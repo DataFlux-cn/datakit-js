@@ -5,7 +5,11 @@ import {
   urlParse,
   replaceNumberCharByPath,
   RumEventType,
-  LifeCycleEventType
+  LifeCycleEventType,
+  formatUnknownError,
+  computeStackTrace,
+  ErrorHandling,
+  ErrorSource
 } from '@cloudcare/browser-core'
 export function startErrorCollection(lifeCycle, configuration) {
   startAutomaticErrorCollection(configuration).subscribe(function (error) {
@@ -36,7 +40,16 @@ export function doStartErrorCollection(lifeCycle) {
     }
   }
 }
-
+function computeRawError(error, handlingStack, startClocks) {
+  const stackTrace = error instanceof Error ? computeStackTrace(error) : undefined
+  return {
+    startClocks,
+    source: ErrorSource.CUSTOM,
+    originalError: error,
+    ...formatUnknownError(stackTrace, error, 'Provided', handlingStack),
+    handling: ErrorHandling.HANDLED,
+  }
+}
 function processError(error) {
   var resource = error.resource
   if (resource) {

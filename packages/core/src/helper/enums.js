@@ -54,3 +54,7 @@ export var TraceType = {
   SKYWALKING_V3: 'skywalking_v3',
   JAEGER: 'jaeger',
 }
+export var ErrorHandling = {
+  HANDLED: 'handled',
+  UNHANDLED: 'unhandled',
+}

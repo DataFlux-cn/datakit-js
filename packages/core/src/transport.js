@@ -44,7 +44,10 @@ httpRequest.prototype = {
 
 export var HttpRequest = httpRequest
 export var processedMessageByDataMap = function (message) {
-  if (!message || !message.type) return ''
+  if (!message || !message.type) return {
+    rowStr: '',
+    rowData: undefined
+  }
   var rowData = { tags: {}, fields: {} }
   var hasFileds = false
   var rowStr = ''
