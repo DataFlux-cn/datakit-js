@@ -69,7 +69,6 @@ export function makeRumPublicApi(startRumImpl) {
       // if (userConfiguration.publicApiKey) {
       //   userConfiguration.clientToken = userConfiguration.publicApiKey
       // }
-
       var _startRumImpl = startRumImpl(userConfiguration, function () {
         return {
           user: user,

@@ -9,7 +9,8 @@ import {
   formatUnknownError,
   computeStackTrace,
   ErrorHandling,
-  ErrorSource
+  ErrorSource,
+  extend
 } from '@cloudcare/browser-core'
 export function startErrorCollection(lifeCycle, configuration) {
   startAutomaticErrorCollection(configuration).subscribe(function (error) {
@@ -42,13 +43,13 @@ export function doStartErrorCollection(lifeCycle) {
 }
 function computeRawError(error, handlingStack, startClocks) {
   const stackTrace = error instanceof Error ? computeStackTrace(error) : undefined
-  return {
+  return extend({
     startClocks,
     source: ErrorSource.CUSTOM,
     originalError: error,
-    ...formatUnknownError(stackTrace, error, 'Provided', handlingStack),
-    handling: ErrorHandling.HANDLED,
-  }
+    handling: ErrorHandling.HANDLED
+  }, formatUnknownError(stackTrace, error, 'Provided', handlingStack) )
+  
 }
 function processError(error) {
   var resource = error.resource

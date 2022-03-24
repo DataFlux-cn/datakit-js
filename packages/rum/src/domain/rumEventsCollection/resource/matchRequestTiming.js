@@ -26,6 +26,7 @@ export function matchRequestTiming(request) {
   var candidates = map(sameNameEntries, function (entry) {
     return entry.toJSON()
   })
+  
   candidates = filter(candidates, toValidEntry)
   candidates = filter(candidates, function (entry) {
     return isBetween(
