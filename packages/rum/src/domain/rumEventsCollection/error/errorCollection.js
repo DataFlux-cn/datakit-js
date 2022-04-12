@@ -28,29 +28,29 @@ export function doStartErrorCollection(lifeCycle) {
   })
   return {
     addError: function (customError, savedCommonContext) {
-      var rawError = computeRawError(
-        customError.error,
-        customError.startClocks,
-        customError.source
-      )
-      lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, {
-        customerContext: customError.context,
-        savedCommonContext: savedCommonContext,
-        error: rawError
-      })
+      // var rawError = computeRawError(
+      //   customError.error,
+      //   customError.handlingStack,
+      //   customError.startClocks
+      // )
+      // lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, {
+      //   customerContext: customError.context,
+      //   savedCommonContext: savedCommonContext,
+      //   error: rawError
+      // })
     }
   }
 }
-function computeRawError(error, handlingStack, startClocks) {
-  const stackTrace = error instanceof Error ? computeStackTrace(error) : undefined
-  return extend({
-    startClocks,
-    source: ErrorSource.CUSTOM,
-    originalError: error,
-    handling: ErrorHandling.HANDLED
-  }, formatUnknownError(stackTrace, error, 'Provided', handlingStack) )
-  
-}
+// function computeRawError(error, handlingStack, startTime) {
+//   const stackTrace = error instanceof Error ? computeStackTrace(error) : undefined
+//   return extend({
+//     startTime:startTime,
+//     source: ErrorSource.CUSTOM,
+//     originalError: error,
+//     handling: ErrorHandling.HANDLED
+//   }, formatUnknownError(stackTrace, error, 'Provided', handlingStack) )
+
+// }
 function processError(error) {
   var resource = error.resource
   if (resource) {

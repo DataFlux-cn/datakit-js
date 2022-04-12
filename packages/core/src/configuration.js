@@ -77,6 +77,7 @@ export function commonInit(userConfiguration, buildEnv) {
     applicationId: userConfiguration.applicationId,
     env: userConfiguration.env || '',
     version: userConfiguration.version || '',
+    service: userConfiguration.service || 'browser',
     sdkVersion: buildEnv.sdkVersion,
     sdkName: buildEnv.sdkName,
     datakitUrl: getDatakitUrl(
