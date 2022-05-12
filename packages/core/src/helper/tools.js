@@ -1060,7 +1060,107 @@ export var getURLSearchParams = function (queryString) {
   }
   return args
 }
+function createCircularReferenceChecker() {
+  if (typeof WeakSet !== 'undefined') {
+    var set = new WeakSet()
+    return {
+      hasAlreadyBeenSeen(value) {
+        var has = set.has(value)
+        if (!has) {
+          set.add(value)
+        }
+        return has
+      },
+    }
+  }
+  var array = []
+  return {
+    hasAlreadyBeenSeen(value) {
+      var has = array.indexOf(value) >= 0
+      if (!has) {
+        array.push(value)
+      }
+      return has
+    },
+  }
+}
+/**
+ * Similar to `typeof`, but distinguish plain objects from `null` and arrays
+ */
+ export function getType(value) {
+  if (value === null) {
+    return 'null'
+  }
+  if (Array.isArray(value)) {
+    return 'array'
+  }
+  return typeof value
+}
+/**
+ * Iterate over source and affect its sub values into destination, recursively.
+ * If the source and destination can't be merged, return source.
+ */
+ export function mergeInto(
+  destination,
+  source,
+  circularReferenceChecker
+) {
+  // ignore the source if it is undefined
+  if (typeof circularReferenceChecker === 'undefined') {
+    circularReferenceChecker = createCircularReferenceChecker()
+  }
+  if (source === undefined) {
+    return destination
+  }
 
+  if (typeof source !== 'object' || source === null) {
+    // primitive values - just return source
+    return source
+  } else if (source instanceof Date) {
+    return new Date(source.getTime())
+  } else if (source instanceof RegExp) {
+    var flags =
+      source.flags ||
+      // old browsers compatibility
+      [
+        source.global ? 'g' : '',
+        source.ignoreCase ? 'i' : '',
+        source.multiline ? 'm' : '',
+        source.sticky ? 'y' : '',
+        source.unicode ? 'u' : '',
+      ].join('')
+    return new RegExp(source.source, flags)
+  }
+
+  if (circularReferenceChecker.hasAlreadyBeenSeen(source)) {
+    // remove circular references
+    return undefined
+  } else if (Array.isArray(source)) {
+    var merged= Array.isArray(destination) ? destination : []
+    for (var i = 0; i < source.length; ++i) {
+      merged[i] = mergeInto(merged[i], source[i], circularReferenceChecker)
+    }
+    return merged
+  }
+
+  var merged = getType(destination) === 'object' ? destination : {}
+  for (var key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      merged[key] = mergeInto(merged[key], source[key], circularReferenceChecker)
+    }
+  }
+  return merged
+}
+
+/**
+ * A simplistic implementation of a deep clone algorithm.
+ * Caveats:
+ * - It doesn't maintain prototype chains - don't use with instances of custom classes.
+ * - It doesn't handle Map and Set
+ */
+export function deepClone(value){
+  return mergeInto(undefined, value)
+}
 export var _URL = function (url) {
   var result = {}
   var basicProps = [

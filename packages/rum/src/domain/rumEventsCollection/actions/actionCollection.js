@@ -53,7 +53,11 @@ function processAction(action) {
           }
         }
       }
-    : undefined
+    : {
+      action: {
+        loadingTime: 0
+      }
+    }
   var customerContext = !isAutoAction(action) ? action.context : undefined
   var actionEvent = extend2Lev(
     {

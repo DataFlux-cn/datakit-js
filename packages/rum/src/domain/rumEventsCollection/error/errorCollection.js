@@ -5,7 +5,12 @@ import {
   urlParse,
   replaceNumberCharByPath,
   RumEventType,
-  LifeCycleEventType
+  LifeCycleEventType,
+  computeStackTrace,
+  formatUnknownError,
+  ErrorHandling,
+  extend,
+  ErrorSource
 } from '@cloudcare/browser-core'
 export function startErrorCollection(lifeCycle, configuration) {
   startAutomaticErrorCollection(configuration).subscribe(function (error) {
@@ -18,15 +23,19 @@ export function doStartErrorCollection(lifeCycle) {
   lifeCycle.subscribe(LifeCycleEventType.RAW_ERROR_COLLECTED, function (error) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processError(error.error)
+      extend({
+        customerContext:error.customerContext,
+        savedCommonContext: error.savedCommonContext,
+      }, processError(error.error))
+      
     )
   })
   return {
     addError: function (customError, savedCommonContext) {
       var rawError = computeRawError(
         customError.error,
+        customError.handlingStack,
         customError.startClocks,
-        customError.source
       )
       lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, {
         customerContext: customError.context,
@@ -36,7 +45,15 @@ export function doStartErrorCollection(lifeCycle) {
     }
   }
 }
-
+function computeRawError(error, handlingStack, startClocks) {
+  const stackTrace = error instanceof Error ? computeStackTrace(error) : undefined
+  return extend({
+    startClocks:startClocks,
+    source: ErrorSource.CUSTOM,
+    originalError: error,
+    handling: ErrorHandling.HANDLED,
+  },formatUnknownError(stackTrace, error, 'Provided', handlingStack))
+}
 function processError(error) {
   var resource = error.resource
   if (resource) {
@@ -60,6 +77,8 @@ function processError(error) {
       source: error.source,
       stack: error.stack,
       type: error.type,
+      handling_stack: error.handlingStack,
+      handling: error.handling,
       starttime: getTimestamp(error.startClocks.relative)
     },
     type: RumEventType.ERROR

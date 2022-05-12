@@ -92,7 +92,6 @@ export function trackFetch(lifeCycle, configuration, tracer) {
   fetchProxy.onRequestComplete(function (context) {
     if (isAllowedRequestUrl(configuration, context.url)) {
       tracer.clearTracingIfCancelled(context)
-      console.log(context.duration, 'duration=====')
       lifeCycle.notify(LifeCycleEventType.REQUEST_COMPLETED, {
         duration: context.duration,
         method: context.method,

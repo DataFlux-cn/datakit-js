@@ -92,6 +92,7 @@ export var dataMap = {
     tags: {
       error_source: 'error.source',
       error_type: 'error.type',
+      error_handling: 'error.handling',
       resource_url: 'error.resource.url',
       resource_url_host: 'error.resource.url_host',
       resource_url_path: 'error.resource.url_path',

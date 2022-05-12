@@ -12,7 +12,9 @@ import {
   ActionType,
   ErrorSource,
   isEmptyObject,
-  formatDate
+  deepClone,
+  formatDate,
+  createHandlingStack
 } from '@cloudcare/browser-core'
 
 export function makeRumPublicApi(startRumImpl) {
@@ -48,8 +50,7 @@ export function makeRumPublicApi(startRumImpl) {
   }
 
   function clonedCommonContext() {
-    return extend2Lev(
-      {},
+    return deepClone(
       {
         context: globalContextManager.get(),
         user: user
@@ -164,14 +165,14 @@ export function makeRumPublicApi(startRumImpl) {
       }
       
     },
-    // addAction: function (name, context) {
-    //   addActionStrategy({
-    //     name: name,
-    //     context: extend2Lev({}, context),
-    //     startClocks: clocksNow(),
-    //     type: ActionType.CUSTOM
-    //   })
-    // },
+    addAction: function (name, context) {
+      addActionStrategy({
+        name: name,
+        context: deepClone(context),
+        startClocks: clocksNow(),
+        type: ActionType.CUSTOM,
+      })
+    },
 
     /**
      * @deprecated use addAction instead
@@ -180,28 +181,16 @@ export function makeRumPublicApi(startRumImpl) {
     //   rumPublicApi.addAction(name, context)
     // },
 
-    // addError: function (error, context, source) {
-    //   if (typeof source === 'undefined') {
-    //     source = ErrorSource.CUSTOM
-    //   }
-    //   var checkedSource
-    //   if (
-    //     source === ErrorSource.CUSTOM ||
-    //     source === ErrorSource.NETWORK ||
-    //     source === ErrorSource.SOURCE
-    //   ) {
-    //     checkedSource = source
-    //   } else {
-    //     console.error(`DD_RUM.addError: Invalid source '${source}'`)
-    //     checkedSource = ErrorSource.CUSTOM
-    //   }
-    //   addErrorStrategy({
-    //     error: error,
-    //     context: extend2Lev({}, context),
-    //     source: checkedSource,
-    //     startClocks: clocksNow()
-    //   })
-    // },
+    addError: function (error, context) {
+      const handlingStack = createHandlingStack()
+      addErrorStrategy({
+        error: error,
+        handlingStack:handlingStack,
+        context: deepClone(context),
+        startClocks: clocksNow(),
+      })
+      
+    },
 
     // addTiming: function (name) {
     //   addTimingStrategy(name)
