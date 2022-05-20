@@ -9,10 +9,7 @@ export var ErrorSource = {
   LOGGER: 'logger',
   CUSTOM: 'custom'
 }
-export var ErrorHandling ={
-  HANDLED:'handled',
-  UNHANDLED:'unhandled',
-}
+
 export function formatUnknownError(stackTrace, errorObject, nonErrorPrefix,handlingStack) {
   if (
     !stackTrace ||

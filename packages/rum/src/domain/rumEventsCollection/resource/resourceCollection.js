@@ -56,7 +56,6 @@ export function startResourceCollection(lifeCycle, configuration, session) {
 function processRequest(request) {
   var type =
     request.type === RequestType.XHR ? ResourceType.XHR : ResourceType.FETCH
-
   var matchingTiming = matchRequestTiming(request)
   var startClocks = matchingTiming
     ? relativeToClocks(matchingTiming.startTime)
@@ -143,8 +142,8 @@ function computeRequestTracingInfo(request) {
   }
   return {
     _dd: {
-      spanId: request.spanId.toDecimalString(),
-      traceId: request.traceId.toDecimalString()
+      spanId: request.spanId,
+      traceId: request.traceId
     },
     resource: { id: UUID() }
   }

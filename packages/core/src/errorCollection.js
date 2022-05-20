@@ -8,7 +8,6 @@ import {
 } from './helper/tools'
 import {
   ErrorSource,
-  ErrorHandling,
   formatUnknownError,
   toStackTraceString,
   formatErrorMessage,
@@ -17,7 +16,7 @@ import {
 import { computeStackTrace, subscribe, unsubscribe } from './tracekit'
 import { Observable } from './helper/observable'
 import { isIntakeRequest } from './configuration'
-import { RequestType } from './helper/enums'
+import { RequestType, ErrorHandling } from './helper/enums'
 import { resetXhrProxy, startXhrProxy } from './xhrProxy'
 import { resetFetchProxy, startFetchProxy } from './fetchProxy'
 

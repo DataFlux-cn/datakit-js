@@ -613,7 +613,7 @@ export var urlParse = function (para) {
   URLParser.prototype.getUrl = function () {
     var url = ''
     url += this._values.Origin
-    url += this._values.Port ? ':' + this._values.Port : ''
+    // url += this._values.Port ? ':' + this._values.Port : ''
     url += this._values.Path
     url += this._values.QueryString ? '?' + this._values.QueryString : ''
     return url
@@ -629,9 +629,13 @@ export var urlParse = function (para) {
         this._values[c] = b[this._fields[c]]
       }
     }
-    this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
-    this._values['Origin'] =
-      this._values['Protocol'] + '://' + this._values['Hostname']
+    this._values['Path'] = this._values['Path'] || '/'
+		this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
+		this._values['Origin'] =
+			this._values['Protocol'] + '://' + this._values['Hostname'] + (this._values.Port ? ':' + this._values.Port : '')
+    // this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
+    // this._values['Origin'] =
+    //   this._values['Protocol'] + '://' + this._values['Hostname']
   }
   return new URLParser(para)
 }

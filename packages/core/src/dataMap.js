@@ -10,6 +10,7 @@ export var commonTags = {
   user_name: 'user.name',
   session_id: 'session.id',
   session_type: 'session.type',
+  session_sampling: 'session.is_sampling',
   is_signin: 'user.is_signin',
   os: 'device.os',
   os_version: 'device.os_version',

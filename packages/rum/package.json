@@ -1,10 +1,10 @@
 {
   "name": "@cloudcare/browser-rum",
-  "version": "2.0.20",
+  "version": "2.0.22",
   "main": "cjs/index.js",
   "module": "esm/index.js",
   "dependencies": {
-    "@cloudcare/browser-core": "1.0.16"
+    "@cloudcare/browser-core": "1.0.18"
   },
   "scripts": {
     "dev": "webpack serve --open --mode=development",
@@ -28,5 +28,6 @@
   "author": "dataflux",
   "license": "MIT",
   "homepage": "https://github.com/CloudCare/dataflux-rum-sdk-javascript/blob/master/packages/rum/README.md",
-  "description": "DataFlux RUM Web 端数据指标监控"
+  "description": "DataFlux RUM Web 端数据指标监控",
+  "gitHead": "e73550d0362e289b1c133980dc7458cb0e5175b5"
 }

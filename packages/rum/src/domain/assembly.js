@@ -73,19 +73,28 @@ export function startRumAssembly(
           session: {
             // must be computed on each event because synthetics instrumentation can be done after sdk execution
             // cf https://github.com/puppeteer/puppeteer/issues/3667
-            type: getSessionType()
+            type: getSessionType(),
           }
         }
-
+        var sessionAliasTag = {}
+        if (session.isTrackedWidthService()) {
+          // 如果是触发了采样的数据，则加上额外的tag
+          sessionAliasTag = {
+            session: {
+              is_sampling: '1'
+            }
+          }
+        }
         var rumEvent = needToAssembleWithAction(rawRumEvent)
           ? extend2Lev(
               rumContext,
               deviceContext,
+              sessionAliasTag,
               viewContext,
               actionContext,
               rawRumEvent
             )
-          : extend2Lev(rumContext, deviceContext, viewContext, rawRumEvent)
+          : extend2Lev(rumContext, deviceContext, sessionAliasTag, viewContext, rawRumEvent)
         var serverRumEvent = withSnakeCaseKeys(rumEvent)
         var context = extend2Lev({},commonContext.context, customerContext)
         if (!isEmptyObject(context)) {

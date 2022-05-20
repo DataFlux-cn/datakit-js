@@ -5,10 +5,12 @@ import {
   isArray,
   includes,
   isFunction,
-  isBoolean
+  isBoolean,
+  values
 } from './helper/tools'
 import { getCurrentSite } from './cookie'
 import { haveSameOrigin } from './helper/urlPolyfill'
+import { TraceType } from './helper/enums'
 var TRIM_REGIX = /^\s+|\s+$/g
 export var DEFAULT_CONFIGURATION = {
   resourceSampleRate: 100,
@@ -32,8 +34,12 @@ export var DEFAULT_CONFIGURATION = {
   batchBytesLimit: 16 * ONE_KILO_BYTE,
   datakitUrl: '',
   logsEndpoint: '',
+  traceType: TraceType.DDTRACE,
+  traceId128Bit: false,
   trackInteractions: false, //是否开启交互action收集
-  allowedDDTracingOrigins: [], //
+  allowedDDTracingOrigins: [], //废弃
+  allowedTracingOrigins:[], // 新增
+  isServiceSampling: false, // 是否不抛弃采样是数据， 采用在服务端菜样的方式
   beforeSend: function (event) {},
   isServerError: function(request) {return false}  // 判断请求是否为error 请求
 }
@@ -71,6 +77,7 @@ export function commonInit(userConfiguration, buildEnv) {
     applicationId: userConfiguration.applicationId,
     env: userConfiguration.env || '',
     version: userConfiguration.version || '',
+    service: userConfiguration.service || 'browser',
     sdkVersion: buildEnv.sdkVersion,
     sdkName: buildEnv.sdkName,
     datakitUrl: getDatakitUrl(
@@ -81,10 +88,12 @@ export function commonInit(userConfiguration, buildEnv) {
     cookieOptions: buildCookieOptions(userConfiguration)
   }
   if ('allowedDDTracingOrigins' in userConfiguration) {
-    transportConfiguration.allowedDDTracingOrigins =
+    transportConfiguration.allowedTracingOrigins =
       userConfiguration.allowedDDTracingOrigins
   }
-
+  if ('allowedTracingOrigins' in userConfiguration) {
+    transportConfiguration.allowedTracingOrigins = userConfiguration.allowedTracingOrigins
+  }
   if ('sampleRate' in userConfiguration) {
     transportConfiguration.sampleRate = userConfiguration.sampleRate
   }
@@ -100,7 +109,20 @@ export function commonInit(userConfiguration, buildEnv) {
   if ('isServerError' in userConfiguration && isFunction(userConfiguration.isServerError) && isBoolean(userConfiguration.isServerError())) {
     transportConfiguration.isServerError = userConfiguration.isServerError
   }
+  if ('traceId128Bit' in userConfiguration) {
+    transportConfiguration.traceId128Bit = !!userConfiguration.traceId128Bit
+  }
+  if ('traceType' in userConfiguration && hasTraceType(userConfiguration.traceType)) {
+    transportConfiguration.traceType = userConfiguration.traceType
+  }
+  if ('isServiceSampling' in userConfiguration && isBoolean(userConfiguration.isServiceSampling)) {
+    transportConfiguration.isServiceSampling = userConfiguration.isServiceSampling
+  }
   return extend2Lev({}, DEFAULT_CONFIGURATION, transportConfiguration)
+}
+function hasTraceType(traceType) {
+  if (traceType && values(TraceType).indexOf(traceType) > -1) return true
+  return false
 }
 function mustUseSecureCookie(userConfiguration) {
   return (

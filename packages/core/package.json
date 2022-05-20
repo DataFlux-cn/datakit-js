@@ -1,6 +1,6 @@
 {
   "name": "@cloudcare/browser-core",
-  "version": "1.0.16",
+  "version": "1.0.18",
   "main": "cjs/index.js",
   "module": "esm/index.js",
   "scripts": {
@@ -20,5 +20,5 @@
   "author": "dataflux",
   "license": "MIT",
   "description": "DataFlux RUM Web 端数据指标监控",
-  "gitHead": "4d458b029fe144d05d7c7d3320e7c5b837118cb5"
+  "gitHead": "e73550d0362e289b1c133980dc7458cb0e5175b5"
 }
