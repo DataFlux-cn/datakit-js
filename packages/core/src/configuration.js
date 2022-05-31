@@ -132,5 +132,17 @@ function mustUseSecureCookie(userConfiguration) {
 }
 
 export function isIntakeRequest(url, configuration) {
-  return haveSameOrigin(url, configuration.datakitUrl)
+  // return haveSameOrigin(url, configuration.datakitUrl)
+  var notTakeRequest = [configuration.datakitUrl]
+  if (configuration.logsEndpoint) {
+    notTakeRequest.push(configuration.logsEndpoint)
+  }
+  var isIntake = false
+  for(var _url of notTakeRequest) {
+    if (url.indexOf(_url) === 0) {
+      isIntake = true
+      break;
+    }
+  }
+  return isIntake
 }
