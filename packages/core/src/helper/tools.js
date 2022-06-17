@@ -536,7 +536,7 @@ export function UUID(placeholder) {
 // 替换url包含数字的路由
 export function replaceNumberCharByPath(path) {
   if (path) {
-    return path.replace(/\/([^\/]*)\d([^\/]*)/g, '/?')
+    return path.replace(/\/([^\/]*)\d([^\/]*)/g, '/?').replace(/\/$/g, '')
   } else {
     return ''
   }
