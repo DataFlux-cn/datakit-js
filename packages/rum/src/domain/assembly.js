@@ -56,7 +56,8 @@ export function startRumAssembly(
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,
             env: configuration.env,
-            version: configuration.version
+            version: configuration.version,
+            service: configuration.service,
           },
           terminal: {
             type: 'web'

@@ -1,10 +1,37 @@
 const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 
-const mode = process.env.NODE_ENV
 const getBaseConfig = (env) => {
   let webConfig = {
-    entry: path.resolve(__dirname, 'src/index.js')
+    entry: path.resolve(__dirname, 'src/index.js'),
+    // resolve: {
+    //   fallback: {
+    //     assert: false,
+    //     buffer: false,
+    //     // console: false,
+    //     constants: false,
+    //     crypto: false,
+    //     // domain: false,
+    //     // events: false,
+    //     http: false,
+    //     https: false,
+    //     os: false,
+    //     fs: false,
+    //     path: require.resolve("path-browserify"),
+    //     // punycode: false,
+    //     // process: false,
+    //     // querystring: false,
+    //     stream: false,
+    //     // string_decoder: false,
+    //     // sys: false,
+    //     // timers: false,
+    //     // tty: false,
+    //     // url: false,
+    //     // util: require.resolve('util'),
+    //     vm: false,
+    //     // zlib: false,
+    //   }
+    // }
   }
   if (env !== 'development') {
     webConfig = Object.assign(webConfig, {

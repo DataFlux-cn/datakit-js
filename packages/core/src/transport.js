@@ -48,6 +48,7 @@ export var processedMessageByDataMap = function (message) {
     rowStr: '',
     rowData: undefined
   }
+  
   var rowData = { tags: {}, fields: {} }
   var hasFileds = false
   var rowStr = ''

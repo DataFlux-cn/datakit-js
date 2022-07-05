@@ -53,7 +53,6 @@ function startActionManagement(lifeCycle) {
         // Ignore any new action if another one is already occurring.
         return
       }
-      console.log(name, '====name=====')
       var pendingAutoAction = new PendingAutoAction(lifeCycle, type, name)
 
       currentAction = pendingAutoAction

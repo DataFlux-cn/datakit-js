@@ -4,6 +4,7 @@ export var commonTags = {
   sdk_version: '_dd.sdk_version',
   app_id: 'application.id',
   env: '_dd.env',
+  service: '_dd.service',
   version: '_dd.version',
   userid: 'user.id',
   user_email: 'user.email',
