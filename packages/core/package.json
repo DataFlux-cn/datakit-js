@@ -1,6 +1,6 @@
 {
   "name": "@cloudcare/browser-core",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "main": "cjs/index.js",
   "module": "esm/index.js",
   "scripts": {

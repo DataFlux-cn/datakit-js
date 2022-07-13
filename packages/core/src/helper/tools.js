@@ -535,11 +535,12 @@ export function UUID(placeholder) {
 
 // 替换url包含数字的路由
 export function replaceNumberCharByPath(path) {
+  var pathGroup = ''
   if (path) {
-    return path.replace(/\/([^\/]*)\d([^\/]*)/g, '/?').replace(/\/$/g, '')
-  } else {
-    return ''
+    pathGroup = path.replace(/\/([^\/]*)\d([^\/]*)/g, '/?').replace(/\/$/g, '')
   }
+  return pathGroup || '/'
+  
 }
 export var getQueryParam = function (url, param) {
   param = param.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]')
