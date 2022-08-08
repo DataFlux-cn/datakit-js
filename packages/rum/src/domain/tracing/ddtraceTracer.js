@@ -61,7 +61,7 @@ DDtraceTracer.prototype = {
   makeTracingHeaders: function() {
     return {
       'x-datadog-origin': 'rum',
-      'x-datadog-parent-id': '0',
+      'x-datadog-parent-id': this.getSpanId(),
       'x-datadog-sampled': '1',
       'x-datadog-sampling-priority': '1',
       'x-datadog-trace-id': this.getTraceId()
