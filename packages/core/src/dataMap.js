@@ -79,7 +79,7 @@ export var dataMap = {
       resource_method: 'resource.method'
     },
     fields: {
-      resource_size: 'resouce.size',
+      resource_size: 'resource.size',
       duration: 'resource.duration',
       resource_dns: 'resource.dns',
       resource_tcp: 'resource.tcp',
