@@ -92,6 +92,8 @@ export var dataMap = {
   error: {
     type: RumEventType.ERROR,
     tags: {
+      trace_id: '_dd.trace_id',
+      span_id: '_dd.span_id',
       error_source: 'error.source',
       error_type: 'error.type',
       error_handling: 'error.handling',
@@ -101,7 +103,7 @@ export var dataMap = {
       resource_url_path_group: 'error.resource.url_path_group',
       resource_status: 'error.resource.status',
       resource_status_group: 'error.resource.status_group',
-      resource_method: 'error.resource.method'
+      resource_method: 'error.resource.method',
     },
     fields: {
       error_message: ['string', 'error.message'],

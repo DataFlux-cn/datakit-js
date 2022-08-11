@@ -10,6 +10,7 @@ import {
   formatUnknownError,
   ErrorHandling,
   extend,
+  extend2Lev,
   ErrorSource
 } from '@cloudcare/browser-core'
 export function startErrorCollection(lifeCycle, configuration) {
@@ -56,7 +57,9 @@ function computeRawError(error, handlingStack, startClocks) {
 }
 function processError(error) {
   var resource = error.resource
+  var tracingInfo
   if (resource) {
+    tracingInfo = computeRequestTracingInfo(resource)
     var urlObj = urlParse(error.resource.url).getParse()
     resource = {
       method: error.resource.method,
@@ -69,7 +72,7 @@ function processError(error) {
     }
   }
 
-  var rawRumEvent = {
+  var rawRumEvent = extend2Lev({
     date: getTimestamp(error.startClocks.relative),
     error: {
       message: error.message,
@@ -82,9 +85,22 @@ function processError(error) {
       starttime: getTimestamp(error.startClocks.relative)
     },
     type: RumEventType.ERROR
-  }
+  }, tracingInfo)
   return {
     rawRumEvent: rawRumEvent,
     startTime: error.startClocks.relative
+  }
+}
+
+function computeRequestTracingInfo(request) {
+  var hasBeenTraced = request.traceId && request.spanId
+  if (!hasBeenTraced) {
+    return undefined
+  }
+  return {
+    _dd: {
+      spanId: request.spanId,
+      traceId: request.traceId
+    }
   }
 }

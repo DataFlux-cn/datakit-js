@@ -46,7 +46,7 @@ export function trackXhr(lifeCycle, configuration, tracer) {
       })
     }
   })
-  xhrProxy.onRequestComplete(function (context, xhr) {
+  xhrProxy.onRequestComplete(function (context) {
     if (isAllowedRequestUrl(configuration, context.url)) {
       tracer.clearTracingIfCancelled(context)
       lifeCycle.notify(LifeCycleEventType.REQUEST_COMPLETED, {
@@ -99,7 +99,6 @@ export function trackFetch(lifeCycle, configuration, tracer) {
         response: context.response,
         responseType: context.responseType,
         startClocks: context.startClocks,
-
         spanId: context.spanId,
         startTime: context.startTime,
         status: context.status,
