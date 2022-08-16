@@ -40,6 +40,7 @@ export var DEFAULT_CONFIGURATION = {
   allowedDDTracingOrigins: [], //废弃
   allowedTracingOrigins:[], // 新增
   isServiceSampling: false, // 是否不抛弃采样是数据， 采用在服务端菜样的方式
+  isJsBirdge: false,// 是否需要对webview 发送数据，需要装我们对应ios sdk
   beforeSend: function (event) {},
   isServerError: function(request) {return false}  // 判断请求是否为error 请求
 }
@@ -86,6 +87,9 @@ export function commonInit(userConfiguration, buildEnv) {
     logsEndpoint: getLogsEndPoint(userConfiguration.datakitOrigin),
     isEnabled: function(feature) {return includes(enableExperimentalFeatures, feature)},
     cookieOptions: buildCookieOptions(userConfiguration)
+  }
+  if ('isJsBirdge' in userConfiguration) {
+    transportConfiguration.isJsBirdge = userConfiguration.isJsBirdge
   }
   if ('allowedDDTracingOrigins' in userConfiguration) {
     transportConfiguration.allowedTracingOrigins =
