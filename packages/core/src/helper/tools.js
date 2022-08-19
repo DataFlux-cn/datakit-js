@@ -1702,3 +1702,11 @@ export function escapeRowData(str) {
     return '\\' + word
   })
 }
+
+export function escapeJsonValue(value) {
+  if (isString(value)) {
+    return value
+  } else {
+    return jsonStringify(value)
+  }
+}

@@ -13,6 +13,7 @@ import {
   isEmptyObject,
   isObject,
   map,
+  escapeJsonValue
 } from './helper/tools'
 import { DOM_EVENT, RumEventType } from './helper/enums'
 import { commonTags, dataMap } from './dataMap'
@@ -30,9 +31,18 @@ var httpRequest = function (endpointUrl, bytesLimit, isLineProtocolToJson) {
 }
 httpRequest.prototype = {
   send: function (data, size) {
+    
     var url = addBatchPrecision(this.endpointUrl)
     if (navigator.sendBeacon && size < this.bytesLimit && !this.isLineProtocolToJson) {
       var isQueued = navigator.sendBeacon(url, data)
+      if (isQueued) {
+        return
+      }
+    } else if (navigator.sendBeacon && size < this.bytesLimit && this.isLineProtocolToJson) {
+      const blob = new Blob([JSON.stringify(data)], {
+        type: 'application/json',
+      });
+      var isQueued = navigator.sendBeacon(url, blob)
       if (isQueued) {
         return
       }
@@ -75,7 +85,7 @@ export var processedMessageByDataMap = function (message) {
         var _value = findByPath(message, value_path)
         filterFileds.push(_key)
         if (_value || isNumber(_value)) {
-          rowData.tags[_key] = _value
+          rowData.tags[_key] = escapeJsonValue(_value)
           tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
         }
       })
@@ -116,12 +126,12 @@ export var processedMessageByDataMap = function (message) {
           filterFileds.push(_key)
           if (_value || isNumber(_value)) {
             _tagKeys.push(_key)
-            rowData.tags[_key] = _value
+            rowData.tags[_key] = escapeJsonValue(_value)
             tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
           }
         })
         if (_tagKeys.length) {
-          rowData.tags[CUSTOM_KEYS] = _tagKeys
+          rowData.tags[CUSTOM_KEYS] = escapeJsonValue(_tagKeys)
           tagsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowData(_tagKeys))
         }
       }
@@ -133,7 +143,7 @@ export var processedMessageByDataMap = function (message) {
             filterFileds.indexOf(key) === -1 &&
             (isNumber(value) || isString(value) || isBoolean(value))
           ) {
-            rowData.tags[key] = value
+            rowData.tags[key] = escapeJsonValue(value)
             tagsStr.push(escapeRowData(key) + '=' + escapeRowData(value))
           }
         })
@@ -190,6 +200,7 @@ batch.prototype = {
   flush: function () {
     if (this.bufferMessageCount !== 0) {
       var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
+      if (messages.length === 0) return
       if (this.isLineProtocolToJson) {
         this.request.send(map(messages, function(rowdataStr) {
           return JSON.parse(rowdataStr)
