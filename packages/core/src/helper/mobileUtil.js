@@ -99,4 +99,4 @@ JsBirdge.prototype = {
   }
 }
 
-export var jsBirdge = new JsBirdge()
+export var JsBirdge = JsBirdge

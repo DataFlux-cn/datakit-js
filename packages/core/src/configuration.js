@@ -41,6 +41,7 @@ export var DEFAULT_CONFIGURATION = {
   allowedTracingOrigins:[], // 新增
   isServiceSampling: false, // 是否不抛弃采样是数据， 采用在服务端菜样的方式
   isJsBirdge: false,// 是否需要对webview 发送数据，需要装我们对应ios sdk
+  isLineProtocolToJson: false,
   beforeSend: function (event) {},
   isServerError: function(request) {return false}  // 判断请求是否为error 请求
 }
@@ -90,6 +91,9 @@ export function commonInit(userConfiguration, buildEnv) {
   }
   if ('isJsBirdge' in userConfiguration) {
     transportConfiguration.isJsBirdge = userConfiguration.isJsBirdge
+  }
+  if ('isLineProtocolToJson' in userConfiguration) {
+    transportConfiguration.isLineProtocolToJson = userConfiguration.isLineProtocolToJson
   }
   if ('allowedDDTracingOrigins' in userConfiguration) {
     transportConfiguration.allowedTracingOrigins =

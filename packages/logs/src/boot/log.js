@@ -104,11 +104,12 @@ function startLoggerBatch(configuration) {
 
   function createLoggerBatch(endpointUrl) {
     return new Batch(
-      new HttpRequest(endpointUrl, configuration.batchBytesLimit),
+      new HttpRequest(endpointUrl, configuration.batchBytesLimit, configuration.isLineProtocolToJson),
       configuration.maxBatchSize,
       configuration.batchBytesLimit,
       configuration.maxMessageSize,
-      configuration.flushTimeout
+      configuration.flushTimeout,
+      configuration.isLineProtocolToJson,
     )
   }
 

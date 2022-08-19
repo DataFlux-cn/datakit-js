@@ -11,7 +11,8 @@ import {
   toServerDuration,
   isBoolean,
   isEmptyObject,
-  isObject
+  isObject,
+  map,
 } from './helper/tools'
 import { DOM_EVENT, RumEventType } from './helper/enums'
 import { commonTags, dataMap } from './dataMap'
@@ -22,14 +23,15 @@ function addBatchPrecision(url) {
   if (!url) return url
   return url + (url.indexOf('?') === -1 ? '?' : '&') + 'precision=ms'
 }
-var httpRequest = function (endpointUrl, bytesLimit) {
+var httpRequest = function (endpointUrl, bytesLimit, isLineProtocolToJson) {
   this.endpointUrl = endpointUrl
   this.bytesLimit = bytesLimit
+  this.isLineProtocolToJson = isLineProtocolToJson
 }
 httpRequest.prototype = {
   send: function (data, size) {
     var url = addBatchPrecision(this.endpointUrl)
-    if (navigator.sendBeacon && size < this.bytesLimit) {
+    if (navigator.sendBeacon && size < this.bytesLimit && !this.isLineProtocolToJson) {
       var isQueued = navigator.sendBeacon(url, data)
       if (isQueued) {
         return
@@ -38,11 +40,21 @@ httpRequest.prototype = {
     var request = new XMLHttpRequest()
     request.open('POST', url, true)
     request.withCredentials = true
-    request.send(data)
+    if (this.isLineProtocolToJson) {
+      request.setRequestHeader('Content-type', 'application/json')
+      request.send(JSON.stringify(data))
+    } else {
+      request.setRequestHeader('Content-type', 'text/plain;charset=UTF-8')
+      request.send(data)
+    }
+    
+    
+    
   }
 }
 
 export var HttpRequest = httpRequest
+
 export var processedMessageByDataMap = function (message) {
   if (!message || !message.type) return {
     rowStr: '',
@@ -67,24 +79,7 @@ export var processedMessageByDataMap = function (message) {
           tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
         }
       })
-      if (message.tags && isObject(message.tags) && !isEmptyObject(message.tags)) {
-        // 自定义tag
-        const _tagKeys = []
-        each(message.tags, function (_value, _key) {
-          // 如果和之前tag重名，则舍弃
-          if (filterFileds.indexOf(_key) > -1) return
-          filterFileds.push(_key)
-          if (_value || isNumber(_value)) {
-            _tagKeys.push(_key)
-            rowData.tags[_key] = _value
-            tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
-          }
-        })
-        if (_tagKeys.length) {
-          rowData.tags[CUSTOM_KEYS] = _tagKeys
-          tagsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowData(_tagKeys))
-        }
-      }
+      
       var fieldsStr = []
       each(value.fields, function (_value, _key) {
         if (isArray(_value) && _value.length === 2) {
@@ -112,6 +107,24 @@ export var processedMessageByDataMap = function (message) {
           }
         }
       })
+      if (message.tags && isObject(message.tags) && !isEmptyObject(message.tags)) {
+        // 自定义tag
+        const _tagKeys = []
+        each(message.tags, function (_value, _key) {
+          // 如果和之前tag重名，则舍弃
+          if (filterFileds.indexOf(_key) > -1) return
+          filterFileds.push(_key)
+          if (_value || isNumber(_value)) {
+            _tagKeys.push(_key)
+            rowData.tags[_key] = _value
+            tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
+          }
+        })
+        if (_tagKeys.length) {
+          rowData.tags[CUSTOM_KEYS] = _tagKeys
+          tagsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowData(_tagKeys))
+        }
+      }
       if (message.type === RumEventType.LOGGER) {
         // 这里处理日志类型数据自定义字段
 
@@ -120,6 +133,7 @@ export var processedMessageByDataMap = function (message) {
             filterFileds.indexOf(key) === -1 &&
             (isNumber(value) || isString(value) || isBoolean(value))
           ) {
+            rowData.tags[key] = value
             tagsStr.push(escapeRowData(key) + '=' + escapeRowData(value))
           }
         })
@@ -147,6 +161,7 @@ function batch(
   bytesLimit,
   maxMessageSize,
   flushTimeout,
+  isLineProtocolToJson,
   beforeUnloadCallback
 ) {
   this.request = request
@@ -154,6 +169,7 @@ function batch(
   this.bytesLimit = bytesLimit
   this.maxMessageSize = maxMessageSize
   this.flushTimeout = flushTimeout
+  this.isLineProtocolToJson = isLineProtocolToJson,
   this.beforeUnloadCallback = beforeUnloadCallback
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
@@ -174,7 +190,14 @@ batch.prototype = {
   flush: function () {
     if (this.bufferMessageCount !== 0) {
       var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
-      this.request.send(messages.join('\n'), this.bufferBytesSize)
+      if (this.isLineProtocolToJson) {
+        this.request.send(map(messages, function(rowdataStr) {
+          return JSON.parse(rowdataStr)
+        }), this.bufferBytesSize)
+      } else {
+        this.request.send(messages.join('\n'), this.bufferBytesSize)
+      }
+      
       this.pushOnlyBuffer = []
       this.upsertBuffer = {}
       this.bufferBytesSize = 0
@@ -183,6 +206,9 @@ batch.prototype = {
   },
 
   processSendData: function (message) {
+    if (this.isLineProtocolToJson) {
+      return JSON.stringify(processedMessageByDataMap(message).rowData)
+    }
     return processedMessageByDataMap(message).rowStr
   },
   sizeInBytes: function (candidate) {

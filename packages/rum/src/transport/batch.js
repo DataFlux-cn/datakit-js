@@ -3,10 +3,10 @@ import {
   HttpRequest,
   Batch,
   RumEventType,
-  jsBirdge,
+  JsBirdge,
   processedMessageByDataMap
 } from '@cloudcare/browser-core'
-var setBridgeData = function (serverRumEvent) {
+var setBridgeData = function (serverRumEvent, jsBirdge) {
   var rowData = processedMessageByDataMap(serverRumEvent).rowData
   if (rowData) {
     jsBirdge.sendEvent({
@@ -24,12 +24,16 @@ var setBatchData = function (serverRumEvent, batch) {
 }
 export function startRumBatch(configuration, lifeCycle) {
   var batch = makeRumBatch(configuration, lifeCycle)
+  var jsBirdge
+  if (configuration.isJsBirdge) {
+    jsBirdge = new JsBirdge(configuration)
+  }
   lifeCycle.subscribe(
     LifeCycleEventType.RUM_EVENT_COLLECTED,
     function (serverRumEvent) {
       // 处理webview 情况
-      if (configuration.isJsBirdge && jsBirdge.bridge) {
-        setBridgeData(serverRumEvent)
+      if (jsBirdge && jsBirdge.bridge) {
+        setBridgeData(serverRumEvent, jsBirdge)
       } else {
         setBatchData(serverRumEvent, batch)
       }
@@ -49,11 +53,12 @@ function makeRumBatch(configuration, lifeCycle) {
 
   function createRumBatch(endpointUrl, unloadCallback) {
     return new Batch(
-      new HttpRequest(endpointUrl, configuration.batchBytesLimit),
+      new HttpRequest(endpointUrl, configuration.batchBytesLimit, configuration.isLineProtocolToJson),
       configuration.maxBatchSize,
       configuration.batchBytesLimit,
       configuration.maxMessageSize,
       configuration.flushTimeout,
+      configuration.isLineProtocolToJson,
       unloadCallback
     )
   }
