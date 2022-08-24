@@ -15,19 +15,20 @@ var setBridgeData = function (serverRumEvent, jsBirdge) {
     })
   }
 }
-var setBatchData = function (serverRumEvent, batch) {
+var setBatchData = function (serverRumEvent, rumBatch) {
   if (serverRumEvent.type === RumEventType.VIEW) {
-    batch.upsert(serverRumEvent, serverRumEvent.view.id)
+    rumBatch.upsert(serverRumEvent, serverRumEvent.view.id)
   } else {
-    batch.add(serverRumEvent)
+    rumBatch.add(serverRumEvent)
   }
 }
 export function startRumBatch(configuration, lifeCycle) {
-  var batch = makeRumBatch(configuration, lifeCycle)
+  var rumBatch = makeRumBatch(configuration, lifeCycle)
   var jsBirdge
   if (configuration.isJsBirdge) {
     jsBirdge = new JsBirdge(configuration)
   }
+  
   lifeCycle.subscribe(
     LifeCycleEventType.RUM_EVENT_COLLECTED,
     function (serverRumEvent) {
@@ -35,13 +36,13 @@ export function startRumBatch(configuration, lifeCycle) {
       if (jsBirdge && jsBirdge.bridge) {
         setBridgeData(serverRumEvent, jsBirdge)
       } else {
-        setBatchData(serverRumEvent, batch)
+        setBatchData(serverRumEvent, rumBatch)
       }
     }
   )
   return {
     stop: function () {
-      batch.stop()
+      rumBatch.stop()
     }
   }
 }
@@ -50,7 +51,7 @@ function makeRumBatch(configuration, lifeCycle) {
   var primaryBatch = createRumBatch(configuration.datakitUrl, function () {
     lifeCycle.notify(LifeCycleEventType.BEFORE_UNLOAD)
   })
-
+  
   function createRumBatch(endpointUrl, unloadCallback) {
     return new Batch(
       new HttpRequest(endpointUrl, configuration.batchBytesLimit, configuration.isLineProtocolToJson),
@@ -67,7 +68,7 @@ function makeRumBatch(configuration, lifeCycle) {
   return {
     add: function (message) {
       if (stopped) {
-        return
+        return 
       }
       primaryBatch.add(message)
     },
@@ -76,7 +77,7 @@ function makeRumBatch(configuration, lifeCycle) {
     },
     upsert: function (message, key) {
       if (stopped) {
-        return
+        return 
       }
       primaryBatch.upsert(message, key)
     }

@@ -17,6 +17,7 @@ import {
 } from './helper/tools'
 import { DOM_EVENT, RumEventType } from './helper/enums'
 import { commonTags, dataMap } from './dataMap'
+import {  getGlobalObject } from'./init'
 // https://en.wikipedia.org/wiki/UTF-8
 var HAS_MULTI_BYTES_CHARACTERS = /[^\u0000-\u007F]/
 var CUSTOM_KEYS = 'custom_keys'
@@ -24,29 +25,40 @@ function addBatchPrecision(url) {
   if (!url) return url
   return url + (url.indexOf('?') === -1 ? '?' : '&') + 'precision=ms'
 }
+var global = getGlobalObject()
 var httpRequest = function (endpointUrl, bytesLimit, isLineProtocolToJson) {
   this.endpointUrl = endpointUrl
   this.bytesLimit = bytesLimit
   this.isLineProtocolToJson = isLineProtocolToJson
+  var isRealNavigator = Object.prototype.toString.call(global && global.navigator) === '[object Navigator]';
+  var hasSendBeacon = isRealNavigator && typeof global.navigator.sendBeacon === 'function';
+  if (hasSendBeacon) {
+    this.sendBeacon = global.navigator.sendBeacon.bind(global.navigator);
+  } else {
+    this.sendBeacon = undefined
+  }
+  
 }
 httpRequest.prototype = {
   send: function (data, size) {
     
     var url = addBatchPrecision(this.endpointUrl)
-    if (navigator.sendBeacon && size < this.bytesLimit && !this.isLineProtocolToJson) {
-      var isQueued = navigator.sendBeacon(url, data)
+    
+    if (this.sendBeacon && size < this.bytesLimit && !this.isLineProtocolToJson) {
+      var isQueued = this.sendBeacon(url, data)
       if (isQueued) {
-        return
+        return 
       }
-    } else if (navigator.sendBeacon && size < this.bytesLimit && this.isLineProtocolToJson) {
+    } else if (this.sendBeacon && size < this.bytesLimit && this.isLineProtocolToJson) {
       const blob = new Blob([JSON.stringify(data)], {
         type: 'application/json',
       });
-      var isQueued = navigator.sendBeacon(url, blob)
+      var isQueued = this.sendBeacon(url, blob)
       if (isQueued) {
         return
       }
     }
+    
     var request = new XMLHttpRequest()
     request.open('POST', url, true)
     request.withCredentials = true
@@ -54,6 +66,7 @@ httpRequest.prototype = {
       request.setRequestHeader('Content-type', 'application/json')
       request.send(JSON.stringify(data))
     } else {
+      
       request.setRequestHeader('Content-type', 'text/plain;charset=UTF-8')
       request.send(data)
     }
@@ -165,7 +178,7 @@ export var processedMessageByDataMap = function (message) {
     rowData: hasFileds ? rowData : undefined
   }
 }
-function batch(
+var batch = function(
   request,
   maxSize,
   bytesLimit,
@@ -174,30 +187,37 @@ function batch(
   isLineProtocolToJson,
   beforeUnloadCallback
 ) {
+  
   this.request = request
   this.maxSize = maxSize
   this.bytesLimit = bytesLimit
   this.maxMessageSize = maxMessageSize
   this.flushTimeout = flushTimeout
-  this.isLineProtocolToJson = isLineProtocolToJson,
+  this.isLineProtocolToJson = isLineProtocolToJson
   this.beforeUnloadCallback = beforeUnloadCallback
+  
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
   this.bufferBytesSize = 0
   this.bufferMessageCount = 0
+  
   this.flushOnVisibilityHidden()
   this.flushPeriodically()
 }
 batch.prototype = {
+  
   add: function (message) {
+    
     this.addOrUpdate(message)
   },
 
   upsert: function (message, key) {
+    
     this.addOrUpdate(message, key)
   },
 
   flush: function () {
+    
     if (this.bufferMessageCount !== 0) {
       var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
       if (messages.length === 0) return
@@ -206,6 +226,7 @@ batch.prototype = {
           return JSON.parse(rowdataStr)
         }), this.bufferBytesSize)
       } else {
+        
         this.request.send(messages.join('\n'), this.bufferBytesSize)
       }
       
@@ -220,6 +241,7 @@ batch.prototype = {
     if (this.isLineProtocolToJson) {
       return JSON.stringify(processedMessageByDataMap(message).rowData)
     }
+    
     return processedMessageByDataMap(message).rowStr
   },
   sizeInBytes: function (candidate) {
@@ -323,7 +345,7 @@ batch.prototype = {
      * With sendBeacon, requests are guaranteed to be successfully sent during document unload
      */
     // @ts-ignore this function is not always defined
-    if (navigator.sendBeacon) {
+    if (global.navigator.sendBeacon) {
       /**
        * beforeunload is called before visibilitychange
        * register first to be sure to be called before flush on beforeunload

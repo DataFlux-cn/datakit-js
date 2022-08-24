@@ -1,7 +1,7 @@
 import {
   objectEntries,
   each,
-  extend,
+  shallowClone,
   isArray,
   TraceType,
   getOrigin
@@ -28,22 +28,40 @@ export function startTracer(configuration) {
         configuration,
         context,
         function (tracingHeaders) {
-          context.init = extend({}, context.init)
-          var headers = []
-          if (context.init.headers instanceof Headers) {
-            each(context.init.headers, function (value, key) {
-              headers.push([key, value])
+          // if (context.input instanceof Request && (context.init))
+          
+          if (context.input instanceof Request && (!context.init || !context.init.headers)) {
+            context.input = new Request(context.input)
+            each(tracingHeaders, function(value,key) {
+              context.input.headers.append(key, value)
             })
-          } else if (isArray(context.init.headers)) {
-            each(context.init.headers, function (header) {
-              headers.push(header)
+            
+          } else {
+            context.init = shallowClone(context.init)
+            var headers = []
+            if (context.init.headers instanceof Headers) {
+              each(context.init.headers, function (value, key) {
+                headers.push([key, value])
+              })
+            } else if (isArray(context.init.headers)) {
+              each(context.init.headers, function (header) {
+                headers.push(header)
+              })
+            } else if (context.init.headers) {
+              each(context.init.headers, function (value, key) {
+                headers.push([key, value])
+              })
+            }
+            // context.init.headers = headers.concat(objectEntries(tracingHeaders))
+            // 转换成对象，兼容部分
+            var headersMap = {}
+            each(headers.concat(objectEntries(tracingHeaders)), function(header){
+              headersMap[header[0]] = header[1]
             })
-          } else if (context.init.headers) {
-            each(context.init.headers, function (value, key) {
-              headers.push([key, value])
-            })
+            context.init.headers = headersMap
+            
           }
-          context.init.headers = headers.concat(objectEntries(tracingHeaders))
+          
         }
       )
     },
