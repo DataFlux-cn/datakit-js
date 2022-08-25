@@ -13,7 +13,8 @@ import {
   isEmptyObject,
   isObject,
   map,
-  escapeJsonValue
+  escapeJsonValue,
+  escapeRowField
 } from './helper/tools'
 import { DOM_EVENT, RumEventType } from './helper/enums'
 import { commonTags, dataMap } from './dataMap'
@@ -93,7 +94,7 @@ export var processedMessageByDataMap = function (message) {
       rowData.measurement = key
       var tagsStr = []
       var tags = extend({}, commonTags, value.tags)
-      var filterFileds = ['date', 'type'] // 已经在datamap中定义过的fields和tags
+      var filterFileds = ['date', 'type', CUSTOM_KEYS] // 已经在datamap中定义过的fields和tags
       each(tags, function (value_path, _key) {
         var _value = findByPath(message, value_path)
         filterFileds.push(_key)
@@ -112,26 +113,25 @@ export var processedMessageByDataMap = function (message) {
           filterFileds.push(_key)
           if (_valueData || isNumber(_valueData)) {
             rowData.fields[_key] = _valueData // 这里不需要转译
-            _valueData =
-              type === 'string'
-                ? '"' +
-                  _valueData.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
-                  '"'
-                : escapeRowData(_valueData)
-            fieldsStr.push(escapeRowData(_key) + '=' + _valueData)
+            // _valueData =
+            //   type === 'string'
+            //     ? '"' +
+            //       _valueData.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
+            //       '"'
+            //     : escapeRowData(_valueData)
+            fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_valueData))
           }
         } else if (isString(_value)) {
           var _valueData = findByPath(message, _value)
           filterFileds.push(_key)
           if (_valueData || isNumber(_valueData)) {
             rowData.fields[_key] = _valueData // 这里不需要转译
-            _valueData = escapeRowData(_valueData)
-            fieldsStr.push(escapeRowData(_key) + '=' + _valueData)
+            fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_valueData))
           }
         }
       })
       if (message.tags && isObject(message.tags) && !isEmptyObject(message.tags)) {
-        // 自定义tag
+        // 自定义tag， 存储成field
         const _tagKeys = []
         each(message.tags, function (_value, _key) {
           // 如果和之前tag重名，则舍弃
@@ -139,25 +139,24 @@ export var processedMessageByDataMap = function (message) {
           filterFileds.push(_key)
           if (_value || isNumber(_value)) {
             _tagKeys.push(_key)
-            rowData.tags[_key] = escapeJsonValue(_value)
-            tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
+            rowData.fields[_key] = _value // 这里不需要转译
+            fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_value))
           }
         })
         if (_tagKeys.length) {
-          rowData.tags[CUSTOM_KEYS] = escapeJsonValue(_tagKeys)
-          tagsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowData(_tagKeys))
+          rowData.fields[CUSTOM_KEYS] = escapeRowField(_tagKeys)
+          fieldsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowField(_tagKeys))
         }
       }
       if (message.type === RumEventType.LOGGER) {
         // 这里处理日志类型数据自定义字段
-
         each(message, function (value, key) {
           if (
             filterFileds.indexOf(key) === -1 &&
             (isNumber(value) || isString(value) || isBoolean(value))
           ) {
-            rowData.tags[key] = escapeJsonValue(value)
-            tagsStr.push(escapeRowData(key) + '=' + escapeRowData(value))
+            rowData.fields[key] = value // 这里不需要转译
+            fieldsStr.push(escapeRowData(key) + '=' + escapeRowField(value))
           }
         })
       }

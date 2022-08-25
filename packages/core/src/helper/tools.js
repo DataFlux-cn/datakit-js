@@ -1724,3 +1724,17 @@ export function escapeJsonValue(value) {
     return jsonStringify(value)
   }
 }
+export function escapeFieldValueStr(str) {
+  return '"' +
+  str.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
+  '"'
+}
+export function escapeRowField(value) {
+  if (typeof value === 'object' && value) {
+    return escapeFieldValueStr(jsonStringify(value))
+  } else if (isString(value)) {
+    return escapeFieldValueStr(value)
+  } else {
+    return value
+  }
+}
