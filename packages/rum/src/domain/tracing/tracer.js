@@ -14,7 +14,7 @@ import { ZipkinMultiTracer} from './zipkinMultiTracer'
 import { W3cTraceParentTracer} from './w3cTraceParentTracer'
 
 export function clearTracingIfCancelled(context) {
-  if (context.status === 0) {
+  if (context.status === 0 && !context.isAborted) {
     context.traceId = undefined
     context.spanId = undefined
   }
@@ -114,9 +114,9 @@ export function injectHeadersIfTracingAllowed(configuration, context, inject) {
     case TraceType.W3C_TRACEPARENT:
       tracer = new W3cTraceParentTracer(configuration);
       break;
-      case TraceType.ZIPKIN_SINGLE_HEADER:
-        tracer = new ZipkinSingleTracer(configuration);
-        break;
+    case TraceType.ZIPKIN_SINGLE_HEADER:
+      tracer = new ZipkinSingleTracer(configuration);
+      break;
     default:
       break;
   }
