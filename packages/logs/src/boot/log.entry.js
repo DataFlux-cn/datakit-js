@@ -102,7 +102,7 @@ export function makeLogsPublicApi(startLogsImpl) {
       message,
       extend2Lev(
         {
-          date: Date.now(),
+          date: new Date().getTime(),
           view: {
             referrer: document.referrer,
             url: window.location.href,

@@ -1514,7 +1514,7 @@ export function clocksNow() {
   return { relative: relativeNow(), timeStamp: timeStampNow() }
 }
 export function timeStampNow() {
-  return Date.now()
+  return new Date().getTime()
 }
 export function elapsed(start, end) {
   return end - start

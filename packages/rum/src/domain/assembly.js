@@ -66,6 +66,7 @@ export function startRumAssembly(
             id: applicationId
           },
           device: {},
+          source: 'browser',
           date: timeStampNow(),
           user: {
             id: session.getAnonymousID(),
