@@ -2,7 +2,6 @@ import {
   msToNs,
   getStatusGroup,
   UUID,
-  preferredTimeStamp,
   extend2Lev,
   relativeToClocks,
   urlParse,
@@ -67,7 +66,7 @@ function processRequest(request) {
   var urlObj = urlParse(request.url).getParse()
   var resourceEvent = extend2Lev(
     {
-      date: preferredTimeStamp(startClocks),
+      date: startClocks.timeStamp,
       resource: {
         type: type,
         duration: msToNs(request.duration),
@@ -102,7 +101,7 @@ function processResourceEntry(entry) {
   var startClocks = relativeToClocks(entry.startTime)
   var resourceEvent = extend2Lev(
     {
-      date: preferredTimeStamp(startClocks),
+      date: startClocks.timeStamp,
       resource: {
         type: type,
         url: entry.name,

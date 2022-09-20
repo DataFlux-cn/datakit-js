@@ -43,7 +43,8 @@ export var DEFAULT_CONFIGURATION = {
   isJsBirdge: false,// 是否需要对webview 发送数据，需要装我们对应ios sdk
   isLineProtocolToJson: false,
   beforeSend: function (event) {},
-  isServerError: function(request) {return false}  // 判断请求是否为error 请求
+  isServerError: function(request) {return false},  // 判断请求是否为error 请求
+  isIntakeUrl: function(url) { return false } // 自定义方法根据请求资源 url 判断是否需要采集对应资源数据，默认都采集。 返回：false 表示要采集，true 表示不需要采集
 }
 function trim(str) {
   return str.replace(TRIM_REGIX, '')
@@ -117,6 +118,9 @@ export function commonInit(userConfiguration, buildEnv) {
   if ('isServerError' in userConfiguration && isFunction(userConfiguration.isServerError) && isBoolean(userConfiguration.isServerError())) {
     transportConfiguration.isServerError = userConfiguration.isServerError
   }
+  if ('isIntakeUrl' in userConfiguration && isFunction(userConfiguration.isIntakeUrl) && isBoolean(userConfiguration.isIntakeUrl())) {
+    transportConfiguration.isIntakeUrl = userConfiguration.isIntakeUrl
+  }
   if ('traceId128Bit' in userConfiguration) {
     transportConfiguration.traceId128Bit = !!userConfiguration.traceId128Bit
   }
@@ -152,5 +156,6 @@ export function isIntakeRequest(url, configuration) {
       break;
     }
   }
-  return isIntake
+  // datakit 地址，log 地址，以及客户自定义过滤方法定义url
+  return isIntake || configuration.isIntakeUrl(url)
 }

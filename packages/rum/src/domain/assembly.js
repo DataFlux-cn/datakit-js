@@ -118,8 +118,7 @@ export function startRumAssembly(
 
         if (shouldSend(serverRumEvent, configuration.beforeSend, errorFilter)) {
           // if (
-          //   serverRumEvent.type === 'long_task' ||
-          //   serverRumEvent.type === 'action'
+          //   serverRumEvent.type === 'resource'
           // ) {
           //   console.log(serverRumEvent, '======serverRumEvent-====')
           // }

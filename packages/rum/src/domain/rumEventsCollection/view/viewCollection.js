@@ -2,7 +2,6 @@ import {
   isEmptyObject,
   msToNs,
   extend2Lev,
-  preferredTimeStamp,
   toServerDuration,
   mapValues,
   RumEventType,
@@ -64,7 +63,7 @@ function processViewUpdate(view) {
     _dd: {
       documentVersion: view.documentVersion
     },
-    date: preferredTimeStamp(view.startClocks),
+    date: view.startClocks.timeStamp,
     type: RumEventType.VIEW,
     view: {
       action: {

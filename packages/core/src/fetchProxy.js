@@ -1,4 +1,4 @@
-import { each, relativeNow, clocksNow, elapsed } from './helper/tools'
+import { each, timeStampNow, clocksNow, elapsed } from './helper/tools'
 import { computeStackTrace } from './tracekit'
 import { toStackTraceString } from './helper/errorTools'
 import { normalizeUrl } from './helper/urlPolyfill'
@@ -63,7 +63,6 @@ function beforeSend(input, init) {
     init: init,
     input: input,
     method: method,
-    startTime: relativeNow(),
     startClocks: startClocks,
     url: url
   }
@@ -76,7 +75,7 @@ function beforeSend(input, init) {
 
 function afterSend(responsePromise, context) {
   var reportFetch = async function (response) {
-    context.duration = elapsed(context.startClocks.relative, relativeNow())
+    context.duration = elapsed(context.startClocks.timeStamp, timeStampNow())
 
     if ('stack' in response || response instanceof Error) {
       context.status = 0

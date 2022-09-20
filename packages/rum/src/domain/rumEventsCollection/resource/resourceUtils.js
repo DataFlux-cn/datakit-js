@@ -232,7 +232,6 @@ export function computePerformanceResourceDetails(entry) {
   // Make sure a connection occurred
   if (connectEnd !== fetchStart) {
     details.tcp = formatTiming(startTime, connectStart, connectEnd)
-
     // Make sure a secure connection occurred
     if (areInOrder(connectStart, secureConnectionStart, connectEnd)) {
       details.ssl = formatTiming(startTime, secureConnectionStart, connectEnd)
@@ -247,7 +246,6 @@ export function computePerformanceResourceDetails(entry) {
   if (hasRedirection(entry)) {
     details.redirect = formatTiming(startTime, redirectStart, redirectEnd)
   }
-
   return details
 }
 

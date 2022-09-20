@@ -1463,6 +1463,8 @@ export function noop() {}
 export var ONE_SECOND = 1000
 export var ONE_MINUTE = 60 * ONE_SECOND
 export var ONE_HOUR = 60 * ONE_MINUTE
+export var ONE_DAY = 24 * ONE_HOUR
+export var ONE_YEAR = 365 * ONE_DAY
 export var ONE_KILO_BYTE = 1024
 /**
  * Return true if the draw is successful
@@ -1504,7 +1506,7 @@ export function preferredNow() {
   return relativeNow()
 }
 export function getTimestamp(relativeTime) {
-  return Math.floor(getNavigationStart() + relativeTime)
+  return Math.round(getNavigationStart() + relativeTime)
 }
 export function relativeNow() {
   return performance.now()
@@ -1514,8 +1516,21 @@ export function clocksNow() {
   return { relative: relativeNow(), timeStamp: timeStampNow() }
 }
 export function timeStampNow() {
+  return dateNow()
+}
+
+export function looksLikeRelativeTime(time) {
+  return time < ONE_YEAR
+}
+export function dateNow() {
+  // Do not use `Date.now` because sometimes websites are wrongly "polyfilling" it. For example, we
+  // had some users using a very old version of `datejs`, which patched `Date.now` to return a Date
+  // instance instead of a timestamp[1]. Those users are unlikely to fix this, so let's handle this
+  // case ourselves.
+  // [1]: https://github.com/datejs/Datejs/blob/97f5c7c58c5bc5accdab8aa7602b6ac56462d778/src/core-debug.js#L14-L16
   return new Date().getTime()
 }
+
 export function elapsed(start, end) {
   return end - start
 }
@@ -1530,7 +1545,15 @@ export function preferredTimeStamp(clocks) {
   return getTimestamp(clocks.relative)
 }
 export function relativeToClocks(relative) {
-  return { relative: relative, timeStamp: getTimestamp(relative) }
+  return { relative: relative, timeStamp: getCorrectedTimeStamp(relative) }
+}
+function getCorrectedTimeStamp(relativeTime) {
+  const correctedOrigin = dateNow() - performance.now()
+  // apply correction only for positive drift
+  if (correctedOrigin > getNavigationStart()) {
+    return Math.round(correctedOrigin + relativeTime)
+  }
+  return getTimestamp(relativeTime)
 }
 /**
  * Navigation start slightly change on some rare cases

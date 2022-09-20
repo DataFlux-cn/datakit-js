@@ -1,5 +1,5 @@
 import { normalizeUrl } from './helper/urlPolyfill'
-import { each, relativeNow, clocksNow, elapsed, extend } from './helper/tools'
+import { each, relativeNow, clocksNow, elapsed, extend, timeStampNow } from './helper/tools'
 
 var xhrProxySingleton
 var beforeSendCallbacks = []
@@ -78,8 +78,8 @@ function proxyXhr() {
         hasBeenReported = true
         var xhrCompleteContext = extend({}, xhrPendingContext, {
           duration: elapsed(
-            xhrPendingContext.startClocks.relative,
-            relativeNow()
+            xhrPendingContext.startClocks.timeStamp,
+            timeStampNow()
           ),
           response: _this.response,
           status: _this.status

@@ -5,8 +5,9 @@ import {
   ONE_MINUTE,
   throttle,
   clocksNow,
-  preferredClock,
   clocksOrigin,
+  timeStampNow,
+  looksLikeRelativeTime,
   LifeCycleEventType
 } from '@cloudcare/browser-core'
 import { trackInitialViewTimings } from './trackInitialViewTimings'
@@ -98,11 +99,11 @@ export function trackViews(location, lifeCycle) {
   }
 
   return {
-    addTiming: function (name, endClocks) {
-      if (typeof endClocks === 'undefined') {
-        endClocks = clocksNow()
+    addTiming: function (name, time) {
+      if (typeof time === 'undefined') {
+        time = timeStampNow()
       }
-      currentView.addTiming(name, endClocks)
+      currentView.addTiming(name, time)
       currentView.triggerUpdate()
     },
     stop: function () {
@@ -164,6 +165,7 @@ function newView(
   triggerViewUpdate()
   function triggerViewUpdate() {
     documentVersion += 1
+    var currentEnd = endClocks === undefined ? timeStampNow() : endClocks.timeStamp
     lifeCycle.notify(
       LifeCycleEventType.VIEW_UPDATED,
       extend({}, viewMetrics, {
@@ -178,8 +180,7 @@ function newView(
         startClocks: startClocks,
         timings: timings,
         duration: elapsed(
-          preferredClock(startClocks),
-          preferredClock(endClocks === undefined ? clocksNow() : endClocks)
+          startClocks.timeStamp, currentEnd
         ),
         isActive: endClocks === undefined
       })
@@ -207,11 +208,10 @@ function newView(
         setLoadEvent(newTimings.loadEvent)
       }
     },
-    addTiming: function (name, endClocks) {
-      customTimings[sanitizeTiming(name)] = elapsed(
-        preferredClock(startClocks),
-        preferredClock(endClocks)
-      )
+    addTiming: function (name, time) {
+      const relativeTime = looksLikeRelativeTime(time) ? time : elapsed(startClocks.timeStamp, time)
+      customTimings[sanitizeTiming(name)] = relativeTime
+      
     },
     updateLocation: function (newLocation) {
       location = extend({}, newLocation)

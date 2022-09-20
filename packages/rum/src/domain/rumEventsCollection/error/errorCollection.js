@@ -73,7 +73,7 @@ function processError(error) {
   }
 
   var rawRumEvent = extend2Lev({
-    date: getTimestamp(error.startClocks.relative),
+    date: error.startClocks.timeStamp,
     error: {
       message: error.message,
       resource: resource,

@@ -1,7 +1,6 @@
 import {
   toServerDuration,
   relativeToClocks,
-  preferredTimeStamp,
   RumEventType,
   LifeCycleEventType
 } from '@cloudcare/browser-core'
@@ -14,7 +13,7 @@ export function startLongTaskCollection(lifeCycle) {
       }
       var startClocks = relativeToClocks(entry.startTime)
       var rawRumEvent = {
-        date: preferredTimeStamp(startClocks),
+        date: startClocks.timeStamp,
         long_task: {
           duration: toServerDuration(entry.duration)
         },

@@ -67,7 +67,7 @@ function processAction(action) {
         },
         type: action.type
       },
-      date: preferredTimeStamp(action.startClocks),
+      date: action.startClocks.timeStamp,
       type: RumEventType.ACTION
     },
     autoActionProperties
