@@ -9,7 +9,6 @@ import {
   values
 } from './helper/tools'
 import { getCurrentSite } from './cookie'
-import { haveSameOrigin } from './helper/urlPolyfill'
 import { TraceType } from './helper/enums'
 var TRIM_REGIX = /^\s+|\s+$/g
 export var DEFAULT_CONFIGURATION = {
