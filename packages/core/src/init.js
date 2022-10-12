@@ -1,5 +1,4 @@
 import { extend, each } from './helper/tools'
-import { areCookiesAuthorized } from './cookie'
 export function makeGlobal(stub) {
   var global = extend({}, stub, {
     onReady: function (callback) {
@@ -63,22 +62,22 @@ export function getGlobalObject() {
   }
   return globalObject
 }
-export function checkCookiesAuthorized(options) {
-  if (!areCookiesAuthorized(options)) {
-    console.warn('Cookies are not authorized, we will not send any data.')
-    return false
-  }
-  return true
-}
+// export function checkCookiesAuthorized(options) {
+//   if (!areCookiesAuthorized(options)) {
+//     console.warn('Cookies are not authorized, we will not send any data.')
+//     return false
+//   }
+//   return true
+// }
 
-export function checkIsNotLocalFile() {
-  if (isLocalFile()) {
-    console.error('Execution is not allowed in the current context.')
-    return false
-  }
-  return true
-}
+// export function checkIsNotLocalFile() {
+//   if (isLocalFile()) {
+//     console.error('Execution is not allowed in the current context.')
+//     return false
+//   }
+//   return true
+// }
 
-function isLocalFile() {
-  return window.location.protocol === 'file:'
-}
+// function isLocalFile() {
+//   return window.location.protocol === 'file:'
+// }

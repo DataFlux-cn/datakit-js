@@ -2,27 +2,38 @@ import {
   toServerDuration,
   relativeToClocks,
   RumEventType,
-  LifeCycleEventType
+  LifeCycleEventType,
+  UUID
 } from '@cloudcare/browser-core'
-export function startLongTaskCollection(lifeCycle) {
+export function startLongTaskCollection(lifeCycle, sessionManager) {
   lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (entry.entryType !== 'longtask') {
-        return
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      for(var entry of entries) {
+        if (entry.entryType !== 'longtask') {
+          return
+        }
+        var session = sessionManager.findTrackedSession(entry.startTime)
+        if (!session) {
+          break
+        }
+        
+        var startClocks = relativeToClocks(entry.startTime)
+        var rawRumEvent = {
+          date: startClocks.timeStamp,
+          long_task: {
+            id: UUID(),
+            duration: toServerDuration(entry.duration)
+          },
+          type: RumEventType.LONG_TASK
+        }
+        lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, {
+          rawRumEvent: rawRumEvent,
+          startTime: startClocks.relative,
+          domainContext: { performanceEntry: entry.toJSON() },
+        })
       }
-      var startClocks = relativeToClocks(entry.startTime)
-      var rawRumEvent = {
-        date: startClocks.timeStamp,
-        long_task: {
-          duration: toServerDuration(entry.duration)
-        },
-        type: RumEventType.LONG_TASK
-      }
-      lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, {
-        rawRumEvent: rawRumEvent,
-        startTime: startClocks.relative
-      })
+      
     }
   )
 }

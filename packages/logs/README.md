@@ -136,9 +136,10 @@ window.DATAFLUX_LOGS && DATAFLUX_LOGS.logger.info('Button clicked', { name: 'but
     "_dd": {
         "sdk_name": "Web LOG SDK",
         "sdk_version": "1.0.0",
-        "env": "",
-        "version": ""
+        
     },
+    "env": "",
+    "version": "",
     "device": {
         "os": "Mac OS",
         "os_version": "10.14.6",
@@ -170,9 +171,9 @@ window.DATAFLUX_LOGS && DATAFLUX_LOGS.logger.info('Button clicked', { name: 'but
         "source": "network",
         "stack": "Failed to load"
     },
-    "resource": {
+    "http": {
         "method": "get",
-        "status": 0,
+        "status_code": 0,
         "status_group": 0,
         "url": "http://testing-ft2x-api.cloudcare.cn/api/v1/workspace/xxx",
         "url_host": "testing-ft2x-api.cloudcare.cn",

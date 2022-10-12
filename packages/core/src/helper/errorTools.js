@@ -1,4 +1,4 @@
-import { each , noop} from './tools'
+import { each , noop, jsonStringify} from './tools'
 import { computeStackTrace} from '../tracekit'
 
 export var ErrorSource = {
@@ -16,7 +16,7 @@ export function formatUnknownError(stackTrace, errorObject, nonErrorPrefix,handl
     (stackTrace.message === undefined && !(errorObject instanceof Error))
   ) {
     return {
-      message: nonErrorPrefix + '' + JSON.stringify(errorObject),
+      message: nonErrorPrefix + '' + jsonStringify(errorObject),
       stack: 'No stack, consider using an instance of Error',
       handlingStack:handlingStack,
       type: stackTrace && stackTrace.name
@@ -43,9 +43,9 @@ export function formatUnknownError(stackTrace, errorObject, nonErrorPrefix,handl
    * - this function
    * in order to keep only the user calls
    */
-  const internalFramesToSkip = 2
-  const error = new Error()
-  let formattedStack
+  var internalFramesToSkip = 2
+  var error = new Error()
+  var formattedStack
 
   // IE needs to throw the error to fill in the stack trace
   if (!error.stack) {
@@ -56,14 +56,14 @@ export function formatUnknownError(stackTrace, errorObject, nonErrorPrefix,handl
     }
   }
 
-  const stackTrace = computeStackTrace(error)
+  var stackTrace = computeStackTrace(error)
   stackTrace.stack = stackTrace.stack.slice(internalFramesToSkip)
   formattedStack = toStackTraceString(stackTrace)
 
   return formattedStack
 }
 export function toStackTraceString(stack) {
-  var result = stack.name || 'Error' + ': ' + stack.message
+  var result = formatErrorMessage(stack)
   each(stack.stack, function (frame) {
     var func = frame.func === '?' ? '<anonymous>' : frame.func
     var args =
@@ -78,4 +78,8 @@ export function toStackTraceString(stack) {
 }
 export function formatErrorMessage(stack) {
   return (stack.name || 'Error') + ': ' + stack.message
+}
+export function getFileFromStackTraceString(stack) {
+  var execResult = /@ (.+)/.exec(stack)
+  return execResult && execResult[1]
 }

@@ -1,2 +1,2 @@
-import { datafluxLogs } from './boot/log.entry'
+import { datafluxLogs } from './entries/main'
 export { datafluxLogs }

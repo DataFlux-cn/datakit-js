@@ -6,6 +6,9 @@ import {
   includes,
   each,
   extend,
+  filter,
+  dateNow,
+  relativeNow,
   DOM_EVENT,
   LifeCycleEventType
 } from '@cloudcare/browser-core'
@@ -26,28 +29,41 @@ export function supportPerformanceTimingEvent(entryType) {
 }
 export function startPerformanceCollection(lifeCycle, configuration) {
   retrieveInitialDocumentResourceTiming(function (timing) {
-    handleRumPerformanceEntry(lifeCycle, configuration, timing)
+    handleRumPerformanceEntries(lifeCycle, configuration, [timing])
   })
 
   if (supportPerformanceObject()) {
-    handlePerformanceEntries(lifeCycle, configuration, performance.getEntries())
+    var performanceEntries = performance.getEntries()
+    // Because the performance entry list can be quite large
+    // delay the computation to prevent the SDK from blocking the main thread on init
+    setTimeout(function() { 
+      handleRumPerformanceEntries(lifeCycle, configuration, performanceEntries)
+    })
   }
   if (window.PerformanceObserver) {
-    var observer = new PerformanceObserver(function (entries) {
-      handlePerformanceEntries(lifeCycle, configuration, entries.getEntries())
-    })
-    var entryTypes = [
-      'resource',
-      'navigation',
-      'longtask',
-      'paint',
-      'largest-contentful-paint',
-      'first-input',
-      'layout-shift'
-    ]
-
-    observer.observe({ entryTypes: entryTypes })
-
+    var handlePerformanceEntryList = function(entries) {
+      handleRumPerformanceEntries(lifeCycle, configuration, entries.getEntries())
+    }
+    var mainEntries = ['resource', 'navigation', 'longtask', 'paint']
+    var experimentalEntries = ['largest-contentful-paint', 'first-input', 'layout-shift']
+    try {
+      // Experimental entries are not retrieved by performance.getEntries()
+      // use a single PerformanceObserver with buffered flag by type
+      // to get values that could happen before SDK init
+      each(experimentalEntries, function(type) {
+        var observer = new PerformanceObserver(handlePerformanceEntryList)
+        observer.observe({ type:type, buffered: true })
+      })
+     
+    } catch (e) {
+      // Some old browser versions (ex: chrome 67) don't support the PerformanceObserver type and buffered options
+      // In these cases, fallback to PerformanceObserver with entryTypes
+      each(experimentalEntries, function(type) {
+        mainEntries.push(type)
+      })
+    }
+    var mainObserver = new PerformanceObserver(handlePerformanceEntryList)
+    mainObserver.observe({ entryTypes: mainEntries })
     if (supportPerformanceObject() && 'addEventListener' in performance) {
       // https://bugzilla.mozilla.org/show_bug.cgi?id=1559377
       performance.addEventListener('resourcetimingbufferfull', function () {
@@ -57,12 +73,12 @@ export function startPerformanceCollection(lifeCycle, configuration) {
   }
   if (!supportPerformanceTimingEvent('navigation')) {
     retrieveNavigationTiming(function (timing) {
-      handleRumPerformanceEntry(lifeCycle, configuration, timing)
+      handleRumPerformanceEntries(lifeCycle, configuration, [timing])
     })
   }
   if (!supportPerformanceTimingEvent('first-input')) {
-    retrieveFirstInputTiming((timing) => {
-      handleRumPerformanceEntry(lifeCycle, configuration, timing)
+    retrieveFirstInputTiming(function(timing) {
+      return handleRumPerformanceEntries(lifeCycle, configuration, [timing])
     })
   }
 }
@@ -117,7 +133,7 @@ function retrieveNavigationTiming(callback) {
  * https://github.com/GoogleChrome/web-vitals/blob/master/src/lib/polyfills/firstInputPolyfill.ts
  */
 function retrieveFirstInputTiming(callback) {
-  var startTimeStamp = Date.now()
+  var startTimeStamp = dateNow()
   var timingSent = false
 
   var listeners = addEventListeners(
@@ -140,7 +156,7 @@ function retrieveFirstInputTiming(callback) {
       // (e.g. performance.now()).
       var timing = {
         entryType: 'first-input',
-        processingStart: performance.now(),
+        processingStart: relativeNow(),
         startTime: evt.timeStamp
       }
 
@@ -183,7 +199,7 @@ function retrieveFirstInputTiming(callback) {
       // - https://github.com/GoogleChromeLabs/first-input-delay/issues/6
       // - https://github.com/GoogleChromeLabs/first-input-delay/issues/7
       var delay = timing.processingStart - timing.startTime
-      if (delay >= 0 && delay < Date.now() - startTimeStamp) {
+      if (delay >= 0 && delay < dateNow() - startTimeStamp) {
         callback(timing)
       }
     }
@@ -216,31 +232,27 @@ function computeRelativePerformanceTiming() {
   return result
 }
 
-function handlePerformanceEntries(lifeCycle, configuration, entries) {
-  each(entries, function (entry) {
-    if (
-      entry.entryType === 'resource' ||
-      entry.entryType === 'navigation' ||
-      entry.entryType === 'paint' ||
-      entry.entryType === 'longtask' ||
-      entry.entryType === 'largest-contentful-paint' ||
-      entry.entryType === 'first-input' ||
-      entry.entryType === 'layout-shift'
-    ) {
-      handleRumPerformanceEntry(lifeCycle, configuration, entry)
-    }
-  })
+function handleRumPerformanceEntries(lifeCycle, configuration, entries) {
+  var rumPerformanceEntries = filter(entries,
+    function(entry){
+      return entry.entryType === 'resource' ||
+            entry.entryType === 'navigation' ||
+            entry.entryType === 'paint' ||
+            entry.entryType === 'longtask' ||
+            entry.entryType === 'largest-contentful-paint' ||
+            entry.entryType === 'first-input' ||
+            entry.entryType === 'layout-shift'
+      }
+  )
+
+  var rumAllowedPerformanceEntries = filter(rumPerformanceEntries, function(entry) { return !isIncompleteNavigation(entry) && !isForbiddenResource(configuration, entry)})
+
+  if (rumAllowedPerformanceEntries.length) {
+    lifeCycle.notify(LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED, rumAllowedPerformanceEntries)
+  }
 }
 
-function handleRumPerformanceEntry(lifeCycle, configuration, entry) {
-  if (
-    isIncompleteNavigation(entry) ||
-    isForbiddenResource(configuration, entry)
-  ) {
-    return
-  }
-  lifeCycle.notify(LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED, entry)
-}
+
 
 function isIncompleteNavigation(entry) {
   return entry.entryType === 'navigation' && entry.loadEventEnd <= 0
@@ -252,3 +264,8 @@ function isForbiddenResource(configuration, entry) {
     !isAllowedRequestUrl(configuration, entry.name)
   )
 }
+export function supportPerformanceEntry() {
+  // Safari 10 doesn't support PerformanceEntry
+  return typeof PerformanceEntry === 'function'
+}
+

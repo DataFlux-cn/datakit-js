@@ -1,36 +1,23 @@
-import {
-  createContextManager,
-  extend2Lev,
-  keys,
-  ErrorSource,
-  jsonStringify
-} from '@cloudcare/browser-core'
+import { deepClone, assign, extend2Lev, createContextManager, ErrorSource, keys } from '@cloudcare/browser-core'
+
+
 export var StatusType = {
   debug: 'debug',
-  critical: 'critical',
   error: 'error',
   info: 'info',
-  warn: 'warning'
-}
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-
-var STATUS_PRIORITIES = {
-  [StatusType.debug]: 0,
-  [StatusType.info]: 1,
-  [StatusType.warn]: 2,
-  [StatusType.error]: 3,
-  [StatusType.critical]: 4
+  warn: 'warn',
+  critical: 'critical'
 }
 
-export const STATUSES = keys(StatusType)
-
-export const HandlerType = {
+export var HandlerType = {
   console: 'console',
   http: 'http',
-  silent: 'silent'
+  silent: 'silent',
 }
+
+export var STATUSES = keys(StatusType)
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export function Logger(sendLog, handlerType, level, loggerContext) {
+export function Logger(handleLogStrategy, name, handlerType, level, loggerContext) {
   this.contextManager = createContextManager()
   if (typeof handlerType === 'undefined') {
     handlerType = HandlerType.http
@@ -41,77 +28,69 @@ export function Logger(sendLog, handlerType, level, loggerContext) {
   if (typeof loggerContext === 'undefined') {
     loggerContext = {}
   }
-  this.sendLog = sendLog
+  this.handleLogStrategy = handleLogStrategy
   this.handlerType = handlerType
   this.level = level
-  this.contextManager.set(loggerContext)
+  this.contextManager.set(assign({}, loggerContext, name ? { logger: { name: name } } : undefined))
 }
 Logger.prototype = {
-  log: function (message, messageContext, status) {
+  log: function(message, messageContext, status) {
     if (typeof status === 'undefined') {
       status = StatusType.info
     }
-    if (STATUS_PRIORITIES[status] >= STATUS_PRIORITIES[this.level]) {
-      switch (this.handlerType) {
-        case HandlerType.http:
-          var logMessage = extend2Lev(
-            { message: message, status: status },
-            { tags: this.contextManager.get() },
-            messageContext
-          )
-          this.sendLog(logMessage)
-          break
-        case HandlerType.console:
-          console.log(
-            status + ' : ' + message,
-            extend2Lev(this.contextManager.get(), messageContext)
-          )
-          break
-        case HandlerType.silent:
-          break
-      }
-    }
+    this.handleLogStrategy({ message: message, context: deepClone(messageContext), status:status }, this)
   },
-  debug: function (message, messageContext) {
+
+  debug: function(message, messageContext) {
     this.log(message, messageContext, StatusType.debug)
   },
 
-  info: function (message, messageContext) {
+  info: function(message, messageContext) {
     this.log(message, messageContext, StatusType.info)
   },
 
-  warn: function (message, messageContext) {
+  warn: function(message, messageContext) {
     this.log(message, messageContext, StatusType.warn)
   },
-  critical: function (message, messageContext) {
+  critical: function(message, messageContext) {
     this.log(message, messageContext, StatusType.critical)
   },
-  error: function (message, messageContext) {
+  error: function(message, messageContext) {
     var errorOrigin = {
       error: {
-        origin: ErrorSource.LOGGER
-      }
+        origin: ErrorSource.LOGGER,
+      },
     }
     this.log(message, extend2Lev(errorOrigin, messageContext), StatusType.error)
   },
 
-  setContext: function (context) {
+  setContext:function(context) {
     this.contextManager.set(context)
   },
 
-  addContext: function (key, value) {
+  getContext: function() {
+    return this.contextManager.get()
+  },
+
+  addContext: function(key, value) {
     this.contextManager.add(key, value)
   },
 
-  removeContext: function (key) {
+  removeContext: function(key) {
     this.contextManager.remove(key)
   },
 
-  setHandler: function (handler) {
+  setHandler:function(handler) {
     this.handlerType = handler
   },
 
-  setLevel: function (level) {
+  getHandler: function() {
+    return this.handlerType
+  },
+  setLevel: function(level) {
     this.level = level
+  },
+  getLevel: function() {
+    return this.level
   }
 }

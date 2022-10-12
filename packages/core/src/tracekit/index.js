@@ -1,2 +1,2 @@
 export { computeStackTrace } from './computeStackTrace'
-export { report, subscribe, unsubscribe } from './report'
+export { startUnhandledErrorCollection } from './tracekit'

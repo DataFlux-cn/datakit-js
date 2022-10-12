@@ -8,20 +8,24 @@ export function trackEventCounts(lifeCycle, callback) {
     errorCount: 0,
     longTaskCount: 0,
     resourceCount: 0,
-    userActionCount: 0
+    actionCount: 0,
+    frustrationCount: 0,
   }
 
   var subscription = lifeCycle.subscribe(
-    LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-    function (data) {
-      var rawRumEvent = data.rawRumEvent
-      switch (rawRumEvent.type) {
+    LifeCycleEventType.RUM_EVENT_COLLECTED,
+    function (event) {
+      switch (event.type) {
         case RumEventType.ERROR:
           eventCounts.errorCount += 1
+          
           callback(eventCounts)
           break
         case RumEventType.ACTION:
-          eventCounts.userActionCount += 1
+          if (event.action.frustration) {
+            eventCounts.frustrationCount += event.action.frustration.type.length
+          }
+          eventCounts.actionCount += 1
           callback(eventCounts)
           break
         case RumEventType.LONG_TASK:

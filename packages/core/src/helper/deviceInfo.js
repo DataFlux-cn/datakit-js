@@ -1,3 +1,4 @@
+import { display } from '../helper/display'
 var VariableLibrary = {
   navigator: typeof window.navigator != 'undefined' ? window.navigator : {},
   // 信息map
@@ -607,7 +608,7 @@ var MethodLibrary = {
         },
         // 位置获取失败
         function (error) {
-          console.log(error)
+          display.warn(error)
         }
       )
   }

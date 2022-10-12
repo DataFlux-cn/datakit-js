@@ -1,11 +1,12 @@
 import { RumEventType } from './helper/enums'
 export var commonTags = {
+  action_id: 'action.id',
   sdk_name: '_dd.sdk_name',
   sdk_version: '_dd.sdk_version',
   app_id: 'application.id',
-  env: '_dd.env',
-  service: '_dd.service',
-  version: '_dd.version',
+  env: 'env',
+  service: 'service',
+  version: 'version',
   userid: 'user.id',
   user_email: 'user.email',
   user_name: 'user.name',
@@ -28,7 +29,7 @@ export var commonTags = {
   view_host: 'view.host',
   view_path: 'view.path',
   view_path_group: 'view.path_group',
-  view_url_query: 'view.url_query'
+  view_url_query: 'view.url_query',
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -37,7 +38,7 @@ export var dataMap = {
     tags: {
       view_loading_type: 'view.loading_type',
       view_apdex_level: 'view.apdex_level',
-      is_active: 'view.is_active'
+      is_active: 'view.is_active',
     },
     fields: {
       view_error_count: 'view.error.count',
@@ -92,6 +93,7 @@ export var dataMap = {
   error: {
     type: RumEventType.ERROR,
     tags: {
+      error_id: 'error.id',
       trace_id: '_dd.trace_id',
       span_id: '_dd.span_id',
       error_source: 'error.source',
@@ -112,7 +114,9 @@ export var dataMap = {
   },
   long_task: {
     type: RumEventType.LONG_TASK,
-    tags: {},
+    tags: {
+      long_task_id: 'long_task.id'
+    },
     fields: {
       duration: 'long_task.duration'
     }
@@ -120,7 +124,6 @@ export var dataMap = {
   action: {
     type: RumEventType.ACTION,
     tags: {
-      action_id: 'action.id',
       action_name: 'action.target.name',
       action_type: 'action.type'
     },
@@ -136,13 +139,13 @@ export var dataMap = {
     tags: {
       error_source: 'error.source',
       error_type: 'error.type',
-      error_resource_url: 'resource.url',
-      error_resource_url_host: 'resource.url_host',
-      error_resource_url_path: 'resource.url_path',
-      error_resource_url_path_group: 'resource.url_path_group',
-      error_resource_status: 'resource.status',
-      error_resource_status_group: 'resource.status_group',
-      error_resource_method: 'resource.method',
+      error_resource_url: 'http.url',
+      error_resource_url_host: 'http.url_host',
+      error_resource_url_path: 'http.url_path',
+      error_resource_url_path_group: 'http.url_path_group',
+      error_resource_status: 'http.status_code',
+      error_resource_status_group: 'http.status_group',
+      error_resource_method: 'http.method',
       action_id: 'user_action.id',
       service: 'service',
       status: 'status'

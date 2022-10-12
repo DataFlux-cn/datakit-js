@@ -1,4 +1,4 @@
-import { DOM_EVENT, addEventListener } from '@cloudcare/browser-core'
+import { DOM_EVENT, addEventListeners } from '@cloudcare/browser-core'
 var trackFirstHiddenSingleton
 var stopListeners
 
@@ -13,15 +13,18 @@ export function trackFirstHidden(emitter) {
       trackFirstHiddenSingleton = {
         timeStamp: Infinity
       }
-      var listeners = addEventListener(
+      var listeners = addEventListeners(
         emitter,
-        DOM_EVENT.PAGE_HIDE,
+        [DOM_EVENT.PAGE_HIDE, DOM_EVENT.VISIBILITY_CHANGE],
         function (evt) {
-          trackFirstHiddenSingleton.timeStamp = evt.timeStamp
+          if (event.type === 'pagehide' || document.visibilityState === 'hidden') {
+            trackFirstHiddenSingleton.timeStamp = event.timeStamp
+            stopListeners()
+          }
         },
-        { capture: true, once: true }
+        { capture: true}
       )
-      stopListeners = listeners.stop
+      var stopListeners = listeners.stop
     }
   }
 

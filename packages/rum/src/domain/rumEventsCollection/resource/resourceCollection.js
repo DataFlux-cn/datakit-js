@@ -13,7 +13,6 @@ import {
   RumEventType,
   LifeCycleEventType
 } from '@cloudcare/browser-core'
-
 import { matchRequestTiming } from './matchRequestTiming'
 import {
   computePerformanceResourceDetails,
@@ -24,29 +23,22 @@ import {
   is304,
   isCacheHit
 } from './resourceUtils'
-
-export function startResourceCollection(lifeCycle, configuration, session) {
+import { supportPerformanceEntry } from '../../performanceCollection'
+export function startResourceCollection(lifeCycle, configuration) {
   lifeCycle.subscribe(LifeCycleEventType.REQUEST_COMPLETED, function (request) {
-    if (session.isTrackedWithResource()) {
-      lifeCycle.notify(
-        LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-        processRequest(request)
-      )
-    }
+    lifeCycle.notify(
+      LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
+      processRequest(request)
+    )
   })
 
   lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (
-        session.isTrackedWithResource() &&
-        entry.entryType === 'resource' &&
-        !isRequestKind(entry)
-      ) {
-        lifeCycle.notify(
-          LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-          processResourceEntry(entry)
-        )
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      for (var entry of entries) {
+        if (entry.entryType === 'resource' && !isRequestKind(entry)) {
+          lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, processResourceEntry(entry))
+        }
       }
     }
   )
@@ -68,6 +60,7 @@ function processRequest(request) {
     {
       date: startClocks.timeStamp,
       resource: {
+        id: UUID,
         type: type,
         duration: msToNs(request.duration),
         method: request.method,
@@ -84,7 +77,18 @@ function processRequest(request) {
     tracingInfo,
     correspondingTimingOverrides
   )
-  return { startTime: startClocks.relative, rawRumEvent: resourceEvent }
+  return { 
+    startTime: startClocks.relative, 
+    rawRumEvent: resourceEvent,
+    domainContext: {
+      performanceEntry: matchingTiming && toPerformanceEntryRepresentation(matchingTiming),
+      xhr: request.xhr,
+      response: request.response,
+      requestInput: request.input,
+      requestInit: request.init,
+      error: request.error,
+    }
+  }
 }
 
 function processResourceEntry(entry) {
@@ -103,6 +107,7 @@ function processResourceEntry(entry) {
     {
       date: startClocks.timeStamp,
       resource: {
+        id: UUID(),
         type: type,
         url: entry.name,
         urlHost: urlObj.Host,
@@ -118,7 +123,13 @@ function processResourceEntry(entry) {
     tracingInfo,
     entryMetrics
   )
-  return { startTime: startClocks.relative, rawRumEvent: resourceEvent }
+  return { 
+    startTime: startClocks.relative, 
+    rawRumEvent: resourceEvent,
+    domainContext: {
+      performanceEntry: toPerformanceEntryRepresentation(entry),
+    },
+  }
 }
 
 function computePerformanceEntryMetrics(timing) {
@@ -133,7 +144,12 @@ function computePerformanceEntryMetrics(timing) {
     )
   }
 }
-
+function toPerformanceEntryRepresentation(entry) {
+  if (supportPerformanceEntry() && entry instanceof PerformanceEntry) {
+    entry.toJSON()
+  }
+  return entry
+}
 function computeRequestTracingInfo(request) {
   var hasBeenTraced = request.traceId && request.spanId
   if (!hasBeenTraced) {

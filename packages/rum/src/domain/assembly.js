@@ -6,33 +6,54 @@ import {
   LifeCycleEventType,
   RumEventType,
   deviceInfo,
-  createErrorFilter,
-  limitModification
+  currentDrift,
+  createEventRateLimiter,
+  limitModification,
+  display
 } from '@cloudcare/browser-core'
 var SessionType = {
   SYNTHETICS: 'synthetics',
   USER: 'user'
 }
-var FIELDS_WITH_SENSITIVE_DATA = [
+
+var VIEW_EVENTS_MODIFIABLE_FIELD_PATHS = [
+  // Fields with sensitive data
   'view.url',
   'view.referrer',
   'action.target.name',
   'error.message',
   'error.stack',
   'error.resource.url',
-  'resource.url'
+  'resource.url',
 ]
+
+var OTHER_EVENTS_MODIFIABLE_FIELD_PATHS = VIEW_EVENTS_MODIFIABLE_FIELD_PATHS.concat([
+  // User-customizable field
+  'tags',
+])
 export function startRumAssembly(
-  applicationId,
   configuration,
   lifeCycle,
-  session,
-  parentContexts,
-  getCommonContext
+  sessionManager,
+  userSessionManager,
+  viewContexts,
+  urlContexts,
+  actionContexts,
+  getCommonContext,
+  reportError
 ) {
-  var errorFilter = createErrorFilter(configuration, function (error) {
-    lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
-  })
+  var eventRateLimiters = {
+  }
+  eventRateLimiters[RumEventType.ERROR] = createEventRateLimiter(
+    RumEventType.ERROR,
+    configuration.eventRateLimiterThreshold,
+    reportError
+  )
+  eventRateLimiters[RumEventType.ACTION] = createEventRateLimiter(
+    RumEventType.ACTION,
+    configuration.eventRateLimiterThreshold,
+    reportError
+  )
   lifeCycle.subscribe(
     LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
     function (data) {
@@ -40,63 +61,59 @@ export function startRumAssembly(
       var rawRumEvent = data.rawRumEvent
       var savedCommonContext = data.savedCommonContext
       var customerContext = data.customerContext
-      var viewContext = parentContexts.findView(startTime)
-      var deviceContext = {
-        device: deviceInfo
-      }
+      var domainContext = data.domainContext
+      var viewContext = viewContexts.findView(startTime)
+      var urlContext = urlContexts.findUrl(startTime)
+      var session = sessionManager.findTrackedSession(rawRumEvent.type !== RumEventType.VIEW ? startTime : undefined)
       if (
-        session.isTracked() &&
+        session &&
         viewContext &&
-        viewContext.session.id === session.getId()
+        urlContext
       ) {
-        var actionContext = parentContexts.findAction(startTime)
+        var actionId = actionContexts.findActionId(startTime)
         var commonContext = savedCommonContext || getCommonContext()
         var rumContext = {
           _dd: {
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,
-            env: configuration.env,
-            version: configuration.version,
-            service: configuration.service,
+            drift: currentDrift()
           },
           terminal: {
             type: 'web'
           },
           application: {
-            id: applicationId
+            id: configuration.applicationId
           },
-          device: {},
+          device: deviceInfo,
+          env: configuration.env || '',
+          service: viewContext.service || configuration.service  || 'browser',
+          version: viewContext.version || configuration.version || '',
           source: 'browser',
           date: timeStampNow(),
           user: {
-            id: session.getAnonymousID(),
+            id: userSessionManager.getId(),
             is_signin: 'F'
           },
           session: {
             // must be computed on each event because synthetics instrumentation can be done after sdk execution
             // cf https://github.com/puppeteer/puppeteer/issues/3667
             type: getSessionType(),
-          }
+            id: session.id,
+          },
+          view: {
+            id: viewContext.id,
+            name: viewContext.name,
+            url: urlContext.url,
+            referrer: urlContext.referrer,
+            host: urlContext.host,
+            path: urlContext.path,
+            pathGroup: urlContext.pathGroup,
+            urlQuery: urlContext.urlQuery
+          },
+          action: needToAssembleWithAction(rawRumEvent) && actionId ? { id: actionId } : undefined,
         }
-        var sessionAliasTag = {}
-        if (session.isTrackedWidthService()) {
-          // 如果是触发了采样的数据，则加上额外的tag
-          sessionAliasTag = {
-            session: {
-              is_sampling: '1'
-            }
-          }
-        }
-        var rumEvent = needToAssembleWithAction(rawRumEvent)
-          ? extend2Lev(
-              rumContext,
-              deviceContext,
-              sessionAliasTag,
-              viewContext,
-              actionContext,
-              rawRumEvent
-            )
-          : extend2Lev(rumContext, deviceContext, sessionAliasTag, viewContext, rawRumEvent)
+        
+        var rumEvent = extend2Lev(rumContext, viewContext, rawRumEvent)
         var serverRumEvent = withSnakeCaseKeys(rumEvent)
         var context = extend2Lev({},commonContext.context, customerContext)
         if (!isEmptyObject(context)) {
@@ -109,19 +126,24 @@ export function startRumAssembly(
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
           serverRumEvent.user = extend2Lev(
             {
-              id: session.getAnonymousID(),
+              // id: session.getAnonymousID(),
               is_signin: 'T'
             },
             commonContext.user
           )
         }
 
-        if (shouldSend(serverRumEvent, configuration.beforeSend, errorFilter)) {
+        if (shouldSend(serverRumEvent, configuration.beforeSend, eventRateLimiters, domainContext)) {
+          
+          if (isEmptyObject(serverRumEvent.tags)) {
+            delete serverRumEvent.tags
+          }
           // if (
-          //   serverRumEvent.type === 'resource'
+          //   serverRumEvent.type === 'error'
           // ) {
           //   console.log(serverRumEvent, '======serverRumEvent-====')
           // }
+          // console.log('======serverRumEvent-====', serverRumEvent )
           lifeCycle.notify(
             LifeCycleEventType.RUM_EVENT_COLLECTED,
             serverRumEvent
@@ -132,24 +154,25 @@ export function startRumAssembly(
   )
 }
 
-function shouldSend(event, beforeSend, errorFilter) {
+function shouldSend(event, beforeSend, eventRateLimiters, domainContext) {
   if (beforeSend) {
     var result = limitModification(
       event,
-      FIELDS_WITH_SENSITIVE_DATA,
-      beforeSend
+      event.type === RumEventType.VIEW ? VIEW_EVENTS_MODIFIABLE_FIELD_PATHS : OTHER_EVENTS_MODIFIABLE_FIELD_PATHS,
+      function(event) { return beforeSend(event, domainContext) }
     )
     if (result === false && event.type !== RumEventType.VIEW) {
       return false
     }
     if (result === false) {
-      console.warn(`Can't dismiss view events using beforeSend!`)
+      display.warn("Can't dismiss view events using beforeSend!")
     }
   }
-  if (event.type === RumEventType.ERROR) {
-    return !errorFilter.isLimitReached()
+  var rateLimitReached = false
+  if (eventRateLimiters[event.type]) {
+    rateLimitReached = eventRateLimiters[event.type].isLimitReached()
   }
-  return true
+  return !rateLimitReached
 }
 function needToAssembleWithAction(event) {
   return (

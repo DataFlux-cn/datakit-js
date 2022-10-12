@@ -2,20 +2,21 @@ import {
   noop,
   elapsed,
   round,
-  preferredNow,
-  LifeCycleEventType
+  ONE_SECOND,
+  LifeCycleEventType,
+  ViewLoadingType
 } from '@cloudcare/browser-core'
 import { supportPerformanceTimingEvent } from '../../performanceCollection'
 import { trackEventCounts } from '../../trackEventCounts'
-import { waitIdlePageActivity } from '../../trackPageActivities'
-import { ViewLoadingType } from './trackViews'
-export function trackViewMetrics(lifeCycle, scheduleViewUpdate, loadingType) {
+import { waitPageActivityEnd } from '../../waitPageActivityEnd'
+export function trackViewMetrics(lifeCycle,domMutationObservable, configuration, scheduleViewUpdate, loadingType, viewStart) {
   var viewMetrics = {
     eventCounts: {
       errorCount: 0,
       longTaskCount: 0,
       resourceCount: 0,
-      userActionCount: 0
+      actionCount: 0,
+      frustrationCount: 0
     }
   }
 
@@ -28,27 +29,23 @@ export function trackViewMetrics(lifeCycle, scheduleViewUpdate, loadingType) {
   )
   var stopEventCountsTracking = _trackEventCounts.stop
   var _trackLoadingTime = trackLoadingTime(
+    lifeCycle,
+    domMutationObservable,
+    configuration,
     loadingType,
-    function (newLoadingTime) {
+    viewStart,
+    function(newLoadingTime) {
       viewMetrics.loadingTime = newLoadingTime
       scheduleViewUpdate()
     }
   )
-  var setActivityLoadingTime = _trackLoadingTime.setActivityLoadingTime
   var setLoadEvent = _trackLoadingTime.setLoadEvent
-  var _trackActivityLoadingTime = trackActivityLoadingTime(
-    lifeCycle,
-    setActivityLoadingTime
-  )
-  var stopActivityLoadingTimeTracking = _trackActivityLoadingTime.stop
+  var stopLoadingTimeTracking = _trackLoadingTime.stop
   var stopCLSTracking
   if (isLayoutShiftSupported()) {
     viewMetrics.cumulativeLayoutShift = 0
-    var _trackLayoutShift = trackLayoutShift(lifeCycle, function (layoutShift) {
-      viewMetrics.cumulativeLayoutShift = round(
-        viewMetrics.cumulativeLayoutShift + layoutShift,
-        4
-      )
+    var _trackLayoutShift = trackCumulativeLayoutShift(lifeCycle, function (cumulativeLayoutShift) {
+      viewMetrics.cumulativeLayoutShift = cumulativeLayoutShift
       scheduleViewUpdate()
     })
     stopCLSTracking = _trackLayoutShift.stop
@@ -58,7 +55,7 @@ export function trackViewMetrics(lifeCycle, scheduleViewUpdate, loadingType) {
   return {
     stop: function () {
       stopEventCountsTracking()
-      stopActivityLoadingTimeTracking()
+      stopLoadingTimeTracking()
       stopCLSTracking()
     },
     setLoadEvent: setLoadEvent,
@@ -66,21 +63,32 @@ export function trackViewMetrics(lifeCycle, scheduleViewUpdate, loadingType) {
   }
 }
 
-function trackLoadingTime(loadType, callback) {
-  var isWaitingForLoadEvent = loadType === ViewLoadingType.INITIAL_LOAD
+function trackLoadingTime(lifeCycle,
+  domMutationObservable,
+  configuration,
+  loadType,
+  viewStart,
+  callback) {
+    var isWaitingForLoadEvent = loadType === ViewLoadingType.INITIAL_LOAD
   var isWaitingForActivityLoadingTime = true
   var loadingTimeCandidates = []
 
   function invokeCallbackIfAllCandidatesAreReceived() {
-    if (
-      !isWaitingForActivityLoadingTime &&
-      !isWaitingForLoadEvent &&
-      loadingTimeCandidates.length > 0
-    ) {
+    if (!isWaitingForActivityLoadingTime && !isWaitingForLoadEvent && loadingTimeCandidates.length > 0) {
       callback(Math.max.apply(Math, loadingTimeCandidates))
     }
   }
 
+  var _waitPageActivityEnd = waitPageActivityEnd(lifeCycle, domMutationObservable, configuration, function(event) {
+    if (isWaitingForActivityLoadingTime) {
+      isWaitingForActivityLoadingTime = false
+      if (event.hadActivity) {
+        loadingTimeCandidates.push(elapsed(viewStart.timeStamp, event.end))
+      }
+      invokeCallbackIfAllCandidatesAreReceived()
+    }
+  })
+  var stop = _waitPageActivityEnd.stop
   return {
     setLoadEvent: function (loadEvent) {
       if (isWaitingForLoadEvent) {
@@ -89,55 +97,66 @@ function trackLoadingTime(loadType, callback) {
         invokeCallbackIfAllCandidatesAreReceived()
       }
     },
-    setActivityLoadingTime: function (activityLoadingTime) {
-      if (isWaitingForActivityLoadingTime) {
-        isWaitingForActivityLoadingTime = false
-        if (activityLoadingTime !== undefined) {
-          loadingTimeCandidates.push(activityLoadingTime)
-        }
-        invokeCallbackIfAllCandidatesAreReceived()
-      }
-    }
+    stop: stop
   }
 }
 
-function trackActivityLoadingTime(lifeCycle, callback) {
-  var startTime = preferredNow()
-  var _waitIdlePageActivity = waitIdlePageActivity(
-    lifeCycle,
-    function (params) {
-      if (params.hadActivity) {
-        callback(elapsed(startTime, params.endTime))
-      } else {
-        callback(undefined)
-      }
-    }
-  )
-  var stopWaitIdlePageActivity = _waitIdlePageActivity.stop
-  return { stop: stopWaitIdlePageActivity }
-}
-
 /**
- * Track layout shifts (LS) occurring during the Views.  This yields multiple values that can be
- * added up to compute the cumulated layout shift (CLS).
+ * Track the cumulative layout shifts (CLS).
+ * Layout shifts are grouped into session windows.
+ * The minimum gap between session windows is 1 second.
+ * The maximum duration of a session window is 5 second.
+ * The session window layout shift value is the sum of layout shifts inside it.
+ * The CLS value is the max of session windows values.
+ *
+ * This yields a new value whenever the CLS value is updated (a higher session window value is computed).
  *
  * See isLayoutShiftSupported to check for browser support.
  *
- * Documentation: https://web.dev/cls/
+ * Documentation:
+ * https://web.dev/cls/
+ * https://web.dev/evolving-cls/
  * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/master/src/getCLS.ts
  */
-function trackLayoutShift(lifeCycle, callback) {
-  var subscribe = lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
+ function trackCumulativeLayoutShift(lifeCycle, callback) {
+  var maxClsValue = 0
+  var window = slidingSessionWindow()
+  var _subscribe = lifeCycle.subscribe(LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED, function(entries){
+    for (var entry of entries) {
       if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-        callback(entry.value)
+        window.update(entry)
+        if (window.value() > maxClsValue) {
+          maxClsValue = window.value()
+          callback(round(maxClsValue, 4))
+        }
       }
     }
-  )
-
+  })
+  var stop = _subscribe.unsubscribe
   return {
-    stop: subscribe.unsubscribe
+    stop:stop
+  }
+}
+
+function slidingSessionWindow() {
+  var value = 0
+  var startTime
+  var endTime
+  return {
+    update: function(entry) {
+      var shouldCreateNewWindow =
+        startTime === undefined ||
+        entry.startTime - endTime >= ONE_SECOND ||
+        entry.startTime - startTime >= 5 * ONE_SECOND
+      if (shouldCreateNewWindow) {
+        startTime = endTime = entry.startTime
+        value = entry.value
+      } else {
+        value += entry.value
+        endTime = entry.startTime
+      }
+    },
+    value: function() {return value}
   }
 }
 

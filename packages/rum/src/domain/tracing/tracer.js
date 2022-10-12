@@ -13,23 +13,24 @@ import { ZipkinSingleTracer} from './zipkinSingleTracer'
 import { ZipkinMultiTracer} from './zipkinMultiTracer'
 import { W3cTraceParentTracer} from './w3cTraceParentTracer'
 
-export function clearTracingIfCancelled(context) {
+export function clearTracingIfNeeded(context) {
   if (context.status === 0 && !context.isAborted) {
     context.traceId = undefined
     context.spanId = undefined
   }
 }
 
-export function startTracer(configuration) {
+export function startTracer(configuration, sessionManager) {
   return {
-    clearTracingIfCancelled: clearTracingIfCancelled,
+    clearTracingIfNeeded: clearTracingIfNeeded,
     traceFetch: function (context) {
       return injectHeadersIfTracingAllowed(
         configuration,
         context,
+        sessionManager,
         function (tracingHeaders) {
           // if (context.input instanceof Request && (context.init))
-          
+          debugger
           if (context.input instanceof Request && (!context.init || !context.init.headers)) {
             context.input = new Request(context.input)
             each(tracingHeaders, function(value,key) {
@@ -40,9 +41,10 @@ export function startTracer(configuration) {
             context.init = shallowClone(context.init)
             var headers = []
             if (context.init.headers instanceof Headers) {
-              each(context.init.headers, function (value, key) {
+              context.init.headers.forEach(function(value, key) {
                 headers.push([key, value])
               })
+              
             } else if (isArray(context.init.headers)) {
               each(context.init.headers, function (header) {
                 headers.push(header)
@@ -69,6 +71,7 @@ export function startTracer(configuration) {
       return injectHeadersIfTracingAllowed(
         configuration,
         context,
+        sessionManager,
         function (tracingHeaders) {
           each(tracingHeaders, function (value, name) {
             xhr.setRequestHeader(name, value)
@@ -93,8 +96,8 @@ function isAllowedUrl(configuration, requestUrl) {
   return flag
 }
 
-export function injectHeadersIfTracingAllowed(configuration, context, inject) {
-  if (!isAllowedUrl(configuration, context.url) || !configuration.traceType) {
+export function injectHeadersIfTracingAllowed(configuration, context, sessionManager, inject) {
+  if (!isAllowedUrl(configuration, context.url) || !configuration.traceType || !sessionManager.findTrackedSession()) {
     return
   }
   var tracer;

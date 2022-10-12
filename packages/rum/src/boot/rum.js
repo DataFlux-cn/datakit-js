@@ -1,99 +1,119 @@
-import { startRumSession } from '../domain/rumSession'
-import { commonInit, LifeCycle } from '@cloudcare/browser-core'
-import { buildEnv } from './buildEnv'
+import { startRumSessionManager } from '../domain/rumSessionManager'
+import { startCacheUsrCache } from '../domain/usr'
+import { LifeCycle, LifeCycleEventType } from '@cloudcare/browser-core'
 import { startPerformanceCollection } from '../domain/performanceCollection'
-import { startDOMMutationCollection } from '../domain/domMutationCollection'
+import { createDOMMutationObservable } from '../domain/domMutationCollection'
+import { createLocationChangeObservable } from '../domain/locationChangeObservable'
 import { startLongTaskCollection } from '../domain/rumEventsCollection/longTask/longTaskCollection'
 import { startActionCollection } from '../domain/rumEventsCollection/actions/actionCollection'
-import { startParentContexts } from '../domain/parentContexts'
-import { startRumBatch } from '../transport/batch'
+import { startRumBatch } from '../transport/startRumBatch'
 import { startRumAssembly } from '../domain/assembly'
-import { startInternalContext } from '../domain/internalContext'
+import { startInternalContext } from '../domain/contexts/internalContext'
+import { startUrlContexts } from '../domain/contexts/urlContexts'
+import { startViewContexts } from '../domain/contexts/viewContexts'
 import { startErrorCollection } from '../domain/rumEventsCollection/error/errorCollection'
 import { startViewCollection } from '../domain/rumEventsCollection/view/viewCollection'
-import { startRequestCollection } from '../domain/requestCollections'
+import { startRequestCollection } from '../domain/requestCollection'
 import { startResourceCollection } from '../domain/rumEventsCollection/resource/resourceCollection'
-export function startRum(userConfiguration, getCommonContext) {
+export function startRum(configuration, getCommonContext, initialViewOptions) {
   var lifeCycle = new LifeCycle()
-  var configuration = commonInit(userConfiguration, buildEnv)
-  var session = startRumSession(configuration, lifeCycle)
+  
+  var reportError = function(error) {
+    lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
+  }
+  startRumBatch(configuration, lifeCycle, reportError)
+  var session = startRumSessionManager(configuration, lifeCycle)
+  var userSession = startCacheUsrCache(configuration)
+  var domMutationObservable = createDOMMutationObservable()
+  var locationChangeObservable = createLocationChangeObservable(location)
   var _startRumEventCollection = startRumEventCollection(
-    userConfiguration.applicationId,
     location,
     lifeCycle,
     configuration,
     session,
-    getCommonContext
+    userSession,
+    locationChangeObservable,
+    domMutationObservable,
+    getCommonContext,
+    reportError
   )
-  var parentContexts = _startRumEventCollection.parentContexts
-  startRequestCollection(lifeCycle, configuration)
+  var viewContexts = _startRumEventCollection.viewContexts
+  var urlContexts = _startRumEventCollection.urlContexts
+  var actionContexts = _startRumEventCollection.actionContexts
+  startLongTaskCollection(lifeCycle, session)
+  startResourceCollection(lifeCycle,configuration)
+
+  var _startViewCollection = startViewCollection(
+    lifeCycle,
+    configuration,
+    location,
+    domMutationObservable,
+    locationChangeObservable,
+    initialViewOptions
+  )
+  var addTiming = _startViewCollection.addTiming
+  var startView = _startViewCollection.startView
+  var _startErrorCollection = startErrorCollection(lifeCycle, configuration)
+  var addError = _startErrorCollection.addError
+  startRequestCollection(lifeCycle, configuration, session)
   startPerformanceCollection(lifeCycle, configuration)
-  startDOMMutationCollection(lifeCycle)
   var internalContext = startInternalContext(
-    userConfiguration.applicationId,
+    configuration.applicationId,
     session,
-    parentContexts
+    viewContexts,
+    actionContexts,
+    urlContexts
   )
   return {
     addAction: _startRumEventCollection.addAction,
-    addError: _startRumEventCollection.addError,
-    addTiming: _startRumEventCollection.addTiming,
+    addError: addError,
+    addTiming: addTiming,
     configuration: configuration,
     lifeCycle: lifeCycle,
-    parentContexts: parentContexts,
+    viewContexts: viewContexts,
     session: session,
+    startView: startView,
     getInternalContext: internalContext.get
   }
 }
 
 export function startRumEventCollection(
-  applicationId,
   location,
   lifeCycle,
   configuration,
-  session,
-  getCommonContext
+  sessionManager,
+  userSessionManager,
+  locationChangeObservable,
+  domMutationObservable,
+  getCommonContext,
+  reportError
 ) {
-  var parentContexts = startParentContexts(lifeCycle, session)
-  var batch = startRumBatch(configuration, lifeCycle)
+  var viewContexts = startViewContexts(lifeCycle)
+  var urlContexts = startUrlContexts(lifeCycle, locationChangeObservable, location)
+  var _startActionCollection = startActionCollection(
+    lifeCycle,
+    domMutationObservable,
+    configuration,
+  )
+  var actionContexts = _startActionCollection.actionContexts
   startRumAssembly(
-    applicationId,
     configuration,
     lifeCycle,
-    session,
-    parentContexts,
-    getCommonContext
+    sessionManager,
+    userSessionManager,
+    viewContexts,
+    urlContexts,
+    actionContexts,
+    getCommonContext,
+    reportError
   )
-  startLongTaskCollection(lifeCycle)
-  startResourceCollection(lifeCycle, configuration, session)
-  var _startViewCollection = startViewCollection(
-    lifeCycle,
-    configuration,
-    location
-  )
-  var addTiming = _startViewCollection.addTiming
-  var stopViewCollection = _startViewCollection.stop
-  var _startErrorCollection = startErrorCollection(lifeCycle, configuration)
-  var _startActionCollection = startActionCollection(lifeCycle, configuration)
   return {
+    viewContexts: viewContexts,
+    urlContexts: urlContexts,
     addAction: _startActionCollection.addAction,
-    addTiming: addTiming,
-    parentContexts: parentContexts,
-    addError: _startErrorCollection.addError,
-    stop: function () {
-      stopViewCollection()
-      batch.stop()
-    }
+    actionContexts: actionContexts,
+    stop: function() {
+      viewContexts.stop()
+    },
   }
-  // return {
-  //   addAction,
-  //   addError,
-  //   parentContexts,
-
-  //   stop() {
-  //     // prevent batch from previous tests to keep running and send unwanted requests
-  //     // could be replaced by stopping all the component when they will all have a stop method
-  //     batch.stop()
-  //   }
-  // }
 }

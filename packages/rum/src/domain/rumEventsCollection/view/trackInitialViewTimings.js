@@ -3,10 +3,15 @@ import {
   elapsed,
   extend,
   DOM_EVENT,
-  LifeCycleEventType
+  find,
+  findLast,
+  LifeCycleEventType,
+  ONE_MINUTE
 } from '@cloudcare/browser-core'
 import { trackFirstHidden } from './trackFirstHidden'
-
+// Discard LCP and FCP timings above a certain delay to avoid incorrect data
+// It happens in some cases like sleep mode or some browser implementations
+export var TIMING_MAXIMUM_DELAY = 10 * ONE_MINUTE
 export function trackInitialViewTimings(lifeCycle, callback) {
   var timings = {}
   function setTimings(newTimings) {
@@ -53,22 +58,25 @@ export function trackInitialViewTimings(lifeCycle, callback) {
 
 export function trackNavigationTimings(lifeCycle, callback) {
   var subscribe = lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (entry.entryType === 'navigation') {
-        callback({
-          fetchStart: entry.fetchStart,
-          responseEnd: entry.responseEnd,
-          domComplete: entry.domComplete,
-          domContentLoaded: entry.domContentLoadedEventEnd,
-          domInteractive: entry.domInteractive,
-          loadEvent: entry.loadEventEnd,
-          loadEventEnd: entry.loadEventEnd,
-          loadEventStart: entry.loadEventStart,
-          domContentLoadedEventEnd: entry.domContentLoadedEventEnd,
-          domContentLoadedEventStart: entry.domContentLoadedEventStart
-        })
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      for (var entry of entries) {
+        if (entry.entryType === 'navigation') {
+          callback({
+            fetchStart: entry.fetchStart,
+            responseEnd: entry.responseEnd,
+            domComplete: entry.domComplete,
+            domContentLoaded: entry.domContentLoadedEventEnd,
+            domInteractive: entry.domInteractive,
+            loadEvent: entry.loadEventEnd,
+            loadEventEnd: entry.loadEventEnd,
+            loadEventStart: entry.loadEventStart,
+            domContentLoadedEventEnd: entry.domContentLoadedEventEnd,
+            domContentLoadedEventStart: entry.domContentLoadedEventStart
+          })
+        }
       }
+      
     }
   )
 
@@ -78,15 +86,20 @@ export function trackNavigationTimings(lifeCycle, callback) {
 export function trackFirstContentfulPaint(lifeCycle, callback) {
   var firstHidden = trackFirstHidden()
   var subscribe = lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (
-        entry.entryType === 'paint' &&
-        entry.name === 'first-contentful-paint' &&
-        entry.startTime < firstHidden.timeStamp
-      ) {
-        callback(entry.startTime)
-      }
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      var fcpEntry = find(
+        entries,
+        function(entry) {
+          return entry.entryType === 'paint' &&
+            entry.name === 'first-contentful-paint' &&
+            entry.startTime < firstHidden.timeStamp &&
+            entry.startTime < TIMING_MAXIMUM_DELAY
+          }
+        )
+        if (fcpEntry) {
+          callback(fcpEntry.startTime)
+        }
     }
   )
   return { stop: subscribe.unsubscribe }
@@ -115,14 +128,19 @@ export function trackLargestContentfulPaint(lifeCycle, emitter, callback) {
   )
   var stopEventListener = _addEventListeners.stop
   var subscribe = lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (
-        entry.entryType === 'largest-contentful-paint' &&
-        entry.startTime < firstInteractionTimestamp &&
-        entry.startTime < firstHidden.timeStamp
-      ) {
-        callback(entry.startTime)
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      var lcpEntry = findLast(
+        entries,
+        function(entry) {
+          return entry.entryType === 'largest-contentful-paint' &&
+          entry.startTime < firstInteractionTimestamp &&
+          entry.startTime < firstHidden.timeStamp &&
+          entry.startTime < TIMING_MAXIMUM_DELAY
+        }    
+      )
+      if (lcpEntry) {
+        callback(lcpEntry.startTime)
       }
     }
   )
@@ -147,18 +165,21 @@ export function trackLargestContentfulPaint(lifeCycle, emitter, callback) {
 export function trackFirstInputTimings(lifeCycle, callback) {
   var firstHidden = trackFirstHidden()
   var subscribe = lifeCycle.subscribe(
-    LifeCycleEventType.PERFORMANCE_ENTRY_COLLECTED,
-    function (entry) {
-      if (
-        entry.entryType === 'first-input' &&
-        entry.startTime < firstHidden.timeStamp
-      ) {
-        var firstInputDelay = elapsed(entry.startTime, entry.processingStart)
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function(entries) {
+      var firstInputEntry = find(
+        entries,
+        function(entry) {
+          return entry.entryType === 'first-input' && entry.startTime < firstHidden.timeStamp
+        }
+      )
+      if (firstInputEntry) {
+        var firstInputDelay = elapsed(firstInputEntry.startTime, firstInputEntry.processingStart)
         callback({
           // Ensure firstInputDelay to be positive, see
           // https://bugs.chromium.org/p/chromium/issues/detail?id=1185815
           firstInputDelay: firstInputDelay >= 0 ? firstInputDelay : 0,
-          firstInputTime: entry.startTime
+          firstInputTime: firstInputEntry.startTime,
         })
       }
     }

@@ -178,6 +178,63 @@ export var map = function (arr, fn, self) {
   }
   return ret
 }
+export var some = function(arr, fn, self) {
+  if (arr.some) {
+    return arr.some(fn)
+  }
+  var flag = false
+  for(var i = 0; i < arr.length; i++) {
+    if (!hasOwnProperty.call(arr, i)) {
+      continue
+    }
+    var val = arr[i]
+    if (fn.call(self, val, i, arr)) {
+      flag = true
+      break;
+    }
+  }
+  return flag
+}
+export var every = function(arr, fn, self) {
+  if (arr.every) {
+    return arr.every(fn)
+  }
+  var flag = true
+  for(var i = 0; i < arr.length; i++) {
+    if (!hasOwnProperty.call(arr, i)) {
+      continue
+    }
+    var val = arr[i]
+    if (!fn.call(self, val, i, arr)) {
+      flag = false
+      break;
+    }
+  }
+  return flag
+}
+export var matchList = function(list, value) {
+  return some(list, function(item) {return item === value || (item instanceof RegExp && item.test(value))})
+}
+// https://github.com/jquery/jquery/blob/a684e6ba836f7c553968d7d026ed7941e1a612d8/src/selector/escapeSelector.js
+export var cssEscape = function(str) {
+  if (window.CSS && window.CSS.escape) {
+    return window.CSS.escape(str)
+  }
+
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g, function (ch, asCodePoint) {
+    if (asCodePoint) {
+      // U+0000 NULL becomes U+FFFD REPLACEMENT CHARACTER
+      if (ch === '\0') {
+        return '\uFFFD'
+      }
+      // Control characters and (dependent upon position) numbers get escaped as code points
+      return ch.slice(0, -1) + '\\' + ch.charCodeAt(ch.length - 1).toString(16) + ' '
+    }
+    // Other potentially-special ASCII characters get backslash-escaped
+    return '\\' + ch
+  })
+}
 export var inherit = function (subclass, superclass) {
   var F = function () {}
   F.prototype = superclass.prototype
@@ -653,6 +710,16 @@ export var urlParse = function (para) {
     //   this._values['Protocol'] + '://' + this._values['Hostname']
   }
   return new URLParser(para)
+}
+export function elementMatches(element, selector) {
+  if (element.matches) {
+    return element.matches(selector)
+  }
+  // IE11 support
+  if (element.msMatchesSelector) {
+    return element.msMatchesSelector(selector)
+  }
+  return false
 }
 export var addEvent = function () {
   function fixEvent(event) {
@@ -1465,7 +1532,8 @@ export var ONE_MINUTE = 60 * ONE_SECOND
 export var ONE_HOUR = 60 * ONE_MINUTE
 export var ONE_DAY = 24 * ONE_HOUR
 export var ONE_YEAR = 365 * ONE_DAY
-export var ONE_KILO_BYTE = 1024
+export var ONE_KIBI_BYTE = 1024
+export var ONE_MEBI_BYTE = 1024 * ONE_KIBI_BYTE
 /**
  * Return true if the draw is successful
  * @param threshold between 0 and 100
@@ -1547,8 +1615,13 @@ export function preferredTimeStamp(clocks) {
 export function relativeToClocks(relative) {
   return { relative: relative, timeStamp: getCorrectedTimeStamp(relative) }
 }
+export function currentDrift() {
+  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+  return Math.round(dateNow() - (getNavigationStart() + performance.now()))
+}
+
 function getCorrectedTimeStamp(relativeTime) {
-  const correctedOrigin = dateNow() - performance.now()
+  var correctedOrigin = dateNow() - performance.now()
   // apply correction only for positive drift
   if (correctedOrigin > getNavigationStart()) {
     return Math.round(correctedOrigin + relativeTime)
@@ -1666,7 +1739,25 @@ export function createContextManager() {
       } else {
         console.error('content 需要传递对象类型数据')
       }
-      
+    },
+    getContext: function() {
+      return deepClone(context)
+    },
+
+    setContext: function(newContext)  {
+      context = deepClone(newContext)
+    },
+
+    setContextProperty: function(key, property){
+      context[key] = deepClone(property)
+    },
+
+    removeContextProperty: function(key){
+      delete context[key]
+    },
+
+    clearContext: function(){
+      context = {}
     }
   }
 }
@@ -1679,13 +1770,46 @@ export function find(array, predicate) {
   }
   return undefined
 }
-
+export function arrayFrom(arrayLike) {
+  if (Array.from) {
+    return Array.from(arrayLike)
+  }
+  var array = []
+  if (arrayLike instanceof Set) {
+    arrayLike.forEach(function(item) { array.push(item) })
+  } else {
+    for (var i = 0; i < arrayLike.length; i++) {
+      array.push(arrayLike[i])
+    }
+  }
+  return array
+}
+export function findLast(
+  array,
+  predicate
+) {
+  for (var i = array.length - 1; i >= 0; i -= 1) {
+    var item = array[i]
+    if (predicate(item, i, array)) {
+      return item
+    }
+  }
+  return undefined
+}
 export function isPercentage(value) {
   return isNumber(value) && value >= 0 && value <= 100
 }
 
 export function getLocationOrigin() {
   return getLinkElementOrigin(window.location)
+}
+
+export function isIE() {
+  return Boolean(document.documentMode)
+}
+
+export function isChromium() {
+  return !!window.chrome || /HeadlessChrome/.test(window.navigator.userAgent)
 }
 
 /**
@@ -1759,5 +1883,12 @@ export function escapeRowField(value) {
     return escapeFieldValueStr(value)
   } else {
     return value
+  }
+}
+export function isNullUndefinedDefaultValue(data,defaultValue) {
+  if (data !== null && data !== void 0) {
+    return data
+  } else {
+    return defaultValue
   }
 }

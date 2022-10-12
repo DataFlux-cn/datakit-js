@@ -1,9 +1,9 @@
 // === Generate a random 64-bit number in fixed-length hex format
 function randomTraceId() {
-  const digits = '0123456789abcdef';
-  let n = '';
-  for (let i = 0; i < 16; i += 1) {
-    const rand = Math.floor(Math.random() * 16);
+  var digits = '0123456789abcdef';
+  var n = '';
+  for (var i = 0; i < 16; i += 1) {
+    var rand = Math.floor(Math.random() * 16);
     n += digits[rand];
   }
   return n;
@@ -14,7 +14,7 @@ function randomTraceId() {
  * @param {*} configuration  配置信息
  */
  export function ZipkinMultiTracer(configuration) {
-  const rootSpanId = randomTraceId();
+  var rootSpanId = randomTraceId();
   if (configuration.traceId128Bit) {
     // 128bit生成traceid
     this._traceId = randomTraceId() + rootSpanId
