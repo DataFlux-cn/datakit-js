@@ -159,51 +159,12 @@ export function makeRumPublicApi(startRumImpl) {
     getInternalContext: function (startTime) {
       return getInternalContextStrategy(startTime)
     },
-    // addDebugSession: function (id) {
-    //   addSessionStrategy(id)
-    //   this.getDebugSession()
-    // },
-    // clearDebugSession: function () {
-    //   clearDebugSessionStrategy()
-    //   display.log('%c应用已关闭调试模式!!!', 'font-size: 18px;color:yellow')
-    // },
-    // getDebugSession: function () {
-    //   var debugInfo = getDebugSessionStrategy()
-    //   if (isEmptyObject(debugInfo)) {
-    //     display.log(
-    //       '%c应用未开启调试模式!!!可以调用%caddDebugSession%c开启',
-    //       'font-size: 18px;color:yellow',
-    //       'font-size: 18px;color:red;font-weight: bold',
-    //       'font-size: 18px;color:yellow'
-    //     )
-    //     return debugInfo
-    //   } else {
-    //     var formatTime = formatDate(new Date(+debugInfo.created))
-    //     var did = debugInfo.id
-    //     display.log(
-    //       '%c应用已开启调试模式!!!调试信息如下:',
-    //       'font-size: 18px;color:yellow'
-    //     )
-    //     display.log(
-    //       '%c调试模式session id: %c' + did,
-    //       'font-size: 18px;color:yellow',
-    //       'font-size: 18px;color:red;font-weight: bold'
-    //     )
-    //     display.log(
-    //       '%c调试模式开始时间: %c' + formatTime,
-    //       'font-size: 18px;color:yellow',
-    //       'font-size: 18px;color:red;font-weight: bold'
-    //     )
-    //     display.log(
-    //       '%c可以调用%cclearDebugSession%c关闭调试模式',
-    //       'font-size: 18px;color:yellow',
-    //       'font-size: 18px;color:red;font-weight: bold',
-    //       'font-size: 18px;color:yellow'
-    //     )
-    //     return extend2Lev(debugInfo, {format_created: formatTime})
-    //   }
-      
-    // },
+    addDebugSession: function (id) {
+    },
+    clearDebugSession: function () {
+    },
+    getDebugSession: function () {
+    },
     addAction: function (name, context) {
       addActionStrategy({
         name: name,
