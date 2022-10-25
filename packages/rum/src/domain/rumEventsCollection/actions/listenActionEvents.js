@@ -1,6 +1,5 @@
 import { addEventListener, DOM_EVENT, each } from '@cloudcare/browser-core'
 
-
 export function listenActionEvents(events) {
   var onClick = events.onClick
   var onPointerDown = events.onPointerDown
@@ -12,7 +11,7 @@ export function listenActionEvents(events) {
     addEventListener(
       window,
       DOM_EVENT.POINTER_DOWN,
-      function(event) {
+      function (event) {
         hasSelectionChanged = false
         selectionEmptyAtPointerDown = isSelectionEmpty()
         if (isMouseEventOnElement(event)) {
@@ -25,7 +24,7 @@ export function listenActionEvents(events) {
     addEventListener(
       window,
       DOM_EVENT.SELECTION_CHANGE,
-      function(){
+      function () {
         if (!selectionEmptyAtPointerDown || !isSelectionEmpty()) {
           hasSelectionChanged = true
         }
@@ -36,21 +35,20 @@ export function listenActionEvents(events) {
     addEventListener(
       window,
       DOM_EVENT.CLICK,
-      function(clickEvent) {
+      function (clickEvent) {
         if (isMouseEventOnElement(clickEvent) && clickContext) {
           // Use a scoped variable to make sure the value is not changed by other clicks
           var userActivity = {
             selection: hasSelectionChanged,
-            input: hasInputChanged,
+            input: hasInputChanged
           }
+
           if (!hasInputChanged) {
-            setTimeout(
-              function(){
-                userActivity.input = hasInputChanged
-              }
-            )
+            setTimeout(function () {
+              userActivity.input = hasInputChanged
+            })
           }
-          onClick(clickContext, clickEvent, function() {
+          onClick(clickContext, clickEvent, function () {
             return userActivity
           })
           clickContext = undefined
@@ -62,19 +60,19 @@ export function listenActionEvents(events) {
     addEventListener(
       window,
       DOM_EVENT.INPUT,
-      function(){
+      function () {
         hasInputChanged = true
       },
       { capture: true }
-    ),
+    )
   ]
 
   return {
-    stop: function(){
-      each(listeners, function(listener) {
+    stop: function () {
+      each(listeners, function (listener) {
         return listener.stop()
       })
-    },
+    }
   }
 }
 

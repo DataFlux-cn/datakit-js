@@ -45,6 +45,8 @@ export function startLogsAssembly(
       var log = extend2Lev(
         { 
           service: configuration.service || 'browser', 
+          env: configuration.env || '',
+          version: configuration.version || '',
           _dd: {
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,

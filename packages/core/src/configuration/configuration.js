@@ -16,6 +16,7 @@ export function validateAndBuildConfiguration(initConfiguration){
       sampleRate: isNullUndefinedDefaultValue(initConfiguration.sampleRate, 100),
       service: initConfiguration.service,
       version: initConfiguration.version,
+      env: initConfiguration.env,
       silentMultipleInit: !!initConfiguration.silentMultipleInit,
 
       /**

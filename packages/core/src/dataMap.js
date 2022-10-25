@@ -29,7 +29,7 @@ export var commonTags = {
   view_host: 'view.host',
   view_path: 'view.path',
   view_path_group: 'view.path_group',
-  view_url_query: 'view.url_query',
+  view_url_query: 'view.url_query'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -38,7 +38,7 @@ export var dataMap = {
     tags: {
       view_loading_type: 'view.loading_type',
       view_apdex_level: 'view.apdex_level',
-      is_active: 'view.is_active',
+      is_active: 'view.is_active'
     },
     fields: {
       view_error_count: 'view.error.count',
@@ -98,18 +98,19 @@ export var dataMap = {
       span_id: '_dd.span_id',
       error_source: 'error.source',
       error_type: 'error.type',
-      error_handling: 'error.handling',
-      resource_url: 'error.resource.url',
-      resource_url_host: 'error.resource.url_host',
-      resource_url_path: 'error.resource.url_path',
-      resource_url_path_group: 'error.resource.url_path_group',
-      resource_status: 'error.resource.status',
-      resource_status_group: 'error.resource.status_group',
-      resource_method: 'error.resource.method',
+      error_handling: 'error.handling'
+      //   resource_url: 'error.resource.url',
+      //   resource_url_host: 'error.resource.url_host',
+      //   resource_url_path: 'error.resource.url_path',
+      //   resource_url_path_group: 'error.resource.url_path_group',
+      //   resource_status: 'error.resource.status',
+      //   resource_status_group: 'error.resource.status_group',
+      //   resource_method: 'error.resource.method'
     },
     fields: {
       error_message: ['string', 'error.message'],
-      error_stack: ['string', 'error.stack']
+      error_stack: ['string', 'error.stack'],
+      error_causes: ['string', 'error.causes']
     }
   },
   long_task: {
@@ -131,6 +132,7 @@ export var dataMap = {
       duration: 'action.loading_time',
       action_error_count: 'action.error.count',
       action_resource_count: 'action.resource.count',
+      action_frustration_types: 'action.frustration.type',
       action_long_task_count: 'action.long_task.count'
     }
   },

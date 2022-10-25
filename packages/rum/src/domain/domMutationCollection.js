@@ -1,20 +1,24 @@
-import {  noop, Observable } from '@cloudcare/browser-core'
+import { noop, Observable } from '@cloudcare/browser-core'
 
 export function createDOMMutationObservable() {
   var MutationObserver = getMutationObserverConstructor()
 
-  var observable = new Observable(function(){
+  var observable = new Observable(function () {
     if (!MutationObserver) {
       return
     }
-    var observer = new MutationObserver(function() { return observable.notify() })
+    var observer = new MutationObserver(function () {
+      return observable.notify()
+    })
     observer.observe(document, {
       attributes: true,
       characterData: true,
       childList: true,
-      subtree: true,
+      subtree: true
     })
-    return function() { return observer.disconnect()}
+    return function () {
+      return observer.disconnect()
+    }
   })
   return observable
 }

@@ -6,10 +6,14 @@ import {
   RumEventType,
   LifeCycleEventType,
   UUID,
-  noop,
+  noop
 } from '@cloudcare/browser-core'
 import { trackClickActions } from './trackClickActions'
-export function startActionCollection(lifeCycle, domMutationObservable, configuration) {
+export function startActionCollection(
+  lifeCycle,
+  domMutationObservable,
+  configuration
+) {
   lifeCycle.subscribe(
     LifeCycleEventType.AUTO_ACTION_COMPLETED,
     function (action) {
@@ -22,7 +26,11 @@ export function startActionCollection(lifeCycle, domMutationObservable, configur
 
   var actionContexts = { findActionId: noop }
   if (configuration.trackInteractions) {
-    actionContexts = trackClickActions(lifeCycle, domMutationObservable, configuration).actionContexts
+    actionContexts = trackClickActions(
+      lifeCycle,
+      domMutationObservable,
+      configuration
+    ).actionContexts
   }
   return {
     actionContexts: actionContexts,
@@ -48,7 +56,7 @@ function processAction(action) {
           id: action.id,
           loadingTime: toServerDuration(action.duration),
           frustration: {
-            type: action.frustrationTypes,
+            type: action.frustrationTypes
           },
           long_task: {
             count: action.counts.longTaskCount
@@ -60,15 +68,15 @@ function processAction(action) {
         _dd: {
           action: {
             target: action.target,
-            position: action.position,
-          },
-        },
+            position: action.position
+          }
+        }
       }
     : {
-      action: {
-        loadingTime: 0
+        action: {
+          loadingTime: 0
+        }
       }
-    }
   var customerContext = !isAutoAction(action) ? action.context : undefined
   var actionEvent = extend2Lev(
     {
@@ -88,7 +96,9 @@ function processAction(action) {
     customerContext: customerContext,
     rawRumEvent: actionEvent,
     startTime: action.startClocks.relative,
-    domainContext: isAutoAction(action) ? { event: action.event, events: action.events } : {},
+    domainContext: isAutoAction(action)
+      ? { event: action.event, events: action.events }
+      : {}
   }
 }
 

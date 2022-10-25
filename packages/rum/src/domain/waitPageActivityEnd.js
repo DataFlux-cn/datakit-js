@@ -13,7 +13,6 @@ export var PAGE_ACTIVITY_VALIDATION_DELAY = 100
 // Delay to wait after a page activity to end the tracking process
 export var PAGE_ACTIVITY_END_DELAY = 100
 
-
 /**
  * Wait for the page activity end
  *
@@ -51,8 +50,16 @@ export function waitPageActivityEnd(
   pageActivityEndCallback,
   maxDuration
 ) {
-  var pageActivityObservable = createPageActivityObservable(lifeCycle, domMutationObservable, configuration)
-  return doWaitPageActivityEnd(pageActivityObservable, pageActivityEndCallback, maxDuration)
+  var pageActivityObservable = createPageActivityObservable(
+    lifeCycle,
+    domMutationObservable,
+    configuration
+  )
+  return doWaitPageActivityEnd(
+    pageActivityObservable,
+    pageActivityEndCallback,
+    maxDuration
+  )
 }
 
 export function doWaitPageActivityEnd(
@@ -63,37 +70,30 @@ export function doWaitPageActivityEnd(
   var pageActivityEndTimeoutId
   var hasCompleted = false
 
-  var validationTimeoutId = setTimeout(
-    function() {
-      complete({ hadActivity: false })
-    },
-    PAGE_ACTIVITY_VALIDATION_DELAY
-  )
+  var validationTimeoutId = setTimeout(function () {
+    complete({ hadActivity: false })
+  }, PAGE_ACTIVITY_VALIDATION_DELAY)
   var maxDurationTimeoutId =
     maxDuration &&
-    setTimeout(
-      function() {
-        return complete({ hadActivity: true, end: timeStampNow() })
-      },
-      maxDuration
-    )
+    setTimeout(function () {
+      return complete({ hadActivity: true, end: timeStampNow() })
+    }, maxDuration)
 
-  var pageActivitySubscription = pageActivityObservable.subscribe(function(data) {
+  var pageActivitySubscription = pageActivityObservable.subscribe(function (
+    data
+  ) {
     var isBusy = data.isBusy
     clearTimeout(validationTimeoutId)
     clearTimeout(pageActivityEndTimeoutId)
     var lastChangeTime = timeStampNow()
     if (!isBusy) {
-      pageActivityEndTimeoutId = setTimeout(
-        function() {
-          complete({ hadActivity: true, end: lastChangeTime })
-        },
-        PAGE_ACTIVITY_END_DELAY
-      )
+      pageActivityEndTimeoutId = setTimeout(function () {
+        complete({ hadActivity: true, end: lastChangeTime })
+      }, PAGE_ACTIVITY_END_DELAY)
     }
   })
 
-  var stop = function(){
+  var stop = function () {
     hasCompleted = true
     clearTimeout(validationTimeoutId)
     clearTimeout(pageActivityEndTimeoutId)
@@ -108,7 +108,7 @@ export function doWaitPageActivityEnd(
     stop()
     pageActivityEndCallback(event)
   }
-  return { stop:stop }
+  return { stop: stop }
 }
 
 export function createPageActivityObservable(
@@ -116,45 +116,61 @@ export function createPageActivityObservable(
   domMutationObservable,
   configuration
 ) {
-  var observable = new Observable(function() {
+  var observable = new Observable(function () {
     var subscriptions = []
     var firstRequestIndex
     var pendingRequestsCount = 0
 
     subscriptions.push(
       domMutationObservable.subscribe(notifyPageActivity),
-      lifeCycle.subscribe(LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED, function(entries) {
-        if (some(entries, function(entry) {return entry.entryType === 'resource' && !isExcludedUrl(configuration, entry.name)})) {
+      lifeCycle.subscribe(
+        LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+        function (entries) {
+          if (
+            some(entries, function (entry) {
+              return (
+                entry.entryType === 'resource' &&
+                !isExcludedUrl(configuration, entry.name)
+              )
+            })
+          ) {
+            notifyPageActivity()
+          }
+        }
+      ),
+      lifeCycle.subscribe(
+        LifeCycleEventType.REQUEST_STARTED,
+        function (startEvent) {
+          if (isExcludedUrl(configuration, startEvent.url)) {
+            return
+          }
+          if (firstRequestIndex === undefined) {
+            firstRequestIndex = startEvent.requestIndex
+          }
+          pendingRequestsCount += 1
           notifyPageActivity()
         }
-      }),
-      lifeCycle.subscribe(LifeCycleEventType.REQUEST_STARTED, function(startEvent){
-        if (isExcludedUrl(configuration, startEvent.url)) {
-          return
+      ),
+      lifeCycle.subscribe(
+        LifeCycleEventType.REQUEST_COMPLETED,
+        function (request) {
+          if (
+            isExcludedUrl(configuration, request.url) ||
+            firstRequestIndex === undefined ||
+            // If the request started before the tracking start, ignore it
+            request.requestIndex < firstRequestIndex
+          ) {
+            return
+          }
+          pendingRequestsCount -= 1
+          notifyPageActivity()
         }
-        if (firstRequestIndex === undefined) {
-          firstRequestIndex = startEvent.requestIndex
-        }
-        pendingRequestsCount += 1
-        notifyPageActivity()
-      }),
-      lifeCycle.subscribe(LifeCycleEventType.REQUEST_COMPLETED, function(request) {
-        if (
-          isExcludedUrl(configuration, request.url) ||
-          firstRequestIndex === undefined ||
-          // If the request started before the tracking start, ignore it
-          request.requestIndex < firstRequestIndex
-        ) {
-          return
-        }
-        pendingRequestsCount -= 1
-        notifyPageActivity()
-      })
+      )
     )
 
     trackWindowOpen(notifyPageActivity)
-    return function(){
-      each(subscriptions, function(s) {
+    return function () {
+      each(subscriptions, function (s) {
         s.unsubscribe()
       })
     }
