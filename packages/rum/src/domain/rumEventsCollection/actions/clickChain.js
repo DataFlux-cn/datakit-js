@@ -1,11 +1,10 @@
 import { ONE_SECOND, every } from '@cloudcare/browser-core'
 
-
 export var MAX_DURATION_BETWEEN_CLICKS = ONE_SECOND
 export var MAX_DISTANCE_BETWEEN_CLICKS = 100
 
 var ClickChainStatus = {
-  WaitingForMoreClicks: 'WaitingForClicksToStop',
+  WaitingForMoreClicks: 'WaitingForMoreClicks',
   WaitingForClicksToStop: 'WaitingForClicksToStop',
   Finalized: 'Finalized'
 }
@@ -20,11 +19,19 @@ export function createClickChain(firstClick, onFinalize) {
     click.stopObservable.subscribe(tryFinalize)
     bufferedClicks.push(click)
     clearTimeout(maxDurationBetweenClicksTimeout)
-    maxDurationBetweenClicksTimeout = setTimeout(dontAcceptMoreClick, MAX_DURATION_BETWEEN_CLICKS)
+    maxDurationBetweenClicksTimeout = setTimeout(
+      dontAcceptMoreClick,
+      MAX_DURATION_BETWEEN_CLICKS
+    )
   }
 
   function tryFinalize() {
-    if (status === ClickChainStatus.WaitingForClicksToStop && every(bufferedClicks, function(click){ return click.isStopped() })) {
+    if (
+      status === ClickChainStatus.WaitingForClicksToStop &&
+      every(bufferedClicks, function (click) {
+        return click.isStopped()
+      })
+    ) {
       status = ClickChainStatus.Finalized
       onFinalize(bufferedClicks)
     }
@@ -39,14 +46,17 @@ export function createClickChain(firstClick, onFinalize) {
   }
 
   return {
-    tryAppend: function(click){
+    tryAppend: function (click) {
       if (status !== ClickChainStatus.WaitingForMoreClicks) {
         return false
       }
 
       if (
         bufferedClicks.length > 0 &&
-        !areEventsSimilar(bufferedClicks[bufferedClicks.length - 1].event, click.event)
+        !areEventsSimilar(
+          bufferedClicks[bufferedClicks.length - 1].event,
+          click.event
+        )
       ) {
         dontAcceptMoreClick()
         return false
@@ -55,9 +65,9 @@ export function createClickChain(firstClick, onFinalize) {
       appendClick(click)
       return true
     },
-    stop: function(){
+    stop: function () {
       dontAcceptMoreClick()
-    },
+    }
   }
 }
 
@@ -73,5 +83,8 @@ function areEventsSimilar(first, second) {
 }
 
 function mouseEventDistance(origin, other) {
-  return Math.sqrt(Math.pow(origin.clientX - other.clientX, 2) + Math.pow(origin.clientY - other.clientY, 2))
+  return Math.sqrt(
+    Math.pow(origin.clientX - other.clientX, 2) +
+      Math.pow(origin.clientY - other.clientY, 2)
+  )
 }

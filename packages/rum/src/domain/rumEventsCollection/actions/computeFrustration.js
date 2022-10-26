@@ -1,4 +1,10 @@
-import { elementMatches, ONE_SECOND, FrustrationType, some,each } from '@cloudcare/browser-core'
+import {
+  elementMatches,
+  ONE_SECOND,
+  FrustrationType,
+  some,
+  each
+} from '@cloudcare/browser-core'
 
 var MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE = 3
 
@@ -14,8 +20,10 @@ export function computeFrustration(clicks, rageClick) {
     return { isRage: true }
   }
 
-  var hasSelectionChanged = some(clicks, function(click) { return click.getUserActivity().selection})
-  each(clicks, function(click) {
+  var hasSelectionChanged = some(clicks, function (click) {
+    return click.getUserActivity().selection
+  })
+  each(clicks, function (click) {
     if (click.hasError) {
       click.addFrustration(FrustrationType.ERROR_CLICK)
     }
@@ -27,17 +35,26 @@ export function computeFrustration(clicks, rageClick) {
       click.addFrustration(FrustrationType.DEAD_CLICK)
     }
   })
-  
+
   return { isRage: false }
 }
 
 export function isRage(clicks) {
-  if (some(clicks, function(click) { return click.getUserActivity().selection})) {
+  if (
+    some(clicks, function (click) {
+      return click.getUserActivity().selection
+    })
+  ) {
     return false
   }
-  for (var i = 0; i < clicks.length - (MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE - 1); i += 1) {
+  for (
+    var i = 0;
+    i < clicks.length - (MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE - 1);
+    i += 1
+  ) {
     if (
-      clicks[i + MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE - 1].event.timeStamp - clicks[i].event.timeStamp <=
+      clicks[i + MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE - 1].event.timeStamp -
+        clicks[i].event.timeStamp <=
       ONE_SECOND
     ) {
       return true
