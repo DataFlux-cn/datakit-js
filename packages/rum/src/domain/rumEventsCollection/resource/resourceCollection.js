@@ -37,7 +37,10 @@ export function startResourceCollection(lifeCycle, configuration) {
     function (entries) {
       for (var entry of entries) {
         if (entry.entryType === 'resource' && !isRequestKind(entry)) {
-          lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, processResourceEntry(entry))
+          lifeCycle.notify(
+            LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
+            processResourceEntry(entry)
+          )
         }
       }
     }
@@ -77,16 +80,17 @@ function processRequest(request) {
     tracingInfo,
     correspondingTimingOverrides
   )
-  return { 
-    startTime: startClocks.relative, 
+  return {
+    startTime: startClocks.relative,
     rawRumEvent: resourceEvent,
     domainContext: {
-      performanceEntry: matchingTiming && toPerformanceEntryRepresentation(matchingTiming),
+      performanceEntry:
+        matchingTiming && toPerformanceEntryRepresentation(matchingTiming),
       xhr: request.xhr,
       response: request.response,
       requestInput: request.input,
       requestInit: request.init,
-      error: request.error,
+      error: request.error
     }
   }
 }
@@ -123,12 +127,12 @@ function processResourceEntry(entry) {
     tracingInfo,
     entryMetrics
   )
-  return { 
-    startTime: startClocks.relative, 
+  return {
+    startTime: startClocks.relative,
     rawRumEvent: resourceEvent,
     domainContext: {
-      performanceEntry: toPerformanceEntryRepresentation(entry),
-    },
+      performanceEntry: toPerformanceEntryRepresentation(entry)
+    }
   }
 }
 
@@ -151,7 +155,7 @@ function toPerformanceEntryRepresentation(entry) {
   return entry
 }
 function computeRequestTracingInfo(request) {
-  var hasBeenTraced = request.traceId && request.spanId
+  var hasBeenTraced = request.traceSampled && request.traceId && request.spanId
   if (!hasBeenTraced) {
     return undefined
   }

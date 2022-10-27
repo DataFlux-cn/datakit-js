@@ -41,29 +41,29 @@ function getCrypto() {
   return window.crypto || window.msCrypto
 }
 /**
- * 
+ *
  * @param {*} configuration  配置信息
  */
-export function DDtraceTracer(configuration) {
-   this._spanId = new TraceIdentifier().toDecimalString()
-   this._traceId = new TraceIdentifier().toDecimalString()
+export function DDtraceTracer(traceSampled) {
+  this._spanId = new TraceIdentifier().toDecimalString()
+  this._traceId = new TraceIdentifier().toDecimalString()
+  this._traceSampled = traceSampled
 }
 DDtraceTracer.prototype = {
-  isTracingSupported: function() {
+  isTracingSupported: function () {
     return getCrypto() !== undefined
   },
-  getSpanId:function() {
+  getSpanId: function () {
     return this._spanId
   },
-  getTraceId: function() {
+  getTraceId: function () {
     return this._traceId
   },
-  makeTracingHeaders: function() {
+  makeTracingHeaders: function () {
     return {
       'x-datadog-origin': 'rum',
       'x-datadog-parent-id': this.getSpanId(),
-      'x-datadog-sampled': '1',
-      'x-datadog-sampling-priority': '1',
+      'x-datadog-sampling-priority': this._traceSampled ? '2' : '-1',
       'x-datadog-trace-id': this.getTraceId()
     }
   }

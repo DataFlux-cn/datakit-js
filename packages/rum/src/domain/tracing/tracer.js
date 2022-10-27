@@ -4,7 +4,9 @@ import {
   shallowClone,
   isArray,
   TraceType,
-  getOrigin
+  getOrigin,
+  performDraw,
+  isNumber
 } from '@cloudcare/browser-core'
 import { DDtraceTracer } from './ddtraceTracer'
 import { SkyWalkingTracer } from './skywalkingTracer'
@@ -17,6 +19,7 @@ export function clearTracingIfNeeded(context) {
   if (context.status === 0 && !context.isAborted) {
     context.traceId = undefined
     context.spanId = undefined
+    context.traceSampled = undefined
   }
 }
 
@@ -109,25 +112,28 @@ export function injectHeadersIfTracingAllowed(
   ) {
     return
   }
+  var traceSampled =
+    !isNumber(configuration.tracingSampleRate) ||
+    performDraw(configuration.tracingSampleRate)
   var tracer
   switch (configuration.traceType) {
     case TraceType.DDTRACE:
-      tracer = new DDtraceTracer()
+      tracer = new DDtraceTracer(traceSampled)
       break
     case TraceType.SKYWALKING_V3:
-      tracer = new SkyWalkingTracer(configuration, context.url)
+      tracer = new SkyWalkingTracer(configuration, context.url, traceSampled)
       break
     case TraceType.ZIPKIN_MULTI_HEADER:
-      tracer = new ZipkinMultiTracer(configuration)
+      tracer = new ZipkinMultiTracer(configuration, traceSampled)
       break
     case TraceType.JAEGER:
-      tracer = new JaegerTracer(configuration)
+      tracer = new JaegerTracer(configuration, traceSampled)
       break
     case TraceType.W3C_TRACEPARENT:
-      tracer = new W3cTraceParentTracer(configuration)
+      tracer = new W3cTraceParentTracer(configuration, traceSampled)
       break
     case TraceType.ZIPKIN_SINGLE_HEADER:
-      tracer = new ZipkinSingleTracer(configuration)
+      tracer = new ZipkinSingleTracer(configuration, traceSampled)
       break
     default:
       break
@@ -138,5 +144,6 @@ export function injectHeadersIfTracingAllowed(
 
   context.traceId = tracer.getTraceId()
   context.spanId = tracer.getSpanId()
+  context.traceSampled = traceSampled
   inject(tracer.makeTracingHeaders())
 }
