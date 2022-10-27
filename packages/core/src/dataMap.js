@@ -87,8 +87,7 @@ export var dataMap = {
       resource_ssl: 'resource.ssl',
       resource_ttfb: 'resource.ttfb',
       resource_trans: 'resource.trans',
-      resource_first_byte: 'resource.firstbyte',
-      trace_sampled: 'resource.trace_sampled'
+      resource_first_byte: 'resource.firstbyte'
     }
   },
   error: {
