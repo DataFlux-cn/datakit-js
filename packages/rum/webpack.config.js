@@ -3,7 +3,7 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const getBaseConfig = (env) => {
   let webConfig = {
-    entry: path.resolve(__dirname, 'src/index.js'),
+    entry: path.resolve(__dirname, 'src/index.js')
     // resolve: {
     //   fallback: {
     //     assert: false,
@@ -41,7 +41,7 @@ const getBaseConfig = (env) => {
           new TerserPlugin({
             terserOptions: {
               compress: {
-                drop_console: true
+                drop_console: false
               }
             }
           })

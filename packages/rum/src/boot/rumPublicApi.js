@@ -7,77 +7,65 @@ import {
   buildCookieOptions,
   createContextManager,
   clocksNow,
-  extend2Lev,
   timeStampNow,
   ActionType,
-  isEmptyObject,
   deepClone,
-  formatDate,
   createHandlingStack
 } from '@cloudcare/browser-core'
-import {validateAndBuildRumConfiguration} from '../domain/configuration'
+import { validateAndBuildRumConfiguration } from '../domain/configuration'
 export function makeRumPublicApi(startRumImpl) {
   var isAlreadyInitialized = false
 
   var globalContextManager = createContextManager()
   var userContextManager = createContextManager()
   var bufferApiCalls = new BoundedBuffer()
-  var addTimingStrategy = function(name, time){
+  var addTimingStrategy = function (name, time) {
     if (typeof time === 'undefined') {
       time = timeStampNow()
     }
-    bufferApiCalls.add(function() {
+    bufferApiCalls.add(function () {
       return addTimingStrategy(name, time)
     })
   }
-  var startViewStrategy = function(options, startClocks){
+  var startViewStrategy = function (options, startClocks) {
     if (typeof startClocks === 'undefined') {
       startClocks = clocksNow()
     }
-    bufferApiCalls.add(function() {
+    bufferApiCalls.add(function () {
       return startViewStrategy(options, startClocks)
     })
   }
-  var addActionStrategy = function(
-    action,
-    commonContext
-  ) {
+  var addActionStrategy = function (action, commonContext) {
     if (typeof commonContext == 'undefined') {
       commonContext = {
         context: globalContextManager.getContext(),
-        user: userContextManager.getContext(),
+        user: userContextManager.getContext()
       }
     }
-    bufferApiCalls.add(function() {
+    bufferApiCalls.add(function () {
       return addActionStrategy(action, commonContext)
     })
   }
-  var addErrorStrategy = function(
-    providedError,
-    commonContext
-  )  {
+  var addErrorStrategy = function (providedError, commonContext) {
     if (typeof commonContext == 'undefined') {
       commonContext = {
         context: globalContextManager.getContext(),
-        user: userContextManager.getContext(),
+        user: userContextManager.getContext()
       }
     }
-    bufferApiCalls.add(function() {
+    bufferApiCalls.add(function () {
       return addErrorStrategy(providedError, commonContext)
     })
   }
 
-
   var getInternalContextStrategy = function () {
     return undefined
   }
-  var getInitConfigurationStrategy = function() {
+  var getInitConfigurationStrategy = function () {
     return undefined
   }
 
-  
   function initRum(initConfiguration) {
-   
     if (!canHandleSession(initConfiguration)) {
       return
     }
@@ -100,12 +88,12 @@ export function makeRumPublicApi(startRumImpl) {
       var beforeInitCalls = bufferApiCalls
       bufferApiCalls = new BoundedBuffer()
 
-      startViewStrategy = function(options){
+      startViewStrategy = function (options) {
         doStartRum(configuration, options)
       }
       beforeInitCalls.drain()
     }
-    getInitConfigurationStrategy = function() {
+    getInitConfigurationStrategy = function () {
       return deepClone(initConfiguration)
     }
 
@@ -114,10 +102,10 @@ export function makeRumPublicApi(startRumImpl) {
   function doStartRum(configuration, initialViewOptions) {
     var startRumResults = startRumImpl(
       configuration,
-      function() {
+      function () {
         return {
           user: userContextManager.getContext(),
-          context: globalContextManager.getContext(),
+          context: globalContextManager.getContext()
         }
       },
       initialViewOptions
@@ -126,11 +114,12 @@ export function makeRumPublicApi(startRumImpl) {
     addActionStrategy = startRumResults.addAction
     addErrorStrategy = startRumResults.addError
     addTimingStrategy = startRumResults.addTiming
-    getInternalContextStrategy = startRumResults.getInternalContext 
+    getInternalContextStrategy = startRumResults.getInternalContext
     bufferApiCalls.drain()
   }
-  var startView = function(options) {
-    var sanitizedOptions = typeof options === 'object' ? options : { name: options }
+  var startView = function (options) {
+    var sanitizedOptions =
+      typeof options === 'object' ? options : { name: options }
     startViewStrategy(sanitizedOptions)
   }
   var rumPublicApi = makePublicApi({
@@ -153,24 +142,21 @@ export function makeRumPublicApi(startRumImpl) {
 
     clearGlobalContext: globalContextManager.clearContext,
 
-    getInitConfiguration: function() {
+    getInitConfiguration: function () {
       return getInitConfigurationStrategy()
     },
     getInternalContext: function (startTime) {
       return getInternalContextStrategy(startTime)
     },
-    addDebugSession: function (id) {
-    },
-    clearDebugSession: function () {
-    },
-    getDebugSession: function () {
-    },
+    addDebugSession: function (id) {},
+    clearDebugSession: function () {},
+    getDebugSession: function () {},
     addAction: function (name, context) {
       addActionStrategy({
         name: name,
         context: deepClone(context),
         startClocks: clocksNow(),
-        type: ActionType.CUSTOM,
+        type: ActionType.CUSTOM
       })
     },
 
@@ -185,12 +171,12 @@ export function makeRumPublicApi(startRumImpl) {
       var handlingStack = createHandlingStack()
       addErrorStrategy({
         error: error,
-        handlingStack:handlingStack,
+        handlingStack: handlingStack,
         context: deepClone(context),
-        startClocks: clocksNow(),
+        startClocks: clocksNow()
       })
     },
-    addTiming: function(name, time){
+    addTiming: function (name, time) {
       addTimingStrategy(name, time)
     },
     setUser: function (newUser) {
@@ -201,7 +187,7 @@ export function makeRumPublicApi(startRumImpl) {
       }
     },
     getUser: userContextManager.getContext,
-    setUserProperty: function(key, property){
+    setUserProperty: function (key, property) {
       var newUser = {}
       newUser[key] = property
       var sanitizedProperty = sanitizeUser(newUser)[key]
@@ -234,7 +220,7 @@ export function makeRumPublicApi(startRumImpl) {
       display.warn('Cookies are not authorized, we will not send any data.')
       return false
     }
-  
+
     if (isLocalFile()) {
       display.error('Execution is not allowed in the current context.')
       return false
@@ -254,4 +240,3 @@ export function makeRumPublicApi(startRumImpl) {
     return window.location.protocol === 'file:'
   }
 }
-
