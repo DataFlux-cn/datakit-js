@@ -1,4 +1,12 @@
-import { isEmptyObject, mapValues, toServerDuration, isNumber, RumEventType, LifeCycleEventType, extend2Lev } from '@cloudcare/browser-core'
+import {
+  isEmptyObject,
+  mapValues,
+  toServerDuration,
+  isNumber,
+  RumEventType,
+  LifeCycleEventType,
+  extend2Lev
+} from '@cloudcare/browser-core'
 import { trackViews } from './trackViews'
 import { toValidEntry } from '../resource/resourceUtils'
 export function startViewCollection(
@@ -9,13 +17,12 @@ export function startViewCollection(
   locationChangeObservable,
   initialViewOptions
 ) {
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_UPDATED, function(view) {
-      lifeCycle.notify(
-        LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-        processViewUpdate(view)
-      )
-    }
-  )
+  lifeCycle.subscribe(LifeCycleEventType.VIEW_UPDATED, function (view) {
+    lifeCycle.notify(
+      LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
+      processViewUpdate(view)
+    )
+  })
 
   return trackViews(
     location,
@@ -59,28 +66,28 @@ function computePerformanceViewDetails(entry) {
     details.load = toServerDuration(loadEventEnd - fetchStart)
   }
   if (loadEventStart !== domContentLoadedEventEnd) {
-    details.resource_load_time = toServerDuration(loadEventStart - domContentLoadedEventEnd)
+    details.resource_load_time = toServerDuration(
+      loadEventStart - domContentLoadedEventEnd
+    )
   }
   if (domComplete !== domInteractive) {
     details.dom = toServerDuration(domComplete - domInteractive)
   }
   return details
 }
-function processViewUpdate(
-  view,
-){
+function processViewUpdate(view) {
   var viewEvent = {
     _dd: {
-      document_version: view.documentVersion,
+      document_version: view.documentVersion
     },
     date: view.startClocks.timeStamp,
     type: RumEventType.VIEW,
     view: {
       action: {
-        count: view.eventCounts.actionCount,
+        count: view.eventCounts.actionCount
       },
       frustration: {
-        count: view.eventCounts.frustrationCount,
+        count: view.eventCounts.frustrationCount
       },
       cumulative_layout_shift: view.cumulativeLayoutShift,
       first_byte: toServerDuration(view.timings.firstByte),
@@ -88,25 +95,29 @@ function processViewUpdate(
       dom_content_loaded: toServerDuration(view.timings.domContentLoaded),
       dom_interactive: toServerDuration(view.timings.domInteractive),
       error: {
-        count: view.eventCounts.errorCount,
+        count: view.eventCounts.errorCount
       },
-      first_contentful_paint: toServerDuration(view.timings.firstContentfulPaint),
+      first_contentful_paint: toServerDuration(
+        view.timings.firstContentfulPaint
+      ),
       first_input_delay: toServerDuration(view.timings.firstInputDelay),
       first_input_time: toServerDuration(view.timings.firstInputTime),
       is_active: view.isActive,
       name: view.name,
-      largest_contentful_paint: toServerDuration(view.timings.largestContentfulPaint),
+      largest_contentful_paint: toServerDuration(
+        view.timings.largestContentfulPaint
+      ),
       load_event: toServerDuration(view.timings.loadEvent),
       loading_time: discardNegativeDuration(toServerDuration(view.loadingTime)),
       loading_type: view.loadingType,
       long_task: {
-        count: view.eventCounts.longTaskCount,
+        count: view.eventCounts.longTaskCount
       },
       resource: {
-        count: view.eventCounts.resourceCount,
+        count: view.eventCounts.resourceCount
       },
-      time_spent: toServerDuration(view.duration),
-    },
+      time_spent: toServerDuration(view.duration)
+    }
     // session: {
     //   has_replay: replayStats ? true : undefined,
     // },
@@ -124,11 +135,11 @@ function processViewUpdate(
     rawRumEvent: viewEvent,
     startTime: view.startClocks.relative,
     domainContext: {
-      location: view.location,
-    },
+      location: view.location
+    }
   }
 }
 
-function discardNegativeDuration(duration){
+function discardNegativeDuration(duration) {
   return isNumber(duration) && duration < 0 ? undefined : duration
 }

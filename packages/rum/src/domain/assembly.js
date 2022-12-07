@@ -24,13 +24,14 @@ var VIEW_EVENTS_MODIFIABLE_FIELD_PATHS = [
   'error.message',
   'error.stack',
   'error.resource.url',
-  'resource.url',
+  'resource.url'
 ]
 
-var OTHER_EVENTS_MODIFIABLE_FIELD_PATHS = VIEW_EVENTS_MODIFIABLE_FIELD_PATHS.concat([
-  // User-customizable field
-  'tags',
-])
+var OTHER_EVENTS_MODIFIABLE_FIELD_PATHS =
+  VIEW_EVENTS_MODIFIABLE_FIELD_PATHS.concat([
+    // User-customizable field
+    'tags'
+  ])
 export function startRumAssembly(
   configuration,
   lifeCycle,
@@ -42,8 +43,7 @@ export function startRumAssembly(
   getCommonContext,
   reportError
 ) {
-  var eventRateLimiters = {
-  }
+  var eventRateLimiters = {}
   eventRateLimiters[RumEventType.ERROR] = createEventRateLimiter(
     RumEventType.ERROR,
     configuration.eventRateLimiterThreshold,
@@ -64,12 +64,10 @@ export function startRumAssembly(
       var domainContext = data.domainContext
       var viewContext = viewContexts.findView(startTime)
       var urlContext = urlContexts.findUrl(startTime)
-      var session = sessionManager.findTrackedSession(rawRumEvent.type !== RumEventType.VIEW ? startTime : undefined)
-      if (
-        session &&
-        viewContext &&
-        urlContext
-      ) {
+      var session = sessionManager.findTrackedSession(
+        rawRumEvent.type !== RumEventType.VIEW ? startTime : undefined
+      )
+      if (session && viewContext && urlContext) {
         var actionId = actionContexts.findActionId(startTime)
         var commonContext = savedCommonContext || getCommonContext()
         var rumContext = {
@@ -86,7 +84,7 @@ export function startRumAssembly(
           },
           device: deviceInfo,
           env: configuration.env || '',
-          service: viewContext.service || configuration.service  || 'browser',
+          service: viewContext.service || configuration.service || 'browser',
           version: viewContext.version || configuration.version || '',
           source: 'browser',
           date: timeStampNow(),
@@ -98,7 +96,7 @@ export function startRumAssembly(
             // must be computed on each event because synthetics instrumentation can be done after sdk execution
             // cf https://github.com/puppeteer/puppeteer/issues/3667
             type: getSessionType(),
-            id: session.id,
+            id: session.id
           },
           view: {
             id: viewContext.id,
@@ -110,12 +108,15 @@ export function startRumAssembly(
             pathGroup: urlContext.pathGroup,
             urlQuery: urlContext.urlQuery
           },
-          action: needToAssembleWithAction(rawRumEvent) && actionId ? { id: actionId } : undefined,
+          action:
+            needToAssembleWithAction(rawRumEvent) && actionId
+              ? { id: actionId }
+              : undefined
         }
-        
+
         var rumEvent = extend2Lev(rumContext, viewContext, rawRumEvent)
         var serverRumEvent = withSnakeCaseKeys(rumEvent)
-        var context = extend2Lev({},commonContext.context, customerContext)
+        var context = extend2Lev({}, commonContext.context, customerContext)
         if (!isEmptyObject(context)) {
           serverRumEvent.tags = context
         }
@@ -133,8 +134,14 @@ export function startRumAssembly(
           )
         }
 
-        if (shouldSend(serverRumEvent, configuration.beforeSend, eventRateLimiters, domainContext)) {
-          
+        if (
+          shouldSend(
+            serverRumEvent,
+            configuration.beforeSend,
+            eventRateLimiters,
+            domainContext
+          )
+        ) {
           if (isEmptyObject(serverRumEvent.tags)) {
             delete serverRumEvent.tags
           }
@@ -158,8 +165,12 @@ function shouldSend(event, beforeSend, eventRateLimiters, domainContext) {
   if (beforeSend) {
     var result = limitModification(
       event,
-      event.type === RumEventType.VIEW ? VIEW_EVENTS_MODIFIABLE_FIELD_PATHS : OTHER_EVENTS_MODIFIABLE_FIELD_PATHS,
-      function(event) { return beforeSend(event, domainContext) }
+      event.type === RumEventType.VIEW
+        ? VIEW_EVENTS_MODIFIABLE_FIELD_PATHS
+        : OTHER_EVENTS_MODIFIABLE_FIELD_PATHS,
+      function (event) {
+        return beforeSend(event, domainContext)
+      }
     )
     if (result === false && event.type !== RumEventType.VIEW) {
       return false
