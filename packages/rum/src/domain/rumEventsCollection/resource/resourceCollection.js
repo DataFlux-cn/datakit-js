@@ -21,7 +21,8 @@ import {
   computeSize,
   isRequestKind,
   is304,
-  isCacheHit
+  isCacheHit,
+  isResourceUrlLimit
 } from './resourceUtils'
 import { supportPerformanceEntry } from '../../performanceCollection'
 export function startResourceCollection(lifeCycle, configuration) {
@@ -36,7 +37,11 @@ export function startResourceCollection(lifeCycle, configuration) {
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
       for (var entry of entries) {
-        if (entry.entryType === 'resource' && !isRequestKind(entry)) {
+        if (
+          entry.entryType === 'resource' &&
+          !isRequestKind(entry) &&
+          !isResourceUrlLimit(entry.name, configuration.resourceUrlLimit)
+        ) {
           lifeCycle.notify(
             LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
             processResourceEntry(entry)

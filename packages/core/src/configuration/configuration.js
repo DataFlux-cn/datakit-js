@@ -1,19 +1,35 @@
 import { getCurrentSite } from '../browser/cookie'
 import { catchUserErrors } from '../helper/catchUserErrors'
 import { display } from '../helper/display'
-import { assign, isPercentage, ONE_KIBI_BYTE, ONE_SECOND, isNullUndefinedDefaultValue } from '../helper/tools'
+import {
+  assign,
+  isPercentage,
+  ONE_KIBI_BYTE,
+  ONE_SECOND,
+  isNullUndefinedDefaultValue
+} from '../helper/tools'
 import { computeTransportConfiguration } from './transportConfiguration'
-export function validateAndBuildConfiguration(initConfiguration){
-  if (initConfiguration.sampleRate !== undefined && !isPercentage(initConfiguration.sampleRate)) {
+export function validateAndBuildConfiguration(initConfiguration) {
+  if (
+    initConfiguration.sampleRate !== undefined &&
+    !isPercentage(initConfiguration.sampleRate)
+  ) {
     display.error('Sample Rate should be a number between 0 and 100')
     return
   }
   return assign(
     {
       beforeSend:
-        initConfiguration.beforeSend && catchUserErrors(initConfiguration.beforeSend, 'beforeSend threw an error:'),
+        initConfiguration.beforeSend &&
+        catchUserErrors(
+          initConfiguration.beforeSend,
+          'beforeSend threw an error:'
+        ),
       cookieOptions: buildCookieOptions(initConfiguration),
-      sampleRate: isNullUndefinedDefaultValue(initConfiguration.sampleRate, 100),
+      sampleRate: isNullUndefinedDefaultValue(
+        initConfiguration.sampleRate,
+        100
+      ),
       service: initConfiguration.service,
       version: initConfiguration.version,
       env: initConfiguration.env,
@@ -38,6 +54,7 @@ export function validateAndBuildConfiguration(initConfiguration){
        */
       batchMessagesLimit: 50,
       messageBytesLimit: 256 * ONE_KIBI_BYTE,
+      resourceUrlLimit: 5 * ONE_KIBI_BYTE
     },
     computeTransportConfiguration(initConfiguration)
   )
@@ -57,5 +74,8 @@ export function buildCookieOptions(initConfiguration) {
 }
 
 function mustUseSecureCookie(initConfiguration) {
-  return !!initConfiguration.useSecureSessionCookie || !!initConfiguration.useCrossSiteSessionCookie
+  return (
+    !!initConfiguration.useSecureSessionCookie ||
+    !!initConfiguration.useCrossSiteSessionCookie
+  )
 }

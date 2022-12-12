@@ -107,7 +107,21 @@ export function isRequestKind(timing) {
     timing.initiatorType === 'fetch'
   )
 }
+var HAS_MULTI_BYTES_CHARACTERS = /[^\u0000-\u007F]/
+export function getStrSize(candidate) {
+  if (!HAS_MULTI_BYTES_CHARACTERS.test(candidate)) {
+    return candidate.length
+  }
 
+  if (window.TextEncoder !== undefined) {
+    return new TextEncoder().encode(candidate).length
+  }
+
+  return new Blob([candidate]).size
+}
+export function isResourceUrlLimit(name, limitSize) {
+  return getStrSize(name) > limitSize
+}
 export function computePerformanceResourceDuration(entry) {
   // Safari duration is always 0 on timings blocked by cross origin policies.
   if (entry.duration === 0 && entry.startTime < entry.responseEnd) {
