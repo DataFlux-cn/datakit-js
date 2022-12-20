@@ -87,7 +87,14 @@ export var dataMap = {
       resource_ssl: 'resource.ssl',
       resource_ttfb: 'resource.ttfb',
       resource_trans: 'resource.trans',
-      resource_first_byte: 'resource.firstbyte'
+      resource_redirect: 'resource.redirect',
+      resource_first_byte: 'resource.firstbyte',
+      resource_dns_time: 'resource.dns_time',
+      resource_download_time: 'resource.download_time',
+      resource_first_byte_time: 'resource.first_byte_time',
+      resource_connect_time: 'resource.connect_time',
+      resource_ssl_time: 'resource.ssl_time',
+      resource_redirect_time: 'resource.redirect_time'
     }
   },
   error: {

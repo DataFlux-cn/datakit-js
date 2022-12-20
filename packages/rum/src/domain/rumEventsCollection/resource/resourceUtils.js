@@ -239,26 +239,40 @@ export function computePerformanceResourceDetails(entry) {
     responseStart = validEntry.responseStart,
     responseEnd = validEntry.responseEnd
   var details = {
-    firstbyte: formatTiming(startTime, domainLookupStart, responseStart),
-    trans: formatTiming(startTime, responseStart, responseEnd),
-    ttfb: formatTiming(startTime, requestStart, responseStart)
+    firstbyte: msToNs(responseStart - domainLookupStart),
+    trans: msToNs(responseEnd, responseStart),
+    ttfb: msToNs(responseStart, requestStart),
+    downloadTime: formatTiming(startTime, responseStart, responseEnd),
+    firstByteTime: formatTiming(startTime, requestStart, responseStart)
   }
   // Make sure a connection occurred
   if (connectEnd !== fetchStart) {
-    details.tcp = formatTiming(startTime, connectStart, connectEnd)
+    details.tcp = msToNs(connectEnd, connectStart)
+    details.connectTime = formatTiming(startTime, connectStart, connectEnd)
     // Make sure a secure connection occurred
     if (areInOrder(connectStart, secureConnectionStart, connectEnd)) {
-      details.ssl = formatTiming(startTime, secureConnectionStart, connectEnd)
+      details.ssl = msToNs(connectEnd, secureConnectionStart)
+      details.sslTime = formatTiming(
+        startTime,
+        secureConnectionStart,
+        connectEnd
+      )
     }
   }
 
   // Make sure a domain lookup occurred
   if (domainLookupEnd !== fetchStart) {
-    details.dns = formatTiming(startTime, domainLookupStart, domainLookupEnd)
+    details.dns = msToNs(domainLookupEnd, domainLookupStart)
+    details.dnsTime = formatTiming(
+      startTime,
+      domainLookupStart,
+      domainLookupEnd
+    )
   }
 
   if (hasRedirection(entry)) {
-    details.redirect = formatTiming(startTime, redirectStart, redirectEnd)
+    details.redirect = msToNs(redirectEnd, redirectStart)
+    details.redirectTime = formatTiming(startTime, redirectStart, redirectEnd)
   }
   return details
 }
@@ -335,11 +349,10 @@ function hasRedirection(entry) {
 }
 
 function formatTiming(origin, start, end) {
-  return msToNs(end - start)
-  // return {
-  //   duration: msToNs(end - start),
-  //   start: msToNs(start - origin)
-  // }
+  return {
+    duration: msToNs(end - start),
+    start: msToNs(start - origin)
+  }
 }
 
 export function computeSize(entry) {
