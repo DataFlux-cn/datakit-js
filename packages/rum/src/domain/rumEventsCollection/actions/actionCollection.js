@@ -12,14 +12,15 @@ import { trackClickActions } from './trackClickActions'
 export function startActionCollection(
   lifeCycle,
   domMutationObservable,
-  configuration
+  configuration,
+  foregroundContexts
 ) {
   lifeCycle.subscribe(
     LifeCycleEventType.AUTO_ACTION_COMPLETED,
     function (action) {
       lifeCycle.notify(
         LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-        processAction(action)
+        processAction(action, foregroundContexts)
       )
     }
   )
@@ -39,14 +40,14 @@ export function startActionCollection(
         LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
         extend(
           { savedCommonContext: savedCommonContext },
-          processAction(action)
+          processAction(action, foregroundContexts)
         )
       )
     }
   }
 }
 
-function processAction(action) {
+function processAction(action, foregroundContexts) {
   var autoActionProperties = isAutoAction(action)
     ? {
         action: {
@@ -92,6 +93,12 @@ function processAction(action) {
     },
     autoActionProperties
   )
+  var inForeground = foregroundContexts.isInForegroundAt(
+    action.startClocks.relative
+  )
+  if (inForeground !== undefined) {
+    actionEvent.view = { in_foreground: inForeground }
+  }
   return {
     customerContext: customerContext,
     rawRumEvent: actionEvent,

@@ -39,7 +39,6 @@ export function trackClickActions(
   lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
     history.reset()
   })
-  lifeCycle.subscribe(LifeCycleEventType.BEFORE_UNLOAD, stopClickChain)
   lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, stopClickChain)
   var _listenActionEvents = listenActionEvents({
     onPointerDown: function (pointerDownEvent) {

@@ -13,7 +13,7 @@ import {
 import { trackConsoleError } from './trackConsoleError'
 import { trackReportError } from './trackReportError'
 
-export function startErrorCollection(lifeCycle) {
+export function startErrorCollection(lifeCycle, foregroundContexts) {
   var errorObservable = new Observable()
 
   trackConsoleError(errorObservable)
@@ -24,10 +24,10 @@ export function startErrorCollection(lifeCycle) {
     lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
   })
 
-  return doStartErrorCollection(lifeCycle)
+  return doStartErrorCollection(lifeCycle, foregroundContexts)
 }
 
-export function doStartErrorCollection(lifeCycle) {
+export function doStartErrorCollection(lifeCycle, foregroundContexts) {
   lifeCycle.subscribe(LifeCycleEventType.RAW_ERROR_COLLECTED, function (error) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
@@ -36,7 +36,7 @@ export function doStartErrorCollection(lifeCycle) {
           customerContext: error.customerContext,
           savedCommonContext: error.savedCommonContext
         },
-        processError(error.error)
+        processError(error.error, foregroundContexts)
       )
     )
   })
@@ -64,7 +64,7 @@ export function doStartErrorCollection(lifeCycle) {
   }
 }
 
-function processError(error) {
+function processError(error, foregroundContexts) {
   var rawRumEvent = {
     date: error.startClocks.timeStamp,
     error: {
@@ -79,6 +79,12 @@ function processError(error) {
       source_type: 'browser'
     },
     type: RumEventType.ERROR
+  }
+  var inForeground = foregroundContexts.isInForegroundAt(
+    error.startClocks.relative
+  )
+  if (inForeground) {
+    rawRumEvent.view = { in_foreground: inForeground }
   }
   return {
     rawRumEvent: rawRumEvent,

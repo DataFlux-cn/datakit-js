@@ -15,12 +15,14 @@ export function startViewCollection(
   location,
   domMutationObservable,
   locationChangeObservable,
+  foregroundContexts,
+  recorderApi,
   initialViewOptions
 ) {
   lifeCycle.subscribe(LifeCycleEventType.VIEW_UPDATED, function (view) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processViewUpdate(view)
+      processViewUpdate(view, foregroundContexts, recorderApi)
     )
   })
 
@@ -75,10 +77,12 @@ function computePerformanceViewDetails(entry) {
   }
   return details
 }
-function processViewUpdate(view) {
+function processViewUpdate(view, foregroundContexts, recorderApi) {
+  var replayStats = recorderApi.getReplayStats(view.id)
   var viewEvent = {
     _dd: {
-      document_version: view.documentVersion
+      document_version: view.documentVersion,
+      replay_stats: replayStats
     },
     date: view.startClocks.timeStamp,
     type: RumEventType.VIEW,
@@ -116,11 +120,15 @@ function processViewUpdate(view) {
       resource: {
         count: view.eventCounts.resourceCount
       },
-      time_spent: toServerDuration(view.duration)
+      time_spent: toServerDuration(view.duration),
+      in_foreground_periods: foregroundContexts.selectInForegroundPeriodsFor(
+        view.startClocks.relative,
+        view.duration
+      )
+    },
+    session: {
+      has_replay: replayStats ? true : undefined
     }
-    // session: {
-    //   has_replay: replayStats ? true : undefined,
-    // },
   }
   if (!isEmptyObject(view.customTimings)) {
     viewEvent.view.custom_timings = mapValues(

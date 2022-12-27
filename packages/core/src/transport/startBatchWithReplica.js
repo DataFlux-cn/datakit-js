@@ -4,23 +4,29 @@ import { createHttpRequest } from './httpRequest'
 export function startBatchWithReplica(
   configuration,
   endpointUrl,
-  reportError
+  reportError,
+  pageExitObservable
 ) {
   var primaryBatch = createBatch(endpointUrl)
 
   function createBatch(endpointUrl) {
     return new Batch(
-      createHttpRequest(endpointUrl, configuration.batchBytesLimit, reportError),
+      createHttpRequest(
+        endpointUrl,
+        configuration.batchBytesLimit,
+        reportError
+      ),
       configuration.batchMessagesLimit,
       configuration.batchBytesLimit,
       configuration.messageBytesLimit,
-      configuration.flushTimeout
+      configuration.flushTimeout,
+      pageExitObservable
     )
   }
 
   return {
-    add: function(message) {
+    add: function (message) {
       primaryBatch.add(message)
-    },
+    }
   }
 }

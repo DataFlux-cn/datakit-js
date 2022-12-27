@@ -1,6 +1,5 @@
 import {
   addEventListeners,
-  addEventListener,
   getRelativeTime,
   isNumber,
   includes,
@@ -10,7 +9,8 @@ import {
   dateNow,
   relativeNow,
   DOM_EVENT,
-  LifeCycleEventType
+  LifeCycleEventType,
+  runOnReadyState
 } from '@cloudcare/browser-core'
 import {
   FAKE_INITIAL_DOCUMENT,
@@ -36,29 +36,36 @@ export function startPerformanceCollection(lifeCycle, configuration) {
     var performanceEntries = performance.getEntries()
     // Because the performance entry list can be quite large
     // delay the computation to prevent the SDK from blocking the main thread on init
-    setTimeout(function() { 
+    setTimeout(function () {
       handleRumPerformanceEntries(lifeCycle, configuration, performanceEntries)
     })
   }
   if (window.PerformanceObserver) {
-    var handlePerformanceEntryList = function(entries) {
-      handleRumPerformanceEntries(lifeCycle, configuration, entries.getEntries())
+    var handlePerformanceEntryList = function (entries) {
+      handleRumPerformanceEntries(
+        lifeCycle,
+        configuration,
+        entries.getEntries()
+      )
     }
     var mainEntries = ['resource', 'navigation', 'longtask', 'paint']
-    var experimentalEntries = ['largest-contentful-paint', 'first-input', 'layout-shift']
+    var experimentalEntries = [
+      'largest-contentful-paint',
+      'first-input',
+      'layout-shift'
+    ]
     try {
       // Experimental entries are not retrieved by performance.getEntries()
       // use a single PerformanceObserver with buffered flag by type
       // to get values that could happen before SDK init
-      each(experimentalEntries, function(type) {
+      each(experimentalEntries, function (type) {
         var observer = new PerformanceObserver(handlePerformanceEntryList)
-        observer.observe({ type:type, buffered: true })
+        observer.observe({ type: type, buffered: true })
       })
-     
     } catch (e) {
       // Some old browser versions (ex: chrome 67) don't support the PerformanceObserver type and buffered options
       // In these cases, fallback to PerformanceObserver with entryTypes
-      each(experimentalEntries, function(type) {
+      each(experimentalEntries, function (type) {
         mainEntries.push(type)
       })
     }
@@ -77,7 +84,7 @@ export function startPerformanceCollection(lifeCycle, configuration) {
     })
   }
   if (!supportPerformanceTimingEvent('first-input')) {
-    retrieveFirstInputTiming(function(timing) {
+    retrieveFirstInputTiming(function (timing) {
       return handleRumPerformanceEntries(lifeCycle, configuration, [timing])
     })
   }
@@ -206,21 +213,6 @@ function retrieveFirstInputTiming(callback) {
   }
 }
 
-function runOnReadyState(expectedReadyState, callback) {
-  if (
-    document.readyState === expectedReadyState ||
-    document.readyState === 'complete'
-  ) {
-    callback()
-  } else {
-    var eventName =
-      expectedReadyState === 'complete'
-        ? DOM_EVENT.LOAD
-        : DOM_EVENT.DOM_CONTENT_LOADED
-    addEventListener(window, eventName, callback, { once: true })
-  }
-}
-
 function computeRelativePerformanceTiming() {
   var result = {}
   var timing = performance.timing
@@ -233,26 +225,35 @@ function computeRelativePerformanceTiming() {
 }
 
 function handleRumPerformanceEntries(lifeCycle, configuration, entries) {
-  var rumPerformanceEntries = filter(entries,
-    function(entry){
-      return entry.entryType === 'resource' ||
-            entry.entryType === 'navigation' ||
-            entry.entryType === 'paint' ||
-            entry.entryType === 'longtask' ||
-            entry.entryType === 'largest-contentful-paint' ||
-            entry.entryType === 'first-input' ||
-            entry.entryType === 'layout-shift'
-      }
+  var rumPerformanceEntries = filter(entries, function (entry) {
+    return (
+      entry.entryType === 'resource' ||
+      entry.entryType === 'navigation' ||
+      entry.entryType === 'paint' ||
+      entry.entryType === 'longtask' ||
+      entry.entryType === 'largest-contentful-paint' ||
+      entry.entryType === 'first-input' ||
+      entry.entryType === 'layout-shift'
+    )
+  })
+
+  var rumAllowedPerformanceEntries = filter(
+    rumPerformanceEntries,
+    function (entry) {
+      return (
+        !isIncompleteNavigation(entry) &&
+        !isForbiddenResource(configuration, entry)
+      )
+    }
   )
 
-  var rumAllowedPerformanceEntries = filter(rumPerformanceEntries, function(entry) { return !isIncompleteNavigation(entry) && !isForbiddenResource(configuration, entry)})
-
   if (rumAllowedPerformanceEntries.length) {
-    lifeCycle.notify(LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED, rumAllowedPerformanceEntries)
+    lifeCycle.notify(
+      LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+      rumAllowedPerformanceEntries
+    )
   }
 }
-
-
 
 function isIncompleteNavigation(entry) {
   return entry.entryType === 'navigation' && entry.loadEventEnd <= 0
@@ -268,4 +269,3 @@ export function supportPerformanceEntry() {
   // Safari 10 doesn't support PerformanceEntry
   return typeof PerformanceEntry === 'function'
 }
-

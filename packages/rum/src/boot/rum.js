@@ -1,6 +1,10 @@
 import { startRumSessionManager } from '../domain/rumSessionManager'
 import { startCacheUsrCache } from '../domain/usr'
-import { LifeCycle, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  LifeCycle,
+  LifeCycleEventType,
+  createPageExitObservable
+} from '@cloudcare/browser-core'
 import { startPerformanceCollection } from '../domain/performanceCollection'
 import { createDOMMutationObservable } from '../domain/domMutationCollection'
 import { createLocationChangeObservable } from '../domain/locationChangeObservable'
@@ -9,19 +13,29 @@ import { startActionCollection } from '../domain/rumEventsCollection/actions/act
 import { startRumBatch } from '../transport/startRumBatch'
 import { startRumAssembly } from '../domain/assembly'
 import { startInternalContext } from '../domain/contexts/internalContext'
+import { startForegroundContexts } from '../domain/contexts/foregroundContexts'
 import { startUrlContexts } from '../domain/contexts/urlContexts'
 import { startViewContexts } from '../domain/contexts/viewContexts'
 import { startErrorCollection } from '../domain/rumEventsCollection/error/errorCollection'
 import { startViewCollection } from '../domain/rumEventsCollection/view/viewCollection'
 import { startRequestCollection } from '../domain/requestCollection'
 import { startResourceCollection } from '../domain/rumEventsCollection/resource/resourceCollection'
-export function startRum(configuration, getCommonContext, initialViewOptions) {
+export function startRum(
+  configuration,
+  getCommonContext,
+  recorderApi,
+  initialViewOptions
+) {
   var lifeCycle = new LifeCycle()
-  
-  var reportError = function(error) {
+
+  var reportError = function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
   }
-  startRumBatch(configuration, lifeCycle, reportError)
+  var pageExitObservable = createPageExitObservable()
+  pageExitObservable.subscribe(function (event) {
+    lifeCycle.notify(LifeCycleEventType.PAGE_EXITED, event)
+  })
+  startRumBatch(configuration, lifeCycle, reportError, pageExitObservable)
   var session = startRumSessionManager(configuration, lifeCycle)
   var userSession = startCacheUsrCache(configuration)
   var domMutationObservable = createDOMMutationObservable()
@@ -40,8 +54,9 @@ export function startRum(configuration, getCommonContext, initialViewOptions) {
   var viewContexts = _startRumEventCollection.viewContexts
   var urlContexts = _startRumEventCollection.urlContexts
   var actionContexts = _startRumEventCollection.actionContexts
+  var foregroundContexts = _startRumEventCollection.foregroundContexts
   startLongTaskCollection(lifeCycle, session)
-  startResourceCollection(lifeCycle,configuration)
+  startResourceCollection(lifeCycle, configuration)
 
   var _startViewCollection = startViewCollection(
     lifeCycle,
@@ -49,11 +64,16 @@ export function startRum(configuration, getCommonContext, initialViewOptions) {
     location,
     domMutationObservable,
     locationChangeObservable,
+    foregroundContexts,
+    recorderApi,
     initialViewOptions
   )
   var addTiming = _startViewCollection.addTiming
   var startView = _startViewCollection.startView
-  var _startErrorCollection = startErrorCollection(lifeCycle, configuration)
+  var _startErrorCollection = startErrorCollection(
+    lifeCycle,
+    foregroundContexts
+  )
   var addError = _startErrorCollection.addError
   startRequestCollection(lifeCycle, configuration, session)
   startPerformanceCollection(lifeCycle, configuration)
@@ -89,11 +109,17 @@ export function startRumEventCollection(
   reportError
 ) {
   var viewContexts = startViewContexts(lifeCycle)
-  var urlContexts = startUrlContexts(lifeCycle, locationChangeObservable, location)
+  var urlContexts = startUrlContexts(
+    lifeCycle,
+    locationChangeObservable,
+    location
+  )
+  var foregroundContexts = startForegroundContexts()
   var _startActionCollection = startActionCollection(
     lifeCycle,
     domMutationObservable,
     configuration,
+    foregroundContexts
   )
   var actionContexts = _startActionCollection.actionContexts
   startRumAssembly(
@@ -110,10 +136,12 @@ export function startRumEventCollection(
   return {
     viewContexts: viewContexts,
     urlContexts: urlContexts,
+    foregroundContexts: foregroundContexts,
     addAction: _startActionCollection.addAction,
     actionContexts: actionContexts,
-    stop: function() {
+    stop: function () {
       viewContexts.stop()
-    },
+      foregroundContexts.stop()
+    }
   }
 }

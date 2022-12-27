@@ -13,7 +13,7 @@ import {
   createHandlingStack
 } from '@cloudcare/browser-core'
 import { validateAndBuildRumConfiguration } from '../domain/configuration'
-export function makeRumPublicApi(startRumImpl) {
+export function makeRumPublicApi(startRumImpl, recorderApi) {
   var isAlreadyInitialized = false
 
   var globalContextManager = createContextManager()
@@ -105,9 +105,11 @@ export function makeRumPublicApi(startRumImpl) {
       function () {
         return {
           user: userContextManager.getContext(),
-          context: globalContextManager.getContext()
+          context: globalContextManager.getContext(),
+          hasReplay: recorderApi.isRecording() ? true : undefined
         }
       },
+      recorderApi,
       initialViewOptions
     )
     startViewStrategy = startRumResults.startView
@@ -116,6 +118,12 @@ export function makeRumPublicApi(startRumImpl) {
     addTimingStrategy = startRumResults.addTiming
     getInternalContextStrategy = startRumResults.getInternalContext
     bufferApiCalls.drain()
+    recorderApi.onRumStart(
+      startRumResults.lifeCycle,
+      configuration,
+      startRumResults.session,
+      startRumResults.viewContexts
+    )
   }
   var startView = function (options) {
     var sanitizedOptions =
@@ -198,7 +206,9 @@ export function makeRumPublicApi(startRumImpl) {
     /** @deprecated: renamed to clearUser */
     removeUser: userContextManager.clearContext,
     clearUser: userContextManager.clearContext,
-    startView: startView
+    startView: startView,
+    startSessionReplayRecording: recorderApi.start,
+    stopSessionReplayRecording: recorderApi.stop
   })
   return rumPublicApi
 

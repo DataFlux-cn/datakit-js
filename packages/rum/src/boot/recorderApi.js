@@ -1,0 +1,164 @@
+import {
+  noop,
+  runOnReadyState,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
+
+import { getReplayStats } from '../domain/replay/replayStats'
+import { startDeflateWorker } from '../domain/replay/segmentCollection'
+
+var RecorderStatus = {
+  // The recorder is stopped.
+  Stopped: 'Stopped',
+  // The user started the recording while it wasn't possible yet. The recorder should start as soon
+  // as possible.
+  IntentToStart: 'IntentToStart',
+  // The recorder is starting. It does not record anything yet.
+  Starting: 'Starting',
+  // The recorder is started, it records the session.
+  Started: 'Started'
+}
+
+export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
+  if (typeof startDeflateWorkerImpl === 'undefined') {
+    startDeflateWorkerImpl = startDeflateWorker
+  }
+  if (!isBrowserSupported()) {
+    return {
+      start: noop,
+      stop: noop,
+      getReplayStats: function () {
+        return undefined
+      },
+      onRumStart: noop,
+      isRecording: function () {
+        return false
+      }
+    }
+  }
+
+  var state = {
+    status: RecorderStatus.Stopped
+  }
+
+  var startStrategy = function () {
+    state = { status: RecorderStatus.IntentToStart }
+  }
+  var stopStrategy = function () {
+    state = { status: RecorderStatus.Stopped }
+  }
+  return {
+    start: function () {
+      startStrategy()
+    },
+    stop: function () {
+      stopStrategy()
+    },
+    getReplayStats: getReplayStats,
+
+    onRumStart: function (
+      lifeCycle,
+      configuration,
+      sessionManager,
+      viewContexts
+    ) {
+      lifeCycle.subscribe(LifeCycleEventType.SESSION_EXPIRED, function () {
+        if (
+          state.status === RecorderStatus.Starting ||
+          state.status === RecorderStatus.Started
+        ) {
+          stopStrategy()
+          state = { status: RecorderStatus.IntentToStart }
+        }
+      })
+
+      lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
+        if (state.status === RecorderStatus.IntentToStart) {
+          startStrategy()
+        }
+      })
+
+      startStrategy = function () {
+        var session = sessionManager.findTrackedSession()
+        if (!session || !session.sessionReplayAllowed) {
+          state = { status: RecorderStatus.IntentToStart }
+          return
+        }
+
+        if (
+          state.status === RecorderStatus.Starting ||
+          state.status === RecorderStatus.Started
+        ) {
+          return
+        }
+
+        state = { status: RecorderStatus.Starting }
+
+        runOnReadyState('interactive', function () {
+          if (state.status !== RecorderStatus.Starting) {
+            return
+          }
+
+          startDeflateWorkerImpl(function (worker) {
+            if (state.status !== RecorderStatus.Starting) {
+              return
+            }
+
+            if (!worker) {
+              state = {
+                status: RecorderStatus.Stopped
+              }
+              return
+            }
+
+            var recordingImpl = startRecordingImpl(
+              lifeCycle,
+              configuration,
+              sessionManager,
+              viewContexts,
+              worker
+            )
+            state = {
+              status: RecorderStatus.Started,
+              stopRecording: recordingImpl.stop
+            }
+          })
+        })
+      }
+
+      stopStrategy = function () {
+        if (state.status === RecorderStatus.Stopped) {
+          return
+        }
+
+        if (state.status === RecorderStatus.Started) {
+          state.stopRecording()
+        }
+
+        state = {
+          status: RecorderStatus.Stopped
+        }
+      }
+
+      if (state.status === RecorderStatus.IntentToStart) {
+        startStrategy()
+      }
+    },
+
+    isRecording: function () {
+      return state.status === RecorderStatus.Started
+    }
+  }
+}
+
+/**
+ * Test for Browser features used while recording
+ */
+function isBrowserSupported() {
+  return (
+    // Array.from is a bit less supported by browsers than CSSSupportsRule, but has higher chances
+    // to be polyfilled. Test for both to be more confident. We could add more things if we find out
+    // this test is not sufficient.
+    typeof Array.from === 'function' && typeof CSSSupportsRule === 'function'
+  )
+}

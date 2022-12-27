@@ -16,13 +16,16 @@ export function trackFirstHidden(emitter) {
       var listeners = addEventListeners(
         emitter,
         [DOM_EVENT.PAGE_HIDE, DOM_EVENT.VISIBILITY_CHANGE],
-        function (evt) {
-          if (event.type === 'pagehide' || document.visibilityState === 'hidden') {
+        function (event) {
+          if (
+            event.type === 'pagehide' ||
+            document.visibilityState === 'hidden'
+          ) {
             trackFirstHiddenSingleton.timeStamp = event.timeStamp
             stopListeners()
           }
         },
-        { capture: true}
+        { capture: true }
       )
       var stopListeners = listeners.stop
     }

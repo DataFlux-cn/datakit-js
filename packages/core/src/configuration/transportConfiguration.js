@@ -12,13 +12,30 @@ function getLogsEndPoint(url) {
     return trim(url) + 'v1/write/logging'
   return trim(url) + '/v1/write/logging'
 }
+function getSessionReplayEndPoint(configuration) {
+  if (url.lastIndexOf('/') === url.length - 1)
+    return trim(url) + 'v1/write/session_replay'
+  return trim(url) + '/v1/write/session_replay'
+}
 export function computeTransportConfiguration(initConfiguration) {
-  var isIntakeUrl = function(url) { return false }
-  if ('isIntakeUrl' in initConfiguration && isFunction(initConfiguration.isIntakeUrl) && isBoolean(initConfiguration.isIntakeUrl())) {
+  var isIntakeUrl = function (url) {
+    return false
+  }
+  if (
+    'isIntakeUrl' in initConfiguration &&
+    isFunction(initConfiguration.isIntakeUrl) &&
+    isBoolean(initConfiguration.isIntakeUrl())
+  ) {
     isIntakeUrl = initConfiguration.isIntakeUrl
   }
-  var isServerError = function(request) { return false }
-  if ('isServerError' in initConfiguration && isFunction(initConfiguration.isServerError) && isBoolean(initConfiguration.isServerError())) {
+  var isServerError = function (request) {
+    return false
+  }
+  if (
+    'isServerError' in initConfiguration &&
+    isFunction(initConfiguration.isServerError) &&
+    isBoolean(initConfiguration.isServerError())
+  ) {
     isServerError = initConfiguration.isServerError
   }
   return {
@@ -26,10 +43,12 @@ export function computeTransportConfiguration(initConfiguration) {
       initConfiguration.datakitUrl || initConfiguration.datakitOrigin
     ),
     logsEndpoint: getLogsEndPoint(initConfiguration.datakitOrigin),
+    sessionReplayEndPoint: getSessionReplayEndPoint(
+      initConfiguration.datakitOrigin
+    ),
     isIntakeUrl: isIntakeUrl,
     isServerError: isServerError
   }
-  
 }
 export function isIntakeRequest(url, configuration) {
   // return haveSameOrigin(url, configuration.datakitUrl)
@@ -38,5 +57,9 @@ export function isIntakeRequest(url, configuration) {
     notTakeRequest.push(configuration.logsEndpoint)
   }
   // datakit 地址，log 地址，以及客户自定义过滤方法定义url
-  return some(notTakeRequest, function(takeUrl) { return url.indexOf(takeUrl) === 0 }) || configuration.isIntakeUrl(url)
+  return (
+    some(notTakeRequest, function (takeUrl) {
+      return url.indexOf(takeUrl) === 0
+    }) || configuration.isIntakeUrl(url)
+  )
 }

@@ -1,8 +1,8 @@
 import { display } from '../helper/display'
-import { 
-  addEventListener, 
-  noop, 
-  values, 
+import {
+  addEventListener,
+  noop,
+  values,
   findByPath,
   escapeRowData,
   each,
@@ -15,7 +15,7 @@ import {
   isEmptyObject,
   isObject,
   escapeJsonValue,
-  escapeRowField 
+  escapeRowField
 } from '../helper/tools'
 import { commonTags, dataMap } from '../dataMap'
 import { DOM_EVENT, RumEventType } from '../helper/enums'
@@ -24,11 +24,12 @@ import { DOM_EVENT, RumEventType } from '../helper/enums'
 var HAS_MULTI_BYTES_CHARACTERS = /[^\u0000-\u007F]/
 var CUSTOM_KEYS = 'custom_keys'
 export var processedMessageByDataMap = function (message) {
-  if (!message || !message.type) return {
-    rowStr: '',
-    rowData: undefined
-  }
-  
+  if (!message || !message.type)
+    return {
+      rowStr: '',
+      rowData: undefined
+    }
+
   var rowData = { tags: {}, fields: {} }
   var hasFileds = false
   var rowStr = ''
@@ -47,7 +48,7 @@ export var processedMessageByDataMap = function (message) {
           tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
         }
       })
-      
+
       var fieldsStr = []
       each(value.fields, function (_value, _key) {
         if (isArray(_value) && _value.length === 2) {
@@ -63,18 +64,26 @@ export var processedMessageByDataMap = function (message) {
             //       _valueData.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
             //       '"'
             //     : escapeRowData(_valueData)
-            fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_valueData))
+            fieldsStr.push(
+              escapeRowData(_key) + '=' + escapeRowField(_valueData)
+            )
           }
         } else if (isString(_value)) {
           var _valueData = findByPath(message, _value)
           filterFileds.push(_key)
           if (_valueData || isNumber(_valueData)) {
             rowData.fields[_key] = _valueData // 这里不需要转译
-            fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_valueData))
+            fieldsStr.push(
+              escapeRowData(_key) + '=' + escapeRowField(_valueData)
+            )
           }
         }
       })
-      if (message.tags && isObject(message.tags) && !isEmptyObject(message.tags)) {
+      if (
+        message.tags &&
+        isObject(message.tags) &&
+        !isEmptyObject(message.tags)
+      ) {
         // 自定义tag， 存储成field
         var _tagKeys = []
         each(message.tags, function (_value, _key) {
@@ -89,7 +98,9 @@ export var processedMessageByDataMap = function (message) {
         })
         if (_tagKeys.length) {
           rowData.fields[CUSTOM_KEYS] = escapeRowField(_tagKeys)
-          fieldsStr.push(escapeRowData(CUSTOM_KEYS) + '=' + escapeRowField(_tagKeys))
+          fieldsStr.push(
+            escapeRowData(CUSTOM_KEYS) + '=' + escapeRowField(_tagKeys)
+          )
         }
       }
       if (message.type === RumEventType.LOGGER) {
@@ -121,7 +132,14 @@ export var processedMessageByDataMap = function (message) {
     rowData: hasFileds ? rowData : undefined
   }
 }
-var batch = function (request, batchMessagesLimit, batchBytesLimit, messageBytesLimit, flushTimeout,beforeUnloadCallback) {
+var batch = function (
+  request,
+  batchMessagesLimit,
+  batchBytesLimit,
+  messageBytesLimit,
+  flushTimeout,
+  pageExitObservable
+) {
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
   this.bufferBytesCount = 0
@@ -131,24 +149,22 @@ var batch = function (request, batchMessagesLimit, batchBytesLimit, messageBytes
   this.batchBytesLimit = batchBytesLimit
   this.messageBytesLimit = messageBytesLimit
   this.flushTimeout = flushTimeout
-  if (typeof beforeUnloadCallback === 'function') {
-    this.beforeUnloadCallback = beforeUnloadCallback
-  } else {
-    this.beforeUnloadCallback = noop
-  }
-  this.setupFlushOnExit()
+  var _this = this
+  pageExitObservable.subscribe(function () {
+    _this.flush(_this.request.sendOnExit)
+  })
   this.flushPeriodically()
 }
-batch.prototype.add = function(message) {
+batch.prototype.add = function (message) {
   this.addOrUpdate(message)
 }
-batch.prototype.upsert = function(message, key) {
+batch.prototype.upsert = function (message, key) {
   this.addOrUpdate(message, key)
 }
-batch.prototype.flush = function(sendFn) {
+batch.prototype.flush = function (sendFn) {
   if (typeof sendFn !== 'function') {
     sendFn = this.request.send
-  } 
+  }
   if (this.bufferMessagesCount !== 0) {
     var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
     var bytesCount = this.bufferBytesCount
@@ -161,10 +177,10 @@ batch.prototype.flush = function(sendFn) {
     }
   }
 }
-batch.prototype.flushOnExit = function() {
+batch.prototype.flushOnExit = function () {
   this.flush(this.request.sendOnExit)
 }
-batch.prototype.computeBytesCount = function(candidate) {
+batch.prototype.computeBytesCount = function (candidate) {
   // Accurate bytes count computations can degrade performances when there is a lot of events to process
   if (!HAS_MULTI_BYTES_CHARACTERS.test(candidate)) {
     return candidate.length
@@ -176,13 +192,15 @@ batch.prototype.computeBytesCount = function(candidate) {
 
   return new Blob([candidate]).size
 }
-batch.prototype.addOrUpdate = function(message, key) {
+batch.prototype.addOrUpdate = function (message, key) {
   var _process = this.process(message)
   var processedMessage = _process.processedMessage
   var messageBytesCount = _process.messageBytesCount
   if (messageBytesCount >= this.messageBytesLimit) {
     display.warn(
-      'Discarded a message whose size was bigger than the maximum allowed size ' + this.messageBytesLimit + 'KB.'
+      'Discarded a message whose size was bigger than the maximum allowed size ' +
+        this.messageBytesLimit +
+        'KB.'
     )
     return
   }
@@ -198,13 +216,16 @@ batch.prototype.addOrUpdate = function(message, key) {
     this.flush()
   }
 }
-batch.prototype.process = function(message) {
+batch.prototype.process = function (message) {
   var processedMessage = processedMessageByDataMap(message).rowStr
   var messageBytesCount = this.computeBytesCount(processedMessage)
-  return { processedMessage: processedMessage, messageBytesCount:messageBytesCount }
+  return {
+    processedMessage: processedMessage,
+    messageBytesCount: messageBytesCount
+  }
 }
 
-batch.prototype.push = function(processedMessage, messageBytesCount, key) {
+batch.prototype.push = function (processedMessage, messageBytesCount, key) {
   if (this.bufferMessagesCount > 0) {
     // \n separator at serialization
     this.bufferBytesCount += 1
@@ -218,7 +239,7 @@ batch.prototype.push = function(processedMessage, messageBytesCount, key) {
   this.bufferMessagesCount += 1
 }
 
-batch.prototype.remove = function(key) {
+batch.prototype.remove = function (key) {
   var removedMessage = this.upsertBuffer[key]
   delete this.upsertBuffer[key]
   var messageBytesCount = this.computeBytesCount(removedMessage)
@@ -229,61 +250,28 @@ batch.prototype.remove = function(key) {
   }
 }
 
-batch.prototype.hasMessageFor = function(key) {
+batch.prototype.hasMessageFor = function (key) {
   return key !== undefined && this.upsertBuffer[key] !== undefined
 }
 
-batch.prototype.willReachedBytesLimitWith = function(messageBytesCount) {
+batch.prototype.willReachedBytesLimitWith = function (messageBytesCount) {
   // byte of the separator at the end of the message
   return this.bufferBytesCount + messageBytesCount + 1 >= this.batchBytesLimit
 }
 
-batch.prototype.isFull = function() {
-  return this.bufferMessagesCount === this.batchMessagesLimit || this.bufferBytesCount >= this.batchBytesLimit
-}
-
-batch.prototype.flushPeriodically = function() {
-  var _this = this
-  setTimeout(
-    function(){
-      _this.flush()
-      _this.flushPeriodically()
-    },
-    this.flushTimeout
+batch.prototype.isFull = function () {
+  return (
+    this.bufferMessagesCount === this.batchMessagesLimit ||
+    this.bufferBytesCount >= this.batchBytesLimit
   )
 }
 
-batch.prototype.setupFlushOnExit = function() {
-  /**
-   * With sendBeacon, requests are guaranteed to be successfully sent during document unload
-   */
-  // @ts-ignore this function is not always defined
-  var  _this = this
-  if (navigator.sendBeacon) {
-    /**
-     * beforeunload is called before visibilitychange
-     * register first to be sure to be called before flush on beforeunload
-     * caveat: unload can still be canceled by another listener
-     */
-    addEventListener(window, DOM_EVENT.BEFORE_UNLOAD, this.beforeUnloadCallback)
-
-    /**
-     * Only event that guarantee to fire on mobile devices when the page transitions to background state
-     * (e.g. when user switches to a different application, goes to homescreen, etc), or is being unloaded.
-     */
-    addEventListener(document, DOM_EVENT.VISIBILITY_CHANGE, function() {
-      if (document.visibilityState === 'hidden') {
-        _this.flushOnExit()
-      }
-    })
-    /**
-     * Safari does not support yet to send a request during:
-     * - a visibility change during doc unload (cf: https://bugs.webkit.org/show_bug.cgi?id=194897)
-     * - a page hide transition (cf: https://bugs.webkit.org/show_bug.cgi?id=188329)
-     */
-    addEventListener(window, DOM_EVENT.BEFORE_UNLOAD, function() {
-      return _this.flushOnExit()
-    })
-  }
+batch.prototype.flushPeriodically = function () {
+  var _this = this
+  setTimeout(function () {
+    _this.flush()
+    _this.flushPeriodically()
+  }, this.flushTimeout)
 }
+
 export var Batch = batch

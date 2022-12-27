@@ -1,17 +1,25 @@
-import { startBatchWithReplica, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  startBatchWithReplica,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 
 export function startLogsBatch(
   configuration,
   lifeCycle,
-  reportError
+  reportError,
+  pageExitObservable
 ) {
   var batch = startBatchWithReplica(
     configuration,
     configuration.logsEndpoint,
-    reportError
+    reportError,
+    pageExitObservable
   )
 
-  lifeCycle.subscribe(LifeCycleEventType.LOG_COLLECTED, function(serverLogsEvent) {
-    batch.add(serverLogsEvent)
-  })
+  lifeCycle.subscribe(
+    LifeCycleEventType.LOG_COLLECTED,
+    function (serverLogsEvent) {
+      batch.add(serverLogsEvent)
+    }
+  )
 }

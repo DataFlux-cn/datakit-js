@@ -1,7 +1,8 @@
 import {
   ErrorSource,
-  LifeCycle, 
-  LifeCycleEventType
+  LifeCycle,
+  LifeCycleEventType,
+  createPageExitObservable
 } from '@cloudcare/browser-core'
 import { startLogsSessionManager } from '../domain/logsSessionManager'
 import { startLogsAssembly } from '../domain/assembly'
@@ -17,19 +18,20 @@ import { startInternalContext } from '../domain/internalContext'
 export function startLogs(configuration, getCommonContext, mainLogger) {
   var lifeCycle = new LifeCycle()
 
-  const reportError = function(error) {
+  const reportError = function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
       rawLogsEvent: {
         message: error.message,
         date: error.startClocks.timeStamp,
         error: {
-          origin: ErrorSource.AGENT, // Todo: Remove in the next major release
+          origin: ErrorSource.AGENT // Todo: Remove in the next major release
         },
         origin: ErrorSource.AGENT,
-        status: StatusType.error,
-      },
+        status: StatusType.error
+      }
     })
   }
+  var pageExitObservable = createPageExitObservable()
   startNetworkErrorCollection(configuration, lifeCycle)
   startRuntimeErrorCollection(configuration, lifeCycle)
   startConsoleCollection(configuration, lifeCycle)
@@ -37,15 +39,21 @@ export function startLogs(configuration, getCommonContext, mainLogger) {
   var _startLoggerCollection = startLoggerCollection(lifeCycle)
 
   var session = startLogsSessionManager(configuration)
-  startLogsAssembly(session, configuration, lifeCycle, getCommonContext, mainLogger, reportError)
+  startLogsAssembly(
+    session,
+    configuration,
+    lifeCycle,
+    getCommonContext,
+    mainLogger,
+    reportError
+  )
 
-  startLogsBatch(configuration, lifeCycle, reportError)
+  startLogsBatch(configuration, lifeCycle, reportError, pageExitObservable)
 
   var internalContext = startInternalContext(session)
 
   return {
     handleLog: _startLoggerCollection.handleLog,
-    getInternalContext: internalContext.get,
+    getInternalContext: internalContext.get
   }
 }
-

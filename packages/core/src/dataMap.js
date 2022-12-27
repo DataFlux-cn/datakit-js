@@ -13,6 +13,7 @@ export var commonTags = {
   session_id: 'session.id',
   session_type: 'session.type',
   session_sampling: 'session.is_sampling',
+  session_has_replay: 'session.has_replay',
   is_signin: 'user.is_signin',
   os: 'device.os',
   os_version: 'device.os_version',
@@ -29,7 +30,8 @@ export var commonTags = {
   view_host: 'view.host',
   view_path: 'view.path',
   view_path_group: 'view.path_group',
-  view_url_query: 'view.url_query'
+  view_url_query: 'view.url_query',
+  view_in_foreground: 'view.in_foreground'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -61,7 +63,8 @@ export var dataMap = {
       time_to_interactive: 'view.tti',
       dom: 'view.dom',
       dom_ready: 'view.dom_ready',
-      time_spent: 'view.time_spent'
+      time_spent: 'view.time_spent',
+      in_foreground_periods: 'view.in_foreground_periods'
     }
   },
   resource: {

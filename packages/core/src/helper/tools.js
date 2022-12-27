@@ -1,3 +1,4 @@
+import { DOM_EVENT } from './enums'
 var ArrayProto = Array.prototype
 var FuncProto = Function.prototype
 var ObjProto = Object.prototype
@@ -40,7 +41,7 @@ export function assign(target) {
   return target
 }
 
-export function shallowClone(object){
+export function shallowClone(object) {
   return assign({}, object)
 }
 export var extend = function (obj) {
@@ -178,62 +179,72 @@ export var map = function (arr, fn, self) {
   }
   return ret
 }
-export var some = function(arr, fn, self) {
+export var some = function (arr, fn, self) {
   if (arr.some) {
     return arr.some(fn)
   }
   var flag = false
-  for(var i = 0; i < arr.length; i++) {
+  for (var i = 0; i < arr.length; i++) {
     if (!hasOwnProperty.call(arr, i)) {
       continue
     }
     var val = arr[i]
     if (fn.call(self, val, i, arr)) {
       flag = true
-      break;
+      break
     }
   }
   return flag
 }
-export var every = function(arr, fn, self) {
+export var every = function (arr, fn, self) {
   if (arr.every) {
     return arr.every(fn)
   }
   var flag = true
-  for(var i = 0; i < arr.length; i++) {
+  for (var i = 0; i < arr.length; i++) {
     if (!hasOwnProperty.call(arr, i)) {
       continue
     }
     var val = arr[i]
     if (!fn.call(self, val, i, arr)) {
       flag = false
-      break;
+      break
     }
   }
   return flag
 }
-export var matchList = function(list, value) {
-  return some(list, function(item) {return item === value || (item instanceof RegExp && item.test(value))})
+export var matchList = function (list, value) {
+  return some(list, function (item) {
+    return item === value || (item instanceof RegExp && item.test(value))
+  })
 }
 // https://github.com/jquery/jquery/blob/a684e6ba836f7c553968d7d026ed7941e1a612d8/src/selector/escapeSelector.js
-export var cssEscape = function(str) {
+export var cssEscape = function (str) {
   if (window.CSS && window.CSS.escape) {
     return window.CSS.escape(str)
   }
 
   // eslint-disable-next-line no-control-regex
-  return str.replace(/([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g, function (ch, asCodePoint) {
-    if (asCodePoint) {
-      // U+0000 NULL becomes U+FFFD REPLACEMENT CHARACTER
-      if (ch === '\0') {
-        return '\uFFFD'
+  return str.replace(
+    /([\0-\x1f\x7f]|^-?\d)|^-$|[^\x80-\uFFFF\w-]/g,
+    function (ch, asCodePoint) {
+      if (asCodePoint) {
+        // U+0000 NULL becomes U+FFFD REPLACEMENT CHARACTER
+        if (ch === '\0') {
+          return '\uFFFD'
+        }
+        // Control characters and (dependent upon position) numbers get escaped as code points
+        return (
+          ch.slice(0, -1) +
+          '\\' +
+          ch.charCodeAt(ch.length - 1).toString(16) +
+          ' '
+        )
       }
-      // Control characters and (dependent upon position) numbers get escaped as code points
-      return ch.slice(0, -1) + '\\' + ch.charCodeAt(ch.length - 1).toString(16) + ' '
+      // Other potentially-special ASCII characters get backslash-escaped
+      return '\\' + ch
     }
-    // Other potentially-special ASCII characters get backslash-escaped
-    return '\\' + ch
-  })
+  )
 }
 export var inherit = function (subclass, superclass) {
   var F = function () {}
@@ -611,7 +622,6 @@ export function replaceNumberCharByPath(path) {
     pathGroup = path.replace(/\/([^\/]*)\d([^\/]*)/g, '/?').replace(/\/$/g, '')
   }
   return pathGroup || '/'
-  
 }
 export var getQueryParam = function (url, param) {
   param = param.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]')
@@ -643,7 +653,8 @@ export var urlParse = function (para) {
     }
     this._values = {}
     this._regex = null
-    this._regex = /^((\w+):\/\/)?((\w+):?(\w+)?@)?([^\/\?:]+):?(\d+)?(\/?[^\?#]+)?\??([^#]+)?#?(\w*)/
+    this._regex =
+      /^((\w+):\/\/)?((\w+):?(\w+)?@)?([^\/\?:]+):?(\d+)?(\/?[^\?#]+)?\??([^#]+)?#?(\w*)/
 
     if (typeof a != 'undefined') {
       this._parse(a)
@@ -702,9 +713,12 @@ export var urlParse = function (para) {
       }
     }
     this._values['Path'] = this._values['Path'] || '/'
-		this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
-		this._values['Origin'] =
-			this._values['Protocol'] + '://' + this._values['Hostname'] + (this._values.Port ? ':' + this._values.Port : '')
+    this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
+    this._values['Origin'] =
+      this._values['Protocol'] +
+      '://' +
+      this._values['Hostname'] +
+      (this._values.Port ? ':' + this._values.Port : '')
     // this._values['Hostname'] = this._values['Host'].replace(/:\d+$/, '')
     // this._values['Origin'] =
     //   this._values['Protocol'] + '://' + this._values['Hostname']
@@ -1156,7 +1170,7 @@ function createCircularReferenceChecker() {
           set.add(value)
         }
         return has
-      },
+      }
     }
   }
   var array = []
@@ -1167,13 +1181,13 @@ function createCircularReferenceChecker() {
         array.push(value)
       }
       return has
-    },
+    }
   }
 }
 /**
  * Similar to `typeof`, but distinguish plain objects from `null` and arrays
  */
- export function getType(value) {
+export function getType(value) {
   if (value === null) {
     return 'null'
   }
@@ -1186,11 +1200,7 @@ function createCircularReferenceChecker() {
  * Iterate over source and affect its sub values into destination, recursively.
  * If the source and destination can't be merged, return source.
  */
- export function mergeInto(
-  destination,
-  source,
-  circularReferenceChecker
-) {
+export function mergeInto(destination, source, circularReferenceChecker) {
   // ignore the source if it is undefined
   if (typeof circularReferenceChecker === 'undefined') {
     circularReferenceChecker = createCircularReferenceChecker()
@@ -1213,7 +1223,7 @@ function createCircularReferenceChecker() {
         source.ignoreCase ? 'i' : '',
         source.multiline ? 'm' : '',
         source.sticky ? 'y' : '',
-        source.unicode ? 'u' : '',
+        source.unicode ? 'u' : ''
       ].join('')
     return new RegExp(source.source, flags)
   }
@@ -1222,7 +1232,7 @@ function createCircularReferenceChecker() {
     // remove circular references
     return undefined
   } else if (Array.isArray(source)) {
-    var merged= Array.isArray(destination) ? destination : []
+    var merged = Array.isArray(destination) ? destination : []
     for (var i = 0; i < source.length; ++i) {
       merged[i] = mergeInto(merged[i], source[i], circularReferenceChecker)
     }
@@ -1232,7 +1242,11 @@ function createCircularReferenceChecker() {
   var merged = getType(destination) === 'object' ? destination : {}
   for (var key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
-      merged[key] = mergeInto(merged[key], source[key], circularReferenceChecker)
+      merged[key] = mergeInto(
+        merged[key],
+        source[key],
+        circularReferenceChecker
+      )
     }
   }
   return merged
@@ -1244,7 +1258,7 @@ function createCircularReferenceChecker() {
  * - It doesn't maintain prototype chains - don't use with instances of custom classes.
  * - It doesn't handle Map and Set
  */
-export function deepClone(value){
+export function deepClone(value) {
   return mergeInto(undefined, value)
 }
 export var _URL = function (url) {
@@ -1619,7 +1633,9 @@ export function currentDrift() {
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   return Math.round(dateNow() - (getNavigationStart() + performance.now()))
 }
-
+export function addDuration(a, b) {
+  return a + b
+}
 function getCorrectedTimeStamp(relativeTime) {
   var correctedOrigin = dateNow() - performance.now()
   // apply correction only for positive drift
@@ -1740,23 +1756,23 @@ export function createContextManager() {
         console.error('content 需要传递对象类型数据')
       }
     },
-    getContext: function() {
+    getContext: function () {
       return deepClone(context)
     },
 
-    setContext: function(newContext)  {
+    setContext: function (newContext) {
       context = deepClone(newContext)
     },
 
-    setContextProperty: function(key, property){
+    setContextProperty: function (key, property) {
       context[key] = deepClone(property)
     },
 
-    removeContextProperty: function(key){
+    removeContextProperty: function (key) {
       delete context[key]
     },
 
-    clearContext: function(){
+    clearContext: function () {
       context = {}
     }
   }
@@ -1776,7 +1792,9 @@ export function arrayFrom(arrayLike) {
   }
   var array = []
   if (arrayLike instanceof Set) {
-    arrayLike.forEach(function(item) { array.push(item) })
+    arrayLike.forEach(function (item) {
+      array.push(item)
+    })
   } else {
     for (var i = 0; i < arrayLike.length; i++) {
       array.push(arrayLike[i])
@@ -1784,10 +1802,7 @@ export function arrayFrom(arrayLike) {
   }
   return array
 }
-export function findLast(
-  array,
-  predicate
-) {
+export function findLast(array, predicate) {
   for (var i = array.length - 1; i >= 0; i -= 1) {
     var item = array[i]
     if (predicate(item, i, array)) {
@@ -1854,10 +1869,10 @@ export function toSnakeCase(word) {
 
 export function escapeRowData(str) {
   if (typeof str === 'object' && str) {
-     str = jsonStringify(str)
+    str = jsonStringify(str)
   } else if (!isString(str)) {
     return str
-  } 
+  }
   var reg = /[\s=,"]/g
   return String(str).replace(reg, function (word) {
     return '\\' + word
@@ -1872,9 +1887,7 @@ export function escapeJsonValue(value) {
   }
 }
 export function escapeFieldValueStr(str) {
-  return '"' +
-  str.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
-  '"'
+  return '"' + str.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') + '"'
 }
 export function escapeRowField(value) {
   if (typeof value === 'object' && value) {
@@ -1885,10 +1898,25 @@ export function escapeRowField(value) {
     return value
   }
 }
-export function isNullUndefinedDefaultValue(data,defaultValue) {
+export function isNullUndefinedDefaultValue(data, defaultValue) {
   if (data !== null && data !== void 0) {
     return data
   } else {
     return defaultValue
+  }
+}
+
+export function runOnReadyState(expectedReadyState, callback) {
+  if (
+    document.readyState === expectedReadyState ||
+    document.readyState === 'complete'
+  ) {
+    callback()
+  } else {
+    var eventName =
+      expectedReadyState === 'complete'
+        ? DOM_EVENT.LOAD
+        : DOM_EVENT.DOM_CONTENT_LOADED
+    addEventListener(window, eventName, callback, { once: true })
   }
 }
