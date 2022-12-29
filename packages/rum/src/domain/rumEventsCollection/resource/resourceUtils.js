@@ -240,18 +240,18 @@ export function computePerformanceResourceDetails(entry) {
     responseEnd = validEntry.responseEnd
   var details = {
     firstbyte: msToNs(responseStart - domainLookupStart),
-    trans: msToNs(responseEnd, responseStart),
-    ttfb: msToNs(responseStart, requestStart),
+    trans: msToNs(responseEnd - responseStart),
+    ttfb: msToNs(responseStart - requestStart),
     downloadTime: formatTiming(startTime, responseStart, responseEnd),
     firstByteTime: formatTiming(startTime, requestStart, responseStart)
   }
   // Make sure a connection occurred
   if (connectEnd !== fetchStart) {
-    details.tcp = msToNs(connectEnd, connectStart)
+    details.tcp = msToNs(connectEnd - connectStart)
     details.connectTime = formatTiming(startTime, connectStart, connectEnd)
     // Make sure a secure connection occurred
     if (areInOrder(connectStart, secureConnectionStart, connectEnd)) {
-      details.ssl = msToNs(connectEnd, secureConnectionStart)
+      details.ssl = msToNs(connectEnd - secureConnectionStart)
       details.sslTime = formatTiming(
         startTime,
         secureConnectionStart,
@@ -262,7 +262,7 @@ export function computePerformanceResourceDetails(entry) {
 
   // Make sure a domain lookup occurred
   if (domainLookupEnd !== fetchStart) {
-    details.dns = msToNs(domainLookupEnd, domainLookupStart)
+    details.dns = msToNs(domainLookupEnd - domainLookupStart)
     details.dnsTime = formatTiming(
       startTime,
       domainLookupStart,
@@ -271,7 +271,7 @@ export function computePerformanceResourceDetails(entry) {
   }
 
   if (hasRedirection(entry)) {
-    details.redirect = msToNs(redirectEnd, redirectStart)
+    details.redirect = msToNs(redirectEnd - redirectStart)
     details.redirectTime = formatTiming(startTime, redirectStart, redirectEnd)
   }
   return details
