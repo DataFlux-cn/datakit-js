@@ -67,7 +67,7 @@ export function startRecording(
   )
 
   return {
-    stop: () => {
+    stop: function () {
       subscribeViewEnded.unsubscribe()
       scribeViewCreated.unsubscribe()
       stopRecording()

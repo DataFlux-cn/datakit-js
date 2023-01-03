@@ -1164,7 +1164,7 @@ function createCircularReferenceChecker() {
   if (typeof WeakSet !== 'undefined') {
     var set = new WeakSet()
     return {
-      hasAlreadyBeenSeen(value) {
+      hasAlreadyBeenSeen: function (value) {
         var has = set.has(value)
         if (!has) {
           set.add(value)
@@ -1175,7 +1175,7 @@ function createCircularReferenceChecker() {
   }
   var array = []
   return {
-    hasAlreadyBeenSeen(value) {
+    hasAlreadyBeenSeen: function (value) {
       var has = array.indexOf(value) >= 0
       if (!has) {
         array.push(value)

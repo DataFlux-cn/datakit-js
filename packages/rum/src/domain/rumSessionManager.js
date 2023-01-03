@@ -1,29 +1,35 @@
-import { performDraw, startSessionManager, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  performDraw,
+  startSessionManager,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 
 export var RUM_SESSION_KEY = 'rum'
 
-
-export var  RumSessionPlan = {
+export var RumSessionPlan = {
   LITE: 1,
-  PREMIUM: 2,
+  PREMIUM: 2
 }
 
-export var  RumTrackingType = {
-  NOT_TRACKED : '0',
+export var RumTrackingType = {
+  NOT_TRACKED: '0',
   // Note: the "tracking type" value (stored in the session cookie) does not match the "session
   // plan" value (sent in RUM events). This is expected, and was done to keep retrocompatibility
   // with active sessions when upgrading the SDK.
-  TRACKED_WITH_SESSION_REPLAY:  '1',
-  TRACKED_WITHOUT_SESSION_REPLAY: '2',
+  TRACKED_WITH_SESSION_REPLAY: '1',
+  TRACKED_WITHOUT_SESSION_REPLAY: '2'
 }
 
 export function startRumSessionManager(configuration, lifeCycle) {
-  var sessionManager = startSessionManager(configuration.cookieOptions, RUM_SESSION_KEY, function(rawTrackingType) {
+  var sessionManager = startSessionManager(
+    configuration.cookieOptions,
+    RUM_SESSION_KEY,
+    function (rawTrackingType) {
       return computeSessionState(configuration, rawTrackingType)
     }
   )
 
-  sessionManager.expireObservable.subscribe(function() {
+  sessionManager.expireObservable.subscribe(function () {
     lifeCycle.notify(LifeCycleEventType.SESSION_EXPIRED)
   })
 
@@ -32,15 +38,21 @@ export function startRumSessionManager(configuration, lifeCycle) {
   })
 
   return {
-    findTrackedSession: function(startTime) {
+    findTrackedSession: function (startTime) {
       var session = sessionManager.findActiveSession(startTime)
       if (!session || !isTypeTracked(session.trackingType)) {
         return
       }
+      var plan =
+        session.trackingType === RumTrackingType.TRACKED_WITH_SESSION_REPLAY
+          ? RumSessionPlan.WITH_SESSION_REPLAY
+          : RumSessionPlan.WITHOUT_SESSION_REPLAY
       return {
         id: session.id,
+        plan: plan,
+        sessionReplayAllowed: plan === RumSessionPlan.WITH_SESSION_REPLAY
       }
-    },
+    }
   }
 }
 
@@ -50,12 +62,12 @@ export function startRumSessionManager(configuration, lifeCycle) {
  */
 export function startRumSessionManagerStub() {
   var session = {
-    id: '00000000-aaaa-0000-aaaa-000000000000',
+    id: '00000000-aaaa-0000-aaaa-000000000000'
   }
   return {
-    findTrackedSession: function() {
+    findTrackedSession: function () {
       return session
-    },
+    }
   }
 }
 
@@ -72,7 +84,7 @@ function computeSessionState(configuration, rawTrackingType) {
   }
   return {
     trackingType: trackingType,
-    isTracked: isTypeTracked(trackingType),
+    isTracked: isTypeTracked(trackingType)
   }
 }
 
@@ -85,6 +97,8 @@ function hasValidRumSession(trackingType) {
 }
 
 function isTypeTracked(rumSessionType) {
-  return rumSessionType === RumTrackingType.TRACKED_WITHOUT_SESSION_REPLAY ||
-  rumSessionType === RumTrackingType.TRACKED_WITH_SESSION_REPLAY
+  return (
+    rumSessionType === RumTrackingType.TRACKED_WITHOUT_SESSION_REPLAY ||
+    rumSessionType === RumTrackingType.TRACKED_WITH_SESSION_REPLAY
+  )
 }
