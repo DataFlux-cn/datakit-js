@@ -3,7 +3,8 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 const getBaseConfig = (env) => {
   let webConfig = {
-    entry: path.resolve(__dirname, 'src/index.js')
+    entry: path.resolve(__dirname, 'src/index.js'),
+    target: ['web', 'es5']
     // resolve: {
     //   fallback: {
     //     assert: false,

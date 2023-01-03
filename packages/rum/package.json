@@ -1,6 +1,6 @@
 {
   "name": "@cloudcare/browser-rum",
-  "version": "2.2.8",
+  "version": "2.2.9",
   "main": "cjs/index.js",
   "module": "esm/index.js",
   "dependencies": {
