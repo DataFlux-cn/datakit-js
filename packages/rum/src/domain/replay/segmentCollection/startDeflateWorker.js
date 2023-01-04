@@ -1,6 +1,5 @@
-import { display, includes } from '@cloudcare/browser-core'
+import { display, includes, each } from '@cloudcare/browser-core'
 import { createDeflateWorker } from './deflateWorker'
-import { each } from '@cloudcare/browser-core/cjs/helper/tools'
 
 /**
  * In order to be sure that the worker is correctly working, we need a round trip of
@@ -74,7 +73,9 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
 
 function onInitialized(worker) {
   if (state.status === DeflateWorkerStatus.Loading) {
-    state.callbacks.forEach((callback) => callback(worker))
+    each(state.callbacks, function (callback) {
+      callback(worker)
+    })
     state = { status: DeflateWorkerStatus.Initialized, worker: worker }
   }
 }

@@ -32,7 +32,7 @@ export function startRecording(
 
   var segmentCollection = startSegmentCollection(
     lifeCycle,
-    configuration.applicationId,
+    configuration,
     sessionManager,
     viewContexts,
     replayRequest,
