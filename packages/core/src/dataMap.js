@@ -28,6 +28,7 @@ export var commonTags = {
   view_url: 'view.url',
   view_host: 'view.host',
   view_path: 'view.path',
+  view_name: 'view.path', // 冗余一个字段
   view_path_group: 'view.path_group',
   view_url_query: 'view.url_query'
 }
