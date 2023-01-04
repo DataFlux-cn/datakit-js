@@ -60,7 +60,8 @@ export function trackNavigationTimings(lifeCycle, callback) {
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
-      for (var entry of entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i]
         if (entry.entryType === 'navigation') {
           callback({
             fetchStart: entry.fetchStart,
@@ -76,7 +77,6 @@ export function trackNavigationTimings(lifeCycle, callback) {
           })
         }
       }
-      
     }
   )
 
@@ -88,18 +88,17 @@ export function trackFirstContentfulPaint(lifeCycle, callback) {
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
-      var fcpEntry = find(
-        entries,
-        function(entry) {
-          return entry.entryType === 'paint' &&
-            entry.name === 'first-contentful-paint' &&
-            entry.startTime < firstHidden.timeStamp &&
-            entry.startTime < TIMING_MAXIMUM_DELAY
-          }
+      var fcpEntry = find(entries, function (entry) {
+        return (
+          entry.entryType === 'paint' &&
+          entry.name === 'first-contentful-paint' &&
+          entry.startTime < firstHidden.timeStamp &&
+          entry.startTime < TIMING_MAXIMUM_DELAY
         )
-        if (fcpEntry) {
-          callback(fcpEntry.startTime)
-        }
+      })
+      if (fcpEntry) {
+        callback(fcpEntry.startTime)
+      }
     }
   )
   return { stop: subscribe.unsubscribe }
@@ -130,15 +129,14 @@ export function trackLargestContentfulPaint(lifeCycle, emitter, callback) {
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
-      var lcpEntry = findLast(
-        entries,
-        function(entry) {
-          return entry.entryType === 'largest-contentful-paint' &&
+      var lcpEntry = findLast(entries, function (entry) {
+        return (
+          entry.entryType === 'largest-contentful-paint' &&
           entry.startTime < firstInteractionTimestamp &&
           entry.startTime < firstHidden.timeStamp &&
           entry.startTime < TIMING_MAXIMUM_DELAY
-        }    
-      )
+        )
+      })
       if (lcpEntry) {
         callback(lcpEntry.startTime)
       }
@@ -166,20 +164,23 @@ export function trackFirstInputTimings(lifeCycle, callback) {
   var firstHidden = trackFirstHidden()
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
-    function(entries) {
-      var firstInputEntry = find(
-        entries,
-        function(entry) {
-          return entry.entryType === 'first-input' && entry.startTime < firstHidden.timeStamp
-        }
-      )
+    function (entries) {
+      var firstInputEntry = find(entries, function (entry) {
+        return (
+          entry.entryType === 'first-input' &&
+          entry.startTime < firstHidden.timeStamp
+        )
+      })
       if (firstInputEntry) {
-        var firstInputDelay = elapsed(firstInputEntry.startTime, firstInputEntry.processingStart)
+        var firstInputDelay = elapsed(
+          firstInputEntry.startTime,
+          firstInputEntry.processingStart
+        )
         callback({
           // Ensure firstInputDelay to be positive, see
           // https://bugs.chromium.org/p/chromium/issues/detail?id=1185815
           firstInputDelay: firstInputDelay >= 0 ? firstInputDelay : 0,
-          firstInputTime: firstInputEntry.startTime,
+          firstInputTime: firstInputEntry.startTime
         })
       }
     }

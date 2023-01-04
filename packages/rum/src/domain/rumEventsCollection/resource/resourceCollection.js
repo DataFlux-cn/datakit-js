@@ -36,7 +36,8 @@ export function startResourceCollection(lifeCycle, configuration) {
   lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
-      for (var entry of entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i]
         if (
           entry.entryType === 'resource' &&
           !isRequestKind(entry) &&

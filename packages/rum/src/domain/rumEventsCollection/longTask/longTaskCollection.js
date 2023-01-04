@@ -9,7 +9,8 @@ export function startLongTaskCollection(lifeCycle, sessionManager) {
   lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
-      for(var entry of entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i]
         if (entry.entryType !== 'longtask') {
           return
         }
@@ -17,7 +18,7 @@ export function startLongTaskCollection(lifeCycle, sessionManager) {
         if (!session) {
           break
         }
-        
+
         var startClocks = relativeToClocks(entry.startTime)
         var rawRumEvent = {
           date: startClocks.timeStamp,
@@ -30,10 +31,9 @@ export function startLongTaskCollection(lifeCycle, sessionManager) {
         lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, {
           rawRumEvent: rawRumEvent,
           startTime: startClocks.relative,
-          domainContext: { performanceEntry: entry.toJSON() },
+          domainContext: { performanceEntry: entry.toJSON() }
         })
       }
-      
     }
   )
 }
