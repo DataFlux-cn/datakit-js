@@ -9,14 +9,14 @@ import { startDeflateWorker } from '../domain/replay/segmentCollection'
 
 var RecorderStatus = {
   // The recorder is stopped.
-  Stopped: 'Stopped',
+  Stopped: 0,
   // The user started the recording while it wasn't possible yet. The recorder should start as soon
   // as possible.
-  IntentToStart: 'IntentToStart',
+  IntentToStart: 1,
   // The recorder is starting. It does not record anything yet.
-  Starting: 'Starting',
+  Starting: 2,
   // The recorder is started, it records the session.
-  Started: 'Started'
+  Started: 3
 }
 
 export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {

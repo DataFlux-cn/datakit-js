@@ -4,9 +4,9 @@ export var MAX_DURATION_BETWEEN_CLICKS = ONE_SECOND
 export var MAX_DISTANCE_BETWEEN_CLICKS = 100
 
 var ClickChainStatus = {
-  WaitingForMoreClicks: 'WaitingForMoreClicks',
-  WaitingForClicksToStop: 'WaitingForClicksToStop',
-  Finalized: 'Finalized'
+  WaitingForMoreClicks: 0,
+  WaitingForClicksToStop: 1,
+  Finalized: 2
 }
 
 export function createClickChain(firstClick, onFinalize) {

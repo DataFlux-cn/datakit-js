@@ -201,11 +201,11 @@ function computeClickActionBase(event, actionNameAttribute) {
 
 var ClickStatus = {
   // Initial state, the click is still ongoing.
-  ONGOING: 'ONGOING',
+  ONGOING: 0,
   // The click is no more ongoing but still needs to be validated or discarded.
-  STOPPED: 'STOPPED',
+  STOPPED: 1,
   // Final state, the click has been stopped and validated or discarded.
-  FINALIZED: 'FINALIZED'
+  FINALIZED: 2
 }
 
 function newClick(
