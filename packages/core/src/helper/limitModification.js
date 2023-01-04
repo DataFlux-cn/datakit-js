@@ -21,12 +21,15 @@ export function limitModification(object, modifiableFieldPaths, modifier) {
 
 function get(object, path) {
   var current = object
-  for (var field of path.split('.')) {
+  var fields = path.split('.')
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i]
     if (!isValidObjectContaining(current, field)) {
       return
     }
     current = current[field]
   }
+
   return current
 }
 

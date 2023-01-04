@@ -1,6 +1,5 @@
 import { safeTruncate, isIE, find, map, filter } from '@cloudcare/browser-core'
 
-
 var DEFAULT_PROGRAMMATIC_ATTRIBUTE = 'data-guance-action-name'
 
 export function getActionNameFromElement(element, userProgrammaticAttribute) {
@@ -11,22 +10,42 @@ export function getActionNameFromElement(element, userProgrammaticAttribute) {
   // * if no name is found this way, use strategies returning less accurate names as a fallback.
   //   Those are much likely to succeed.
   return (
-    getActionNameFromElementProgrammatically(element, DEFAULT_PROGRAMMATIC_ATTRIBUTE) ||
-    (userProgrammaticAttribute && getActionNameFromElementProgrammatically(element, userProgrammaticAttribute)) ||
-    getActionNameFromElementForStrategies(element, userProgrammaticAttribute, priorityStrategies) ||
-    getActionNameFromElementForStrategies(element, userProgrammaticAttribute, fallbackStrategies) ||
+    getActionNameFromElementProgrammatically(
+      element,
+      DEFAULT_PROGRAMMATIC_ATTRIBUTE
+    ) ||
+    (userProgrammaticAttribute &&
+      getActionNameFromElementProgrammatically(
+        element,
+        userProgrammaticAttribute
+      )) ||
+    getActionNameFromElementForStrategies(
+      element,
+      userProgrammaticAttribute,
+      priorityStrategies
+    ) ||
+    getActionNameFromElementForStrategies(
+      element,
+      userProgrammaticAttribute,
+      fallbackStrategies
+    ) ||
     ''
   )
 }
 
-function getActionNameFromElementProgrammatically(targetElement, programmaticAttribute) {
+function getActionNameFromElementProgrammatically(
+  targetElement,
+  programmaticAttribute
+) {
   var elementWithAttribute
   // We don't use getActionNameFromElementForStrategies here, because we want to consider all parents,
   // without limit. It is up to the user to declare a relevant naming strategy.
   // If available, use element.closest() to match get the attribute from the element or any of its
   // parent.  Else fallback to a more traditional implementation.
   if (supportsElementClosest()) {
-    elementWithAttribute = targetElement.closest('[' + programmaticAttribute + ']')
+    elementWithAttribute = targetElement.closest(
+      '[' + programmaticAttribute + ']'
+    )
   } else {
     var element = targetElement
     while (element) {
@@ -47,7 +66,7 @@ function getActionNameFromElementProgrammatically(targetElement, programmaticAtt
 
 var priorityStrategies = [
   // associated LABEL text
-  function(element, userProgrammaticAttribute){
+  function (element, userProgrammaticAttribute) {
     // IE does not support element.labels, so we fallback to a CSS selector based on the element id
     // instead
     if (supportsLabelProperty()) {
@@ -57,12 +76,14 @@ var priorityStrategies = [
     } else if (element.id) {
       var label =
         element.ownerDocument &&
-        find(element.ownerDocument.querySelectorAll('label'), function(label) { return label.htmlFor === element.id})
+        find(element.ownerDocument.querySelectorAll('label'), function (label) {
+          return label.htmlFor === element.id
+        })
       return label && getTextualContent(label, userProgrammaticAttribute)
     }
   },
   // INPUT button (and associated) value
-  function(element) {
+  function (element) {
     if (element.nodeName === 'INPUT') {
       var input = element
       var type = input.getAttribute('type')
@@ -72,14 +93,20 @@ var priorityStrategies = [
     }
   },
   // BUTTON, LABEL or button-like element text
-  function(element, userProgrammaticAttribute) {
-    if (element.nodeName === 'BUTTON' || element.nodeName === 'LABEL' || element.getAttribute('role') === 'button') {
+  function (element, userProgrammaticAttribute) {
+    if (
+      element.nodeName === 'BUTTON' ||
+      element.nodeName === 'LABEL' ||
+      element.getAttribute('role') === 'button'
+    ) {
       return getTextualContent(element, userProgrammaticAttribute)
     }
   },
-  function (element){ return element.getAttribute('aria-label')},
+  function (element) {
+    return element.getAttribute('aria-label')
+  },
   // associated element text designated by the aria-labelledby attribute
-  function (element, userProgrammaticAttribute){
+  function (element, userProgrammaticAttribute) {
     var labelledByAttribute = element.getAttribute('aria-labelledby')
     if (labelledByAttribute) {
       labelledByAttribute = labelledByAttribute.split(/\s+/)
@@ -112,11 +139,13 @@ var priorityStrategies = [
     if ('options' in element && element.options.length > 0) {
       return getTextualContent(element.options[0])
     }
-  },
+  }
 ]
 
 var fallbackStrategies = [
-  function(element, userProgrammaticAttribute){ return getTextualContent(element, userProgrammaticAttribute)},
+  function (element, userProgrammaticAttribute) {
+    return getTextualContent(element, userProgrammaticAttribute)
+  }
 ]
 
 /**
@@ -138,7 +167,8 @@ function getActionNameFromElementForStrategies(
     element.nodeName !== 'HTML' &&
     element.nodeName !== 'HEAD'
   ) {
-    for (var strategy of strategies) {
+    for (var i = 0; i < strategies.length; i++) {
+      var strategy = strategies[i]
       var name = strategy(element, userProgrammaticAttribute)
       if (typeof name === 'string') {
         var trimmedName = name.trim()
@@ -165,7 +195,6 @@ function truncate(s) {
   return s.length > 100 ? safeTruncate(s, 100) + ' [...]' : s
 }
 
-
 function getElementById(refElement, id) {
   // Use the element ownerDocument here, because tests are executed in an iframe, so
   // document.getElementById won't work.
@@ -182,7 +211,7 @@ function getTextualContent(element, userProgrammaticAttribute) {
   if ('innerText' in element) {
     var text = element.innerText
 
-    var removeTextFromElements = function(query){
+    var removeTextFromElements = function (query) {
       var list = element.querySelectorAll(query)
       for (var index = 0; index < list.length; index += 1) {
         var _element = list[index]

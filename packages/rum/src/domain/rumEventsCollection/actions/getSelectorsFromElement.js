@@ -1,4 +1,9 @@
-import { arrayFrom, cssEscape, elementMatches,map} from '@cloudcare/browser-core'
+import {
+  arrayFrom,
+  cssEscape,
+  elementMatches,
+  map
+} from '@cloudcare/browser-core'
 
 /**
  * Stable attributes are attributes that are commonly used to identify parts of a UI (ex:
@@ -18,18 +23,24 @@ var STABLE_ATTRIBUTES = [
   // FullStory decorator attributes:
   'data-component',
   'data-element',
-  'data-source-file',
+  'data-source-file'
 ]
 
 export function getSelectorsFromElement(element, actionNameAttribute) {
   var attributeSelectors = getStableAttributeSelectors()
   if (actionNameAttribute) {
-    attributeSelectors = [function(element){return getAttributeSelector(actionNameAttribute, element)}].concat(
-      attributeSelectors
-    )
+    attributeSelectors = [
+      function (element) {
+        return getAttributeSelector(actionNameAttribute, element)
+      }
+    ].concat(attributeSelectors)
   }
   return {
-    selector: getSelectorFromElement(element, [getIDSelector], [getClassSelector]),
+    selector: getSelectorFromElement(
+      element,
+      [getIDSelector],
+      [getClassSelector]
+    ),
     selector_with_stable_attributes: getSelectorFromElement(
       element,
       attributeSelectors.concat(getIDSelector),
@@ -39,7 +50,7 @@ export function getSelectorsFromElement(element, actionNameAttribute) {
       element,
       attributeSelectors.concat(getIDSelector),
       attributeSelectors
-    ),
+    )
   }
 }
 
@@ -47,12 +58,16 @@ function getSelectorFromElement(
   targetElement,
   globallyUniqueSelectorStrategies,
   uniqueAmongChildrenSelectorStrategies
-){
+) {
   var targetElementSelector = []
   var element = targetElement
 
   while (element && element.nodeName !== 'HTML') {
-    var globallyUniqueSelector = findSelector(element, globallyUniqueSelectorStrategies, isSelectorUniqueGlobally)
+    var globallyUniqueSelector = findSelector(
+      element,
+      globallyUniqueSelectorStrategies,
+      isSelectorUniqueGlobally
+    )
     if (globallyUniqueSelector) {
       targetElementSelector.unshift(globallyUniqueSelector)
       break
@@ -81,18 +96,28 @@ function getIDSelector(element) {
   }
 }
 
-function getClassSelector(element){
+function getClassSelector(element) {
   if (element.classList.length > 0) {
     var orderedClassList = arrayFrom(element.classList).sort()
-    return element.tagName + map(orderedClassList, function(className){return '.' + cssEscape(className)}).join('')
+    return (
+      element.tagName +
+      map(orderedClassList, function (className) {
+        return '.' + cssEscape(className)
+      }).join('')
+    )
   }
 }
 
 var stableAttributeSelectorsCache
 function getStableAttributeSelectors() {
   if (!stableAttributeSelectorsCache) {
-    stableAttributeSelectorsCache = map(STABLE_ATTRIBUTES,
-      function(attribute) { return function(element) { return getAttributeSelector(attribute, element) }}
+    stableAttributeSelectorsCache = map(
+      STABLE_ATTRIBUTES,
+      function (attribute) {
+        return function (element) {
+          return getAttributeSelector(attribute, element)
+        }
+      }
     )
   }
   return stableAttributeSelectorsCache
@@ -100,7 +125,14 @@ function getStableAttributeSelectors() {
 
 function getAttributeSelector(attributeName, element) {
   if (element.hasAttribute(attributeName)) {
-    return element.tagName + '[' + attributeName + '="' + cssEscape(element.getAttribute(attributeName))+'"]'
+    return (
+      element.tagName +
+      '[' +
+      attributeName +
+      '="' +
+      cssEscape(element.getAttribute(attributeName)) +
+      '"]'
+    )
   }
 }
 
@@ -126,15 +158,14 @@ function getPositionSelector(element) {
     sibling = sibling.nextElementSibling
   }
 
-  return currentIndex === 1 ? element.tagName : element.tagName + ':nth-of-type(' + elementIndex + ')'
+  return currentIndex === 1
+    ? element.tagName
+    : element.tagName + ':nth-of-type(' + elementIndex + ')'
 }
 
-function findSelector(
-  element,
-  selectorGetters,
-  predicate
-) {
-  for (var selectorGetter of selectorGetters) {
+function findSelector(element, selectorGetters, predicate) {
+  for (var i = 0; i < selectorGetters.length; i++) {
+    var selectorGetter = selectorGetters[i]
     var selector = selectorGetter(element)
     if (selector && predicate(element, selector)) {
       return selector
