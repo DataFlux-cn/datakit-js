@@ -161,20 +161,20 @@ function newPayloadQueue() {
       queue.push(payload)
       this.bytesCount += payload.bytesCount
     },
-    first() {
+    first: function () {
       return queue[0]
     },
-    dequeue() {
+    dequeue: function () {
       var payload = queue.shift()
       if (payload) {
         this.bytesCount -= payload.bytesCount
       }
       return payload
     },
-    size() {
+    size: function () {
       return queue.length
     },
-    isFull() {
+    isFull: function () {
       return this.bytesCount >= MAX_QUEUE_BYTES_COUNT
     }
   }
