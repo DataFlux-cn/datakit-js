@@ -1,5 +1,5 @@
 import { each } from '@cloudcare/browser-core'
-export const MAX_STATS_HISTORY = 10
+export var MAX_STATS_HISTORY = 10
 var statsPerView
 
 export function getSegmentsCount(viewId) {

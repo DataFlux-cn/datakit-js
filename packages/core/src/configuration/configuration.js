@@ -9,6 +9,12 @@ import {
   isNullUndefinedDefaultValue
 } from '../helper/tools'
 import { computeTransportConfiguration } from './transportConfiguration'
+
+export var DefaultPrivacyLevel = {
+  ALLOW: 'allow',
+  MASK: 'mask',
+  MASK_USER_INPUT: 'mask-user-input'
+}
 export function validateAndBuildConfiguration(initConfiguration) {
   if (
     initConfiguration.sampleRate !== undefined &&

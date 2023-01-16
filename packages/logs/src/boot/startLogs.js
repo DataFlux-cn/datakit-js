@@ -18,7 +18,7 @@ import { startInternalContext } from '../domain/internalContext'
 export function startLogs(configuration, getCommonContext, mainLogger) {
   var lifeCycle = new LifeCycle()
 
-  const reportError = function (error) {
+  var reportError = function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
       rawLogsEvent: {
         message: error.message,

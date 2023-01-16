@@ -261,6 +261,7 @@ export var isObject = function (obj) {
   if (obj === null) return false
   return toString.call(obj) === '[object Object]'
 }
+
 export var isEmptyObject = function (obj) {
   if (isObject(obj)) {
     for (var key in obj) {
@@ -1919,4 +1920,34 @@ export function runOnReadyState(expectedReadyState, callback) {
         : DOM_EVENT.DOM_CONTENT_LOADED
     addEventListener(window, eventName, callback, { once: true })
   }
+}
+
+export function requestIdleCallback(callback, opts) {
+  // Use 'requestIdleCallback' when available: it will throttle the mutation processing if the
+  // browser is busy rendering frames (ex: when frames are below 60fps). When not available, the
+  // fallback on 'requestAnimationFrame' will still ensure the mutations are processed after any
+  // browser rendering process (Layout, Recalculate Style, etc.), so we can serialize DOM nodes
+  // efficiently.
+  if (window.requestIdleCallback) {
+    var id = window.requestIdleCallback(callback, opts)
+    return function () {
+      return window.cancelIdleCallback(id)
+    }
+  }
+  var id = window.requestAnimationFrame(callback)
+  return function () {
+    return window.cancelAnimationFrame(id)
+  }
+}
+export function objectHasValue(object, value) {
+  return some(keys(object), function (key) {
+    return object[key] === value
+  })
+}
+export function startsWith(candidate, search) {
+  return candidate.slice(0, search.length) === search
+}
+
+export function endsWith(candidate, search) {
+  return candidate.slice(-search.length) === search
 }

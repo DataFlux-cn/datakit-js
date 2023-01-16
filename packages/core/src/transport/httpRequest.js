@@ -12,27 +12,28 @@ function addBatchPrecision(url) {
   if (!url) return url
   return url + (url.indexOf('?') === -1 ? '?' : '&') + 'precision=ms'
 }
-export function createHttpRequest(
-  endpointUrl,
-  bytesLimit,
-  reportError
-) {
+export function createHttpRequest(endpointUrl, bytesLimit, reportError) {
   var retryState = newRetryState()
-  var sendStrategyForRetry = function(payload, onResponse) {
+  var sendStrategyForRetry = function (payload, onResponse) {
     return fetchKeepAliveStrategy(endpointUrl, bytesLimit, payload, onResponse)
   }
-    
+
   return {
-    send: function(payload) {
-      sendWithRetryStrategy(payload, retryState, sendStrategyForRetry, reportError)
+    send: function (payload) {
+      sendWithRetryStrategy(
+        payload,
+        retryState,
+        sendStrategyForRetry,
+        reportError
+      )
     },
     /**
      * Since fetch keepalive behaves like regular fetch on Firefox,
      * keep using sendBeaconStrategy on exit
      */
-    sendOnExit: function(payload) {
+    sendOnExit: function (payload) {
       sendBeaconStrategy(endpointUrl, bytesLimit, payload)
-    },
+    }
   }
 }
 
@@ -55,8 +56,6 @@ function sendBeaconStrategy(endpointUrl, bytesLimit, payload) {
   sendXHR(url, data)
 }
 
-
-
 export function fetchKeepAliveStrategy(
   endpointUrl,
   bytesLimit,
@@ -68,14 +67,13 @@ export function fetchKeepAliveStrategy(
   var url = addBatchPrecision(endpointUrl)
   var canUseKeepAlive = isKeepAliveSupported() && bytesCount < bytesLimit
   if (canUseKeepAlive) {
-    fetch(url, { method: 'POST', body: data, keepalive: true })
-    .then(
-      function(response) {
+    fetch(url, { method: 'POST', body: data, keepalive: true }).then(
+      function (response) {
         if (typeof onResponse === 'function') {
           onResponse({ status: response.status })
         }
       },
-      function() {
+      function () {
         // failed to queue the request
         sendXHR(url, data, onResponse)
       }
@@ -95,15 +93,12 @@ function isKeepAliveSupported() {
 }
 
 function sendXHR(url, data, onResponse) {
-  const request = new XMLHttpRequest()
+  var request = new XMLHttpRequest()
   request.open('POST', url, true)
   request.send(data)
-  request.addEventListener(
-    'loadend',
-    function(){
-      if (typeof onResponse === 'function') {
-        onResponse({ status: request.status })
-      }
+  request.addEventListener('loadend', function () {
+    if (typeof onResponse === 'function') {
+      onResponse({ status: request.status })
     }
-  )
+  })
 }

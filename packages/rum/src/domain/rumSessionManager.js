@@ -7,8 +7,8 @@ import {
 export var RUM_SESSION_KEY = 'rum'
 
 export var RumSessionPlan = {
-  LITE: 1,
-  PREMIUM: 2
+  WITHOUT_SESSION_REPLAY: 1,
+  WITH_SESSION_REPLAY: 2
 }
 
 export var RumTrackingType = {

@@ -91,10 +91,7 @@ function onError(error) {
       (error instanceof Error &&
         includes(error.message, 'Content Security Policy'))
     ) {
-      display.error(
-        'Please make sure CSP is correctly configured ' +
-          'https://docs.datadoghq.com/real_user_monitoring/faq/content_security_policy'
-      )
+      display.error('Please make sure CSP is correctly configured !!!')
     }
     each(state.callbacks, function (callback) {
       callback()

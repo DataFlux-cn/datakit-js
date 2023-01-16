@@ -2,7 +2,7 @@ import { objectEntries, each } from '@cloudcare/browser-core'
 
 export function buildReplayPayload(data, metadata, rawSegmentBytesCount) {
   var formData = new FormData()
-
+  console.log('====data', data)
   formData.append(
     'segment',
     new Blob([data], {

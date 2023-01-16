@@ -44,6 +44,7 @@ export var dataMap = {
       is_active: 'view.is_active'
     },
     fields: {
+      session_replay_stats: '_dd.replay_stats',
       view_error_count: 'view.error.count',
       view_resource_count: 'view.resource.count',
       view_long_task_count: 'view.long_task.count',
@@ -65,7 +66,8 @@ export var dataMap = {
       dom: 'view.dom',
       dom_ready: 'view.dom_ready',
       time_spent: 'view.time_spent',
-      in_foreground_periods: 'view.in_foreground_periods'
+      in_foreground_periods: 'view.in_foreground_periods',
+      frustration_count: 'view.frustration.count'
     }
   },
   resource: {

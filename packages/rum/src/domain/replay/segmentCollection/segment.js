@@ -11,6 +11,7 @@ export function Segment(
   onWrote,
   onFlushed
 ) {
+  this.worker = worker
   var viewId = context.view.id
 
   this.metadata = assign(

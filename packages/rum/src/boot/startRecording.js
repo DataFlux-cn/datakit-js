@@ -3,11 +3,11 @@ import {
   createHttpRequest,
   LifeCycleEventType
 } from '@cloudcare/browser-core'
-import { record } from '../domain/record'
+import { record } from '../domain/replay/record'
 import {
   startSegmentCollection,
   SEGMENT_BYTES_LIMIT
-} from '../domain/segmentCollection'
+} from '../domain/replay/segmentCollection'
 import { RecordType } from '../types'
 
 export function startRecording(

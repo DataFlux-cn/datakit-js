@@ -5,7 +5,9 @@ import {
   validateAndBuildConfiguration,
   isArray,
   TraceType,
-  isNullUndefinedDefaultValue
+  isNullUndefinedDefaultValue,
+  DefaultPrivacyLevel,
+  objectHasValue
 } from '@cloudcare/browser-core'
 import { buildEnv } from '../boot/buildEnv'
 
@@ -92,7 +94,13 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
         TraceType.DDTRACE
       ),
       traceId128Bit: !!initConfiguration.traceId128Bit,
-      isJsBirdge: !!initConfiguration.isJsBirdge // 是否需要对webview 发送数据，需要装我们对应ios sdk
+      isJsBirdge: !!initConfiguration.isJsBirdge, // 是否需要对webview 发送数据，需要装我们对应ios sdk
+      defaultPrivacyLevel: objectHasValue(
+        DefaultPrivacyLevel,
+        initConfiguration.defaultPrivacyLevel
+      )
+        ? initConfiguration.defaultPrivacyLevel
+        : DefaultPrivacyLevel.MASK_USER_INPUT
     },
     baseConfiguration,
     buildEnv

@@ -1,9 +1,13 @@
-
-import { RequestType, initFetchObservable, initXhrObservable, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  RequestType,
+  initFetchObservable,
+  initXhrObservable,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 import { isAllowedRequestUrl } from './rumEventsCollection/resource/resourceUtils'
 import { startTracer } from './tracing/tracer'
 
-let nextRequestIndex = 1
+var nextRequestIndex = 1
 
 export function startRequestCollection(
   lifeCycle,
@@ -16,7 +20,7 @@ export function startRequestCollection(
 }
 
 export function trackXhr(lifeCycle, configuration, tracer) {
-  var subscription = initXhrObservable().subscribe(function(rawContext) {
+  var subscription = initXhrObservable().subscribe(function (rawContext) {
     var context = rawContext
     if (!isAllowedRequestUrl(configuration, context.url)) {
       return
@@ -29,7 +33,7 @@ export function trackXhr(lifeCycle, configuration, tracer) {
 
         lifeCycle.notify(LifeCycleEventType.REQUEST_STARTED, {
           requestIndex: context.requestIndex,
-          url: context.url,
+          url: context.url
         })
         break
       case 'complete':
@@ -45,17 +49,21 @@ export function trackXhr(lifeCycle, configuration, tracer) {
           traceSampled: context.traceSampled,
           type: RequestType.XHR,
           url: context.url,
-          xhr: context.xhr,
+          xhr: context.xhr
         })
         break
     }
   })
 
-  return { stop: function() { return subscription.unsubscribe() } }
+  return {
+    stop: function () {
+      return subscription.unsubscribe()
+    }
+  }
 }
 
 export function trackFetch(lifeCycle, configuration, tracer) {
-  var subscription = initFetchObservable().subscribe(function(rawContext) {
+  var subscription = initFetchObservable().subscribe(function (rawContext) {
     var context = rawContext
     if (!isAllowedRequestUrl(configuration, context.url)) {
       return
@@ -68,7 +76,7 @@ export function trackFetch(lifeCycle, configuration, tracer) {
 
         lifeCycle.notify(LifeCycleEventType.REQUEST_STARTED, {
           requestIndex: context.requestIndex,
-          url: context.url,
+          url: context.url
         })
         break
       case 'complete':
@@ -88,12 +96,16 @@ export function trackFetch(lifeCycle, configuration, tracer) {
           url: context.url,
           response: context.response,
           init: context.init,
-          input: context.input,
+          input: context.input
         })
         break
     }
   })
-  return { stop: function() { return subscription.unsubscribe() } }
+  return {
+    stop: function () {
+      return subscription.unsubscribe()
+    }
+  }
 }
 
 function getNextRequestIndex() {

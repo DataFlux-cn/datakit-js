@@ -12,10 +12,11 @@ function getLogsEndPoint(url) {
     return trim(url) + 'v1/write/logging'
   return trim(url) + '/v1/write/logging'
 }
-function getSessionReplayEndPoint(configuration) {
+function getSessionReplayEndPoint(url) {
+  //   return 'http://localhost:3002/write_data'
   if (url.lastIndexOf('/') === url.length - 1)
-    return trim(url) + 'v1/write/session_replay'
-  return trim(url) + '/v1/write/session_replay'
+    return trim(url) + 'v1/write/rum/replay'
+  return trim(url) + '/v1/write/rum/replay'
 }
 export function computeTransportConfiguration(initConfiguration) {
   var isIntakeUrl = function (url) {

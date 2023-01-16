@@ -4,14 +4,14 @@ import {
   elementMatches,
   map
 } from '@cloudcare/browser-core'
-
+import { DEFAULT_PROGRAMMATIC_ATTRIBUTE } from './getActionNameFromElement'
 /**
  * Stable attributes are attributes that are commonly used to identify parts of a UI (ex:
  * component). Those attribute values should not be generated randomly (hardcoded most of the time)
  * and stay the same across deploys. They are not necessarily unique across the document.
  */
-var STABLE_ATTRIBUTES = [
-  'data-guance-action-name',
+export var STABLE_ATTRIBUTES = [
+  DEFAULT_PROGRAMMATIC_ATTRIBUTE,
   // Common test attributes (list provided by google recorder)
   'data-testid',
   'data-test',
