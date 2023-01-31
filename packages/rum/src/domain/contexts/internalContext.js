@@ -2,7 +2,13 @@
  * Internal context keep returning v1 format
  * to not break compatibility with logs data format
  */
-export function startInternalContext(applicationId, sessionManager, viewContexts, actionContexts, urlContexts) {
+export function startInternalContext(
+  applicationId,
+  sessionManager,
+  viewContexts,
+  actionContexts,
+  urlContexts
+) {
   return {
     get: function (startTime) {
       var viewContext = viewContexts.findView(startTime)
@@ -22,15 +28,15 @@ export function startInternalContext(applicationId, sessionManager, viewContexts
                 id: actionId
               }
             : undefined,
-          view: { 
+          view: {
             id: viewContext.id,
             name: viewContext.name,
             url: urlContext.url,
             referrer: urlContext.referrer,
             host: urlContext.host,
-            path: urlContext.pathname,
+            path: urlContext.path,
             pathGroup: urlContext.pathGroup,
-            urlQuery: urlContext.urlQuery 
+            urlQuery: urlContext.urlQuery
           }
         }
       }
