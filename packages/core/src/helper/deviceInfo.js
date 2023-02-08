@@ -252,7 +252,7 @@ var MethodLibrary = {
       window.navigator.mozConnection ||
       window.navigator.webkitConnection
     var result = 'unknown'
-    const type = connection ? connection.type || connection.effectiveType : null
+    var type = connection ? connection.type || connection.effectiveType : null
     if (type && typeof type === 'string') {
       switch (type) {
         // possible type values
