@@ -247,9 +247,45 @@ var MethodLibrary = {
   },
   // 获取网络状态
   getNetwork: function () {
-    var netWork =
-      navigator && navigator.connection && navigator.connection.effectiveType
-    return netWork
+    var connection =
+      window.navigator.connection ||
+      window.navigator.mozConnection ||
+      window.navigator.webkitConnection
+    var result = 'unknown'
+    const type = connection ? connection.type || connection.effectiveType : null
+    if (type && typeof type === 'string') {
+      switch (type) {
+        // possible type values
+        case 'bluetooth':
+        case 'cellular':
+          result = 'cellular'
+          break
+        case 'none':
+          result = 'none'
+          break
+        case 'ethernet':
+        case 'wifi':
+        case 'wimax':
+          result = 'wifi'
+          break
+        case 'other':
+        case 'unknown':
+          result = 'unknown'
+          break
+        // possible effectiveType values
+        case 'slow-2g':
+        case '2g':
+        case '3g':
+          result = 'cellular'
+          break
+        case '4g':
+          result = 'wifi'
+          break
+        default:
+          break
+      }
+    }
+    return result
   },
   // 获取当前语言
   getLanguage: function () {
