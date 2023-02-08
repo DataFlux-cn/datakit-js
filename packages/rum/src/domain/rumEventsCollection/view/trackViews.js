@@ -243,7 +243,7 @@ function newView(
         clocks = clocksNow()
       }
       endClocks = clocks
-      lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks })
+      lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks: endClocks })
       stopViewMetricsTracking()
     },
     triggerUpdate: function () {
