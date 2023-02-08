@@ -138,10 +138,10 @@ export var dataMap = {
   action: {
     type: RumEventType.ACTION,
     tags: {
-      action_name: 'action.target.name',
       action_type: 'action.type'
     },
     fields: {
+      action_name: 'action.target.name',
       duration: 'action.loading_time',
       action_error_count: 'action.error.count',
       action_resource_count: 'action.resource.count',
