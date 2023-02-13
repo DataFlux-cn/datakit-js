@@ -1884,7 +1884,6 @@ export function escapeJsonValue(value) {
   }
 }
 export function escapeFieldValueStr(str) {
-  console.log(str, '====str====')
   return (
     '"' +
     str
