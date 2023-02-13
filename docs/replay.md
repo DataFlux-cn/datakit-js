@@ -58,7 +58,7 @@ type="text/javascript"
 <script>
 window.DATAFLUX_RUM &&
 window.DATAFLUX_RUM.init({
-    pplicationId: '<DATAFLUX_APPLICATION_ID>',
+    applicationId: '<DATAFLUX_APPLICATION_ID>',
     datakitOrigin: '<DATAKIT ORIGIN>',
     service: 'browser',
     env: 'production',
@@ -68,7 +68,7 @@ window.DATAFLUX_RUM.init({
     trackInteractions: true,
 })
 
-window.DATAFLUX_RUM.startSessionReplayRecording()
+window.DATAFLUX_RUM && window.DATAFLUX_RUM.startSessionReplayRecording()
 </script>
 ```
 
