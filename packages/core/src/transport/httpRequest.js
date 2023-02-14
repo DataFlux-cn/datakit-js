@@ -1,5 +1,3 @@
-import { newRetryState, sendWithRetryStrategy } from './sendWithRetryStrategy'
-
 /**
  * Use POST request without content type to:
  * - avoid CORS preflight requests
@@ -67,10 +65,15 @@ export function fetchKeepAliveStrategy(
   var url = addBatchPrecision(endpointUrl)
   var canUseKeepAlive = isKeepAliveSupported() && bytesCount < bytesLimit
   if (canUseKeepAlive) {
-    fetch(url, { method: 'POST', body: data, keepalive: true }).then(
+    fetch(url, {
+      method: 'POST',
+      body: data,
+      keepalive: true,
+      mode: 'cors'
+    }).then(
       function (response) {
         if (typeof onResponse === 'function') {
-          onResponse({ status: response.status })
+          onResponse({ status: response.status, type: response.type })
         }
       },
       function () {
