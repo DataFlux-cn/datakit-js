@@ -92,7 +92,7 @@ function send(payload, state, sendStrategy, responseData) {
   state.bandwidthMonitor.add(payload)
   sendStrategy(payload, function (response) {
     state.bandwidthMonitor.remove(payload)
-    if (wasRequestSuccessful(response)) {
+    if (!shouldRetryRequest(response)) {
       state.transportStatus = TransportStatus.UP
       onSuccess()
     } else {
@@ -135,10 +135,15 @@ function retryQueuedPayloads(reason, state, sendStrategy, reportError) {
   }
 }
 
-function wasRequestSuccessful(response) {
-  return response.status !== 0 && response.status < 500
+function shouldRetryRequest(response) {
+  return (
+    response.type !== 'opaque' &&
+    ((response.status === 0 && !navigator.onLine) ||
+      response.status === 408 ||
+      response.status === 429 ||
+      response.status >= 500)
+  )
 }
-
 export function newRetryState() {
   return {
     transportStatus: TransportStatus.UP,
