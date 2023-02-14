@@ -1,3 +1,5 @@
+import { newRetryState, sendWithRetryStrategy } from './sendWithRetryStrategy'
+
 /**
  * Use POST request without content type to:
  * - avoid CORS preflight requests
@@ -96,7 +98,7 @@ function isKeepAliveSupported() {
 }
 
 function sendXHR(url, data, onResponse) {
-  var request = new XMLHttpRequest()
+  const request = new XMLHttpRequest()
   request.open('POST', url, true)
   request.send(data)
   request.addEventListener('loadend', function () {
