@@ -1,4 +1,9 @@
 import {
+  isElementNode,
+  getParentNode,
+  isTextNode
+} from '@cloudcare/browser-core'
+import {
   NodePrivacyLevel,
   PRIVACY_ATTR_NAME,
   PRIVACY_ATTR_VALUE_ALLOW,
@@ -24,8 +29,9 @@ var TEXT_MASKING_CHAR = 'x'
  * derivePrivacyLevelGivenParent(getNodeSelfPrivacyLevel(node), parentNodePrivacyLevel)
  */
 export function getNodePrivacyLevel(node, defaultPrivacyLevel) {
-  var parentNodePrivacyLevel = node.parentNode
-    ? getNodePrivacyLevel(node.parentNode, defaultPrivacyLevel)
+  var parentNode = getParentNode(node)
+  var parentNodePrivacyLevel = parentNode
+    ? getNodePrivacyLevel(parentNode, defaultPrivacyLevel)
     : defaultPrivacyLevel
   var selfNodePrivacyLevel = getNodeSelfPrivacyLevel(node)
   return reducePrivacyLevel(selfNodePrivacyLevel, parentNodePrivacyLevel)
@@ -58,7 +64,7 @@ export function reducePrivacyLevel(childPrivacyLevel, parentNodePrivacyLevel) {
  */
 export function getNodeSelfPrivacyLevel(node) {
   // Only Element types can have a privacy level set
-  if (!isElement(node)) {
+  if (!isElementNode(node)) {
     return
   }
 
@@ -147,14 +153,6 @@ export function shouldMaskNode(node, privacyLevel) {
     default:
       return false
   }
-}
-
-function isElement(node) {
-  return node.nodeType === node.ELEMENT_NODE
-}
-
-function isTextNode(node) {
-  return node.nodeType === node.TEXT_NODE
 }
 
 function isFormElement(node) {

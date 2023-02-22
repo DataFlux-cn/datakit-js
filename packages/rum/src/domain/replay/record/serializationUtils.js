@@ -1,4 +1,9 @@
-import { buildUrl } from '@cloudcare/browser-core'
+import {
+  buildUrl,
+  getParentNode,
+  isNodeShadowRoot,
+  map
+} from '@cloudcare/browser-core'
 import { CENSORED_STRING_MARK } from '../../../constants'
 import { shouldMaskNode } from './privacy'
 
@@ -11,10 +16,10 @@ export function hasSerializedNode(node) {
 export function nodeAndAncestorsHaveSerializedNode(node) {
   var current = node
   while (current) {
-    if (!hasSerializedNode(current)) {
+    if (!hasSerializedNode(current) && !isNodeShadowRoot(current)) {
       return false
     }
-    current = current.parentNode
+    current = getParentNode(current)
   }
   return true
 }
@@ -105,4 +110,25 @@ export function makeUrlAbsolute(url, baseUrl) {
   } catch (_) {
     return url
   }
+}
+export function serializeStyleSheets(cssStyleSheets) {
+  if (cssStyleSheets === undefined || cssStyleSheets.length === 0) {
+    return undefined
+  }
+  return map(cssStyleSheets, function (cssStyleSheet) {
+    var rules = cssStyleSheet.cssRules || cssStyleSheet.rules
+    var cssRules = Array.from(rules, function (cssRule) {
+      return cssRule.cssText
+    })
+
+    var styleSheet = {
+      cssRules,
+      disabled: cssStyleSheet.disabled || undefined,
+      media:
+        cssStyleSheet.media.length > 0
+          ? Array.from(cssStyleSheet.media)
+          : undefined
+    }
+    return styleSheet
+  })
 }

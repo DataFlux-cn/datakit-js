@@ -1,4 +1,9 @@
-import { assign, startsWith } from '@cloudcare/browser-core'
+import {
+  assign,
+  startsWith,
+  isNodeShadowRoot,
+  isNodeShadowHost
+} from '@cloudcare/browser-core'
 import { STABLE_ATTRIBUTES } from '../../../domain/rumEventsCollection/actions/getSelectorsFromElement'
 import {
   NodePrivacyLevel,
@@ -20,7 +25,8 @@ import {
   getSerializedNodeId,
   setSerializedNodeId,
   getElementInputValue,
-  switchToAbsoluteUrl
+  switchToAbsoluteUrl,
+  serializeStyleSheets
 } from './serializationUtils'
 import { forEach } from './utils'
 
@@ -68,6 +74,8 @@ function serializeNode(node, options) {
   switch (node.nodeType) {
     case node.DOCUMENT_NODE:
       return serializeDocumentNode(node, options)
+    case node.DOCUMENT_FRAGMENT_NODE:
+      return serializeDocumentFragmentNode(node, options)
     case node.DOCUMENT_TYPE_NODE:
       return serializeDocumentTypeNode(node)
     case node.ELEMENT_NODE:
@@ -82,7 +90,8 @@ function serializeNode(node, options) {
 export function serializeDocumentNode(document, options) {
   return {
     type: NodeType.Document,
-    childNodes: serializeChildNodes(document, options)
+    childNodes: serializeChildNodes(document, options),
+    adoptedStyleSheets: serializeStyleSheets(document.adoptedStyleSheets)
   }
 }
 
@@ -92,6 +101,26 @@ function serializeDocumentTypeNode(documentType) {
     name: documentType.name,
     publicId: documentType.publicId,
     systemId: documentType.systemId
+  }
+}
+function serializeDocumentFragmentNode(element, options) {
+  var childNodes = []
+  if (element.childNodes.length) {
+    childNodes = serializeChildNodes(element, options)
+  }
+
+  var isShadowRoot = isNodeShadowRoot(element)
+  if (isShadowRoot) {
+    options.serializationContext.shadowRootsController.addShadowRoot(element)
+  }
+
+  return {
+    type: NodeType.DocumentFragment,
+    childNodes: childNodes,
+    isShadowRoot: isShadowRoot,
+    adoptedStyleSheets: isShadowRoot
+      ? serializeStyleSheets(element.adoptedStyleSheets)
+      : undefined
   }
 }
 
@@ -171,7 +200,12 @@ export function serializeElementNode(element, options) {
     }
     childNodes = serializeChildNodes(element, childNodesSerializationOptions)
   }
-
+  if (isNodeShadowHost(element)) {
+    var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
+    if (shadowRoot !== null) {
+      childNodes.push(shadowRoot)
+    }
+  }
   return {
     type: NodeType.Element,
     tagName: tagName,
@@ -189,7 +223,7 @@ export function serializeElementNode(element, options) {
 function serializeTextNode(textNode, options) {
   // The parent node may not be a html element which has a tagName attribute.
   // So just let it be undefined which is ok in this use case.
-  var parentTagName = textNode.parentElement?.tagName
+  var parentTagName = textNode.parentElement && textNode.parentElement.tagName
   var textContent = getTextContent(
     textNode,
     options.ignoreWhiteSpace || false,

@@ -1,4 +1,9 @@
-import { findCommaSeparatedValue, ONE_MINUTE } from '@cloudcare/browser-core'
+import {
+  findCommaSeparatedValue,
+  ONE_MINUTE,
+  isCommentNode,
+  isTextNode
+} from '@cloudcare/browser-core'
 
 export var INITIAL_DOCUMENT_OUTDATED_TRACE_ID_THRESHOLD = 2 * ONE_MINUTE
 
@@ -86,12 +91,4 @@ function getTraceCommentFromNode(node) {
       return match[1]
     }
   }
-}
-
-function isCommentNode() {
-  return node.nodeName === '#comment'
-}
-
-function isTextNode(node) {
-  return node.nodeName === '#text'
 }

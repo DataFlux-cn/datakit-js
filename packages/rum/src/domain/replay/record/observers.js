@@ -12,7 +12,8 @@ import {
   keys,
   map,
   each,
-  assign
+  assign,
+  isNodeShadowHost
 } from '@cloudcare/browser-core'
 import { initViewportObservable } from '../../initViewportObservable'
 import { NodePrivacyLevel } from '../../../constants'
@@ -58,9 +59,9 @@ function getRecordIdForEvent(event) {
 
 export function initObservers(o) {
   var mutationHandler = initMutationObserver(
-    o.mutationController,
     o.mutationCb,
-    o.configuration
+    o.configuration,
+    o.shadowRootsController
   )
   var mousemoveHandler = initMoveObserver(o.mousemoveCb)
   var mouseInteractionHandler = initMouseInteractionObserver(
@@ -88,48 +89,50 @@ export function initObservers(o) {
   )
   var frustrationHandler = initFrustrationObserver(o.lifeCycle, o.frustrationCb)
 
-  return function () {
-    mutationHandler()
-    mousemoveHandler()
-    mouseInteractionHandler()
-    scrollHandler()
-    viewportResizeHandler()
-    inputHandler()
-    mediaInteractionHandler()
-    styleSheetObserver()
-    focusHandler()
-    visualViewportResizeHandler()
-    frustrationHandler()
+  return {
+    flush: function () {
+      mutationHandler.flush()
+    },
+    stop: function () {
+      mutationHandler.stop()
+      mutationHandler()
+      mousemoveHandler()
+      mouseInteractionHandler()
+      scrollHandler()
+      viewportResizeHandler()
+      inputHandler()
+      mediaInteractionHandler()
+      styleSheetObserver()
+      focusHandler()
+      visualViewportResizeHandler()
+      frustrationHandler()
+    }
   }
 }
 
-function initMutationObserver(mutationController, cb, configuration) {
-  return startMutationObserver(mutationController, cb, configuration).stop
+function initMutationObserver(cb, configuration, shadowRootsController) {
+  return startMutationObserver(
+    cb,
+    configuration,
+    shadowRootsController,
+    document
+  )
 }
 
 function initMoveObserver(cb) {
   var updatePosition = throttle(
     function (event) {
-      var target = event.target
+      var target = getEventTarget(event)
       if (hasSerializedNode(target)) {
-        var commonEvent = isTouchEvent(event) ? event.changedTouches[0] : event
-        var clientX = commonEvent.clientX
-        var clientY = commonEvent.clientY
+        var coordinates = tryToComputeCoordinates(event)
+        if (!coordinates) {
+          return
+        }
         var position = {
           id: getSerializedNodeId(target),
           timeOffset: 0,
-          x: clientX,
-          y: clientY
-        }
-        if (window.visualViewport) {
-          var mouseEventCoordinates = convertMouseEventToLayoutCoordinates(
-            clientX,
-            clientY
-          )
-          var visualViewportX = mouseEventCoordinates.visualViewportX
-          var visualViewportY = mouseEventCoordinates.visualViewportY
-          position.x = visualViewportX
-          position.y = visualViewportY
+          x: coordinates.x,
+          y: coordinates.y
         }
         cb(
           [position],
@@ -157,7 +160,7 @@ function initMoveObserver(cb) {
 }
 
 var eventTypeToMouseInteraction = {
-  [DOM_EVENT.MOUSE_UP]: MouseInteractionType.MouseUp,
+  [DOM_EVENT.POINTER_UP]: MouseInteractionType.MouseUp,
   [DOM_EVENT.MOUSE_DOWN]: MouseInteractionType.MouseDown,
   [DOM_EVENT.CLICK]: MouseInteractionType.Click,
   [DOM_EVENT.CONTEXT_MENU]: MouseInteractionType.ContextMenu,
@@ -169,7 +172,7 @@ var eventTypeToMouseInteraction = {
 }
 function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
   var handler = function (event) {
-    var target = event.target
+    var target = getEventTarget(event)
     if (
       getNodePrivacyLevel(target, defaultPrivacyLevel) ===
         NodePrivacyLevel.HIDDEN ||
@@ -177,29 +180,28 @@ function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
     ) {
       return
     }
-    var commonEvent = isTouchEvent(event) ? event.changedTouches[0] : event
-    var clientX = commonEvent.clientX
-    var clientY = commonEvent.clientY
-    var position = {
-      id: getSerializedNodeId(target),
-      type: eventTypeToMouseInteraction[event.type],
-      x: clientX,
-      y: clientY
-    }
-    if (window.visualViewport) {
-      var mouseEventCoordinates = convertMouseEventToLayoutCoordinates(
-        clientX,
-        clientY
-      )
-      var visualViewportX = mouseEventCoordinates.visualViewportX
-      var visualViewportY = mouseEventCoordinates.visualViewportY
-      position.x = visualViewportX
-      position.y = visualViewportY
+    var id = getSerializedNodeId(target)
+    var type = eventTypeToMouseInteraction[event.type]
+    var interaction
+    if (
+      type !== MouseInteractionType.Blur &&
+      type !== MouseInteractionType.Focus
+    ) {
+      var coordinates = tryToComputeCoordinates(event)
+      if (!coordinates) {
+        return
+      }
+      interaction = { id: id, type: type, x: coordinates.x, y: coordinates.y }
+    } else {
+      interaction = { id: id, type: type }
     }
 
     var record = assign(
       { id: getRecordIdForEvent(event) },
-      assembleIncrementalSnapshot(IncrementalSource.MouseInteraction, position)
+      assembleIncrementalSnapshot(
+        IncrementalSource.MouseInteraction,
+        interaction
+      )
     )
     cb(record)
   }
@@ -213,10 +215,26 @@ function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
     }
   ).stop
 }
+function tryToComputeCoordinates(event) {
+  var commonEvent = isTouchEvent(event) ? event.changedTouches[0] : event
+  var x = commonEvent.clientX
+  var y = commonEvent.clientY
+  if (window.visualViewport) {
+    var mouseEventCoordinates = convertMouseEventToLayoutCoordinates(x, y)
+    var visualViewportX = mouseEventCoordinates.visualViewportX
+    var visualViewportY = mouseEventCoordinates.visualViewportY
+    x = visualViewportX
+    y = visualViewportY
+  }
 
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return undefined
+  }
+  return { x: x, y: y }
+}
 function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
   var updatePosition = throttle(function (event) {
-    var target = event.target
+    var target = getEventTarget(event)
     if (
       !target ||
       getNodePrivacyLevel(target, defaultPrivacyLevel) ===
@@ -253,7 +271,18 @@ function initViewportResizeObserver(cb) {
   return initViewportObservable().subscribe(cb).unsubscribe
 }
 
-export function initInputObserver(cb, defaultPrivacyLevel) {
+export function initInputObserver(
+  cb,
+  defaultPrivacyLevel,
+  inputObserverOptions
+) {
+  var domEvents = (inputObserverOptions && inputObserverOptions.domEvents) || [
+    DOM_EVENT.INPUT,
+    DOM_EVENT.CHANGE
+  ]
+
+  var target = (inputObserverOptions && inputObserverOptions.target) || document
+
   var lastInputStateMap = new WeakMap()
 
   function onElementChange(target) {
@@ -321,15 +350,16 @@ export function initInputObserver(cb, defaultPrivacyLevel) {
     }
   }
   var _addEventListeners = addEventListeners(
-    document,
-    [DOM_EVENT.INPUT, DOM_EVENT.CHANGE],
+    target,
+    domEvents,
     function (event) {
+      var target = getEventTarget(event)
       if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement ||
-        event.target instanceof HTMLSelectElement
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
       ) {
-        onElementChange(event.target)
+        onElementChange(target)
       }
     },
     {
@@ -425,7 +455,7 @@ export function initStyleSheetObserver(cb) {
 
 function initMediaInteractionObserver(mediaInteractionCb, defaultPrivacyLevel) {
   var handler = function (event) {
-    var target = event.target
+    var target = getEventTarget(event)
     if (
       !target ||
       getNodePrivacyLevel(target, defaultPrivacyLevel) ===
@@ -517,4 +547,10 @@ export function initFrustrationObserver(lifeCycle, frustrationCb) {
       }
     }
   ).unsubscribe
+}
+function getEventTarget(event) {
+  if (event.composed === true && isNodeShadowHost(event.target)) {
+    return event.composedPath()[0]
+  }
+  return event.target
 }

@@ -5,10 +5,10 @@ import { RecordType, IncrementalSource } from '../../../types'
 import { serializeDocument, SerializationContextStatus } from './serialize'
 import { initObservers } from './observers'
 
-import { MutationController } from './mutationObserver'
 import { getVisualViewport, getScrollX, getScrollY } from './viewports'
 import { assembleIncrementalSnapshot } from './utils'
 import { createElementsScrollPositions } from './elementsScrollPositions'
+import { initShadowRootsController } from './shadowRootsController'
 
 export function record(options) {
   var emit = options.emit
@@ -17,9 +17,19 @@ export function record(options) {
     throw new Error('emit function is required')
   }
 
-  var mutationController = new MutationController()
   var elementsScrollPositions = createElementsScrollPositions()
-
+  var mutationCb = function (mutation) {
+    return emit(
+      assembleIncrementalSnapshot(IncrementalSource.Mutation, mutation)
+    )
+  }
+  var inputCb = function (v) {
+    return emit(assembleIncrementalSnapshot(IncrementalSource.Input, v))
+  }
+  var shadowRootsController = initShadowRootsController(options.configuration, {
+    mutationCb: mutationCb,
+    inputCb: inputCb
+  })
   var takeFullSnapshot = function (timestamp, serializationContext) {
     if (timestamp === undefined) {
       timestamp = timeStampNow()
@@ -27,10 +37,10 @@ export function record(options) {
     if (serializationContext === undefined) {
       serializationContext = {
         status: SerializationContextStatus.INITIAL_FULL_SNAPSHOT,
-        elementsScrollPositions: elementsScrollPositions
+        elementsScrollPositions: elementsScrollPositions,
+        shadowRootsController: shadowRootsController
       }
     }
-    mutationController.flush() // process any pending mutation before taking a full snapshot
     var viewportDimension = getViewportDimension()
     var width = viewportDimension.width
     var height = viewportDimension.height
@@ -79,14 +89,11 @@ export function record(options) {
 
   takeFullSnapshot()
 
-  var stopObservers = initObservers({
+  var _initObservers = initObservers({
     lifeCycle: options.lifeCycle,
     configuration: options.configuration,
-    mutationController: mutationController,
     elementsScrollPositions: elementsScrollPositions,
-    inputCb: function (v) {
-      return emit(assembleIncrementalSnapshot(IncrementalSource.Input, v))
-    },
+    inputCb: inputCb,
     mediaInteractionCb: function (p) {
       return emit(
         assembleIncrementalSnapshot(IncrementalSource.MediaInteraction, p)
@@ -98,9 +105,8 @@ export function record(options) {
     mousemoveCb: function (positions, source) {
       return emit(assembleIncrementalSnapshot(source, { positions: positions }))
     },
-    mutationCb: function (m) {
-      return emit(assembleIncrementalSnapshot(IncrementalSource.Mutation, m))
-    },
+
+    mutationCb: mutationCb,
     scrollCb: function (p) {
       return emit(assembleIncrementalSnapshot(IncrementalSource.Scroll, p))
     },
@@ -130,18 +136,29 @@ export function record(options) {
         type: RecordType.VisualViewport,
         timestamp: timeStampNow()
       })
-    }
+    },
+    shadowRootsController: shadowRootsController
   })
+  var stopObservers = _initObservers.stop
+  var flushMutationsFromObservers = _initObservers.flush
+  function flushMutations() {
+    shadowRootsController.flush()
+    flushMutationsFromObservers()
+  }
   return {
-    stop: stopObservers,
+    stop: function () {
+      shadowRootsController.stop()
+      stopObservers()
+    },
     takeSubsequentFullSnapshot: function (timestamp) {
+      flushMutations()
       return takeFullSnapshot(timestamp, {
+        shadowRootsController: shadowRootsController,
         status: SerializationContextStatus.SUBSEQUENT_FULL_SNAPSHOT,
         elementsScrollPositions: elementsScrollPositions
       })
     },
-    flushMutations: function () {
-      return mutationController.flush()
-    }
+    flushMutations: flushMutations,
+    shadowRootsController: shadowRootsController
   }
 }
