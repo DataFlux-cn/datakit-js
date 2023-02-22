@@ -17,7 +17,7 @@ import {
   escapeJsonValue,
   escapeRowField
 } from '../helper/tools'
-import { commonTags, dataMap } from '../dataMap'
+import { commonTags, dataMap, commonFields } from '../dataMap'
 import { DOM_EVENT, RumEventType } from '../helper/enums'
 // https://en.wikipedia.org/wiki/UTF-8
 // eslint-disable-next-line no-control-regex
@@ -50,7 +50,8 @@ export var processedMessageByDataMap = function (message) {
       })
 
       var fieldsStr = []
-      each(value.fields, function (_value, _key) {
+      var fields = extend({}, commonFields, value.fields)
+      each(fields, function (_value, _key) {
         if (isArray(_value) && _value.length === 2) {
           var type = _value[0],
             value_path = _value[1]
