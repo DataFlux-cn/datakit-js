@@ -2,7 +2,11 @@ import {
   RequestType,
   initFetchObservable,
   initXhrObservable,
-  LifeCycleEventType
+  LifeCycleEventType,
+  tryToClone,
+  readBytesFromStream,
+  elapsed,
+  timeStampNow
 } from '@cloudcare/browser-core'
 import { isAllowedRequestUrl } from './rumEventsCollection/resource/resourceUtils'
 import { startTracer } from './tracing/tracer'
@@ -79,24 +83,25 @@ export function trackFetch(lifeCycle, configuration, tracer) {
           url: context.url
         })
         break
-      case 'complete':
-        tracer.clearTracingIfNeeded(context)
-
-        lifeCycle.notify(LifeCycleEventType.REQUEST_COMPLETED, {
-          duration: context.duration,
-          method: context.method,
-          requestIndex: context.requestIndex,
-          responseType: context.responseType,
-          spanId: context.spanId,
-          startClocks: context.startClocks,
-          status: context.status,
-          traceId: context.traceId,
-          traceSampled: context.traceSampled,
-          type: RequestType.FETCH,
-          url: context.url,
-          response: context.response,
-          init: context.init,
-          input: context.input
+      case 'resolve':
+        waitForResponseToComplete(context, function (duration) {
+          tracer.clearTracingIfNeeded(context)
+          lifeCycle.notify(LifeCycleEventType.REQUEST_COMPLETED, {
+            duration: duration,
+            method: context.method,
+            requestIndex: context.requestIndex,
+            responseType: context.responseType,
+            spanId: context.spanId,
+            startClocks: context.startClocks,
+            status: context.status,
+            traceId: context.traceId,
+            traceSampled: context.traceSampled,
+            type: RequestType.FETCH,
+            url: context.url,
+            response: context.response,
+            init: context.init,
+            input: context.input
+          })
         })
         break
     }
@@ -112,4 +117,23 @@ function getNextRequestIndex() {
   var result = nextRequestIndex
   nextRequestIndex += 1
   return result
+}
+
+function waitForResponseToComplete(context, callback) {
+  var clonedResponse = context.response && tryToClone(context.response)
+  if (!clonedResponse || !clonedResponse.body) {
+    // do not try to wait for the response if the clone failed, fetch error or null body
+    callback(elapsed(context.startClocks.timeStamp, timeStampNow()))
+  } else {
+    readBytesFromStream(
+      clonedResponse.body,
+      function () {
+        callback(elapsed(context.startClocks.timeStamp, timeStampNow()))
+      },
+      {
+        bytesLimit: Number.POSITIVE_INFINITY,
+        collectStreamBody: false
+      }
+    )
+  }
 }

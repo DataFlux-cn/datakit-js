@@ -10,7 +10,9 @@ import {
   LifeCycleEventType,
   getStatusGroup,
   urlParse,
-  replaceNumberCharByPath
+  replaceNumberCharByPath,
+  tryToClone,
+  readBytesFromStream
 } from '@cloudcare/browser-core'
 import { StatusType } from '../../logger'
 
@@ -19,25 +21,42 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
     return { stop: noop }
   }
 
-  var xhrSubscription = initXhrObservable().subscribe(function(context){
+  var xhrSubscription = initXhrObservable().subscribe(function (context) {
     if (context.state === 'complete') {
       handleCompleteRequest(RequestType.XHR, context, configuration)
     }
   })
-  var fetchSubscription = initFetchObservable().subscribe(function(context) {
+  var fetchSubscription = initFetchObservable().subscribe(function (context) {
     if (context.state === 'complete') {
       handleCompleteRequest(RequestType.FETCH, context, configuration)
     }
   })
 
   function handleCompleteRequest(type, request) {
-    if (!configuration.isIntakeUrl(request.url) && (isRejected(request) || isServerError(request) || configuration.isServerError(request))) {
+    if (
+      !configuration.isIntakeUrl(request.url) &&
+      (isRejected(request) ||
+        isServerError(request) ||
+        configuration.isServerError(request))
+    ) {
       if ('xhr' in request) {
-        computeXhrResponseData(request.xhr, configuration, onResponseDataAvailable)
+        computeXhrResponseData(
+          request.xhr,
+          configuration,
+          onResponseDataAvailable
+        )
       } else if (request.response) {
-        computeFetchResponseText(request.response, configuration, onResponseDataAvailable)
+        computeFetchResponseText(
+          request.response,
+          configuration,
+          onResponseDataAvailable
+        )
       } else if (request.error) {
-        computeFetchErrorText(request.error, configuration, onResponseDataAvailable)
+        computeFetchErrorText(
+          request.error,
+          configuration,
+          onResponseDataAvailable
+        )
       }
     }
 
@@ -45,11 +64,12 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
       var urlObj = urlParse(request.url).getParse()
       lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
         rawLogsEvent: {
-          message: format(type) + ' error ' + request.method +' ' + request.url,
+          message:
+            format(type) + ' error ' + request.method + ' ' + request.url,
           date: request.startClocks.timeStamp,
           error: {
             origin: ErrorSource.NETWORK, // Todo: Remove in the next major release
-            stack: responseData || 'Failed to load',
+            stack: responseData || 'Failed to load'
           },
           http: {
             method: request.method, // Cast resource method because of case mismatch cf issue RUMF-1152
@@ -61,17 +81,17 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
             urlPathGroup: replaceNumberCharByPath(urlObj.Path)
           },
           status: StatusType.error,
-          origin: ErrorSource.NETWORK,
-        },
+          origin: ErrorSource.NETWORK
+        }
       })
     }
   }
 
   return {
-    stop: function() {
+    stop: function () {
       xhrSubscription.unsubscribe()
       fetchSubscription.unsubscribe()
-    },
+    }
   }
 }
 
@@ -80,11 +100,7 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
 // than "text", the response data should be whatever `xhr.response` is. This is a bit confusing as
 // Logs event 'stack' is expected to be a string. This should be changed in a future major version
 // as it could be a breaking change.
-export function computeXhrResponseData(
-  xhr,
-  configuration,
-  callback
-) {
+export function computeXhrResponseData(xhr, configuration, callback) {
   if (typeof xhr.response === 'string') {
     callback(truncateResponseText(xhr.response, configuration))
   } else {
@@ -92,20 +108,21 @@ export function computeXhrResponseData(
   }
 }
 
-export function computeFetchErrorText(
-  error,
-  configuration,
-  callback
-) {
-  callback(truncateResponseText(toStackTraceString(computeStackTrace(error)), configuration))
+export function computeFetchErrorText(error, configuration, callback) {
+  callback(
+    truncateResponseText(
+      toStackTraceString(computeStackTrace(error)),
+      configuration
+    )
+  )
 }
 
-export function computeFetchResponseText(
-  response,
-  configuration,
-  callback
-) {
-  if (!window.TextDecoder) {
+export function computeFetchResponseText(response, configuration, callback) {
+  var clonedResponse = tryToClone(response)
+  if (!clonedResponse || !clonedResponse.body) {
+    // if the clone failed or if the body is null, let's not try to read it.
+    callback()
+  } else if (!window.TextDecoder) {
     // If the browser doesn't support TextDecoder, let's read the whole response then truncate it.
     //
     // This should only be the case on early versions of Edge (before they migrated to Chromium).
@@ -133,20 +150,19 @@ export function computeFetchResponseText(
     //   }
     //   response.body.getReader().cancel()
     // })
-    response
-      .clone()
-      .text()
-      .then(
-        function(text) { return callback(truncateResponseText(text, configuration)) },
-        function(error) { return callback('Unable to retrieve response: ' + error ) }
-      )
-  } else if (!response.body) {
-    callback()
+    clonedResponse.text().then(
+      function (text) {
+        return callback(truncateResponseText(text, configuration))
+      },
+      function (error) {
+        return callback('Unable to retrieve response: ' + error)
+      }
+    )
   } else {
     truncateResponseStream(
-      response.clone().body,
+      clonedResponse.body,
       configuration.requestErrorResponseLengthLimit,
-      function(error, responseText){
+      function (error, responseText) {
         if (error) {
           callback('Unable to retrieve response: ' + error)
         } else {
@@ -167,7 +183,10 @@ function isServerError(request) {
 
 function truncateResponseText(responseText, configuration) {
   if (responseText.length > configuration.requestErrorResponseLengthLimit) {
-    return responseText.substring(0, configuration.requestErrorResponseLengthLimit) + '...'
+    return (
+      responseText.substring(0, configuration.requestErrorResponseLengthLimit) +
+      '...'
+    )
   }
   return responseText
 }
@@ -179,82 +198,23 @@ function format(type) {
   return 'Fetch'
 }
 
-function truncateResponseStream(
-  stream,
-  limit,
-  callback
-) {
-  readLimitedAmountOfBytes(stream, limit, function(error, bytes, limitExceeded){
-    if (error) {
-      callback(error)
-    } else {
-      var responseText = new TextDecoder().decode(bytes)
-      if (limitExceeded) {
-        responseText += '...'
+function truncateResponseStream(stream, bytesLimit, callback) {
+  readBytesFromStream(
+    stream,
+    function (error, bytes, limitExceeded) {
+      if (error) {
+        callback(error)
+      } else {
+        var responseText = new TextDecoder().decode(bytes)
+        if (limitExceeded) {
+          responseText += '...'
+        }
+        callback(undefined, responseText)
       }
-      callback(undefined, responseText)
+    },
+    {
+      bytesLimit: bytesLimit,
+      collectStreamBody: true
     }
-  })
-}
-
-/**
- * Read bytes from a ReadableStream until at least `limit` bytes have been read (or until the end of
- * the stream). The callback is invoked with the at most `limit` bytes, and indicates that the limit
- * has been exceeded if more bytes were available.
- */
-function readLimitedAmountOfBytes(
-  stream,
-  limit,
-  callback
-) {
-  var reader = stream.getReader()
-  var chunks = []
-  var readBytesCount = 0
-
-  readMore()
-
-  function readMore() {
-    reader.read().then(
-      function(result){
-        if (result.done) {
-          onDone()
-          return
-        }
-
-        chunks.push(result.value)
-        readBytesCount += result.value.length
-
-        if (readBytesCount > limit) {
-          onDone()
-        } else {
-          readMore()
-        }
-      },
-      function(error) { return callback(error) }
-    )
-  }
-
-  function onDone() {
-    reader.cancel().catch(
-      // we don't care if cancel fails, but we still need to catch the error to avoid reporting it
-      // as an unhandled rejection
-      noop
-    )
-
-    var completeBuffer
-    if (chunks.length === 1) {
-      // optim: if the response is small enough to fit in a single buffer (provided by the browser), just
-      // use it directly.
-      completeBuffer = chunks[0]
-    } else {
-      // else, we need to copy buffers into a larger buffer to concatenate them.
-      completeBuffer = new Uint8Array(readBytesCount)
-      var offset = 0
-      each(chunks, function(chunk) {
-        completeBuffer.set(chunk, offset)
-        offset += chunk.length
-      })
-    }
-    callback(undefined, completeBuffer.slice(0, limit), completeBuffer.length > limit)
-  }
+  )
 }

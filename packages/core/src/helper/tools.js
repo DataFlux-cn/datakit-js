@@ -1,4 +1,6 @@
 import { DOM_EVENT } from './enums'
+import { getZoneJsOriginalValue } from './getZoneJsOriginalValue'
+
 var ArrayProto = Array.prototype
 var FuncProto = Function.prototype
 var ObjProto = Object.prototype
@@ -1680,8 +1682,8 @@ export function safeTruncate(candidate, length) {
   return candidate.slice(0, length)
 }
 
-export function addEventListener(emitter, event, listener, options) {
-  return addEventListeners(emitter, [event], listener, options)
+export function addEventListener(eventTarget, event, listener, options) {
+  return addEventListeners(eventTarget, [event], listener, options)
 }
 
 /**
@@ -1699,8 +1701,9 @@ export function addEventListener(emitter, event, listener, options) {
  * * with `once: true`, the listener will be called at most once, even if different events are
  *   listened
  */
-export function addEventListeners(emitter, events, listener, options) {
-  var wrapedListener =
+
+export function addEventListeners(eventTarget, events, listener, options) {
+  var wrappedListener =
     options && options.once
       ? function (event) {
           stop()
@@ -1712,12 +1715,15 @@ export function addEventListeners(emitter, events, listener, options) {
     options && options.passive
       ? { capture: options.capture, passive: options.passive }
       : options && options.capture
+  var add = getZoneJsOriginalValue(eventTarget, 'addEventListener')
+
   each(events, function (event) {
-    emitter.addEventListener(event, wrapedListener, options)
+    add.call(eventTarget, event, wrappedListener, options)
   })
   var stop = function () {
+    var remove = getZoneJsOriginalValue(eventTarget, 'removeEventListener')
     each(events, function (event) {
-      emitter.removeEventListener(event, wrapedListener, options)
+      remove.call(eventTarget, event, wrappedListener, options)
     })
   }
   return {
@@ -1957,4 +1963,13 @@ export function startsWith(candidate, search) {
 
 export function endsWith(candidate, search) {
   return candidate.slice(-search.length) === search
+}
+
+export function tryToClone(response) {
+  try {
+    return response.clone()
+  } catch (e) {
+    // clone can throw if the response has already been used by another instrumentation or is disturbed
+    return
+  }
 }

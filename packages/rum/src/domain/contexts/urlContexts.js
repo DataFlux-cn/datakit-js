@@ -1,4 +1,12 @@
-import { LifeCycleEventType, SESSION_TIME_OUT_DELAY, relativeNow, ContextHistory, replaceNumberCharByPath, jsonStringify, getQueryParamsFromUrl } from '@cloudcare/browser-core'
+import {
+  LifeCycleEventType,
+  SESSION_TIME_OUT_DELAY,
+  relativeNow,
+  ContextHistory,
+  replaceNumberCharByPath,
+  jsonStringify,
+  getQueryParamsFromUrl
+} from '@cloudcare/browser-core'
 
 /**
  * We want to attach to an event:
@@ -7,7 +15,6 @@ import { LifeCycleEventType, SESSION_TIME_OUT_DELAY, relativeNow, ContextHistory
  */
 
 export var URL_CONTEXT_TIME_OUT_DELAY = SESSION_TIME_OUT_DELAY
-
 
 export function startUrlContexts(
   lifeCycle,
@@ -18,24 +25,26 @@ export function startUrlContexts(
 
   var previousViewUrl
 
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, function(data) {
+  lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, function (data) {
     urlContextHistory.closeActive(data.endClocks.relative)
   })
 
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_CREATED, function(data ){
+  lifeCycle.subscribe(LifeCycleEventType.VIEW_CREATED, function (data) {
     var viewUrl = location.href
     urlContextHistory.add(
       buildUrlContext({
         url: viewUrl,
         location: location,
-        referrer: !previousViewUrl ? document.referrer : previousViewUrl,
+        referrer: !previousViewUrl ? document.referrer : previousViewUrl
       }),
       data.startClocks.relative
     )
     previousViewUrl = viewUrl
   })
 
-  var locationChangeSubscription = locationChangeObservable.subscribe(function(data) {
+  var locationChangeSubscription = locationChangeObservable.subscribe(function (
+    data
+  ) {
     var current = urlContextHistory.find()
     if (current) {
       var changeTime = relativeNow()
@@ -44,7 +53,7 @@ export function startUrlContexts(
         buildUrlContext({
           url: data.newLocation.href,
           location: data.newLocation,
-          referrer: current.referrer,
+          referrer: current.referrer
         }),
         changeTime
       )
@@ -52,25 +61,27 @@ export function startUrlContexts(
   })
 
   function buildUrlContext(data) {
+    let path = data.location.pathname
+    if (path === '/' && data.location.hash) {
+      path = '/' + data.location.hash
+    }
     return {
       url: data.url,
       referrer: data.referrer,
       host: data.location.host,
-      path: data.location.pathname,
-      pathGroup: replaceNumberCharByPath(data.location.pathname),
-      urlQuery: jsonStringify(
-        getQueryParamsFromUrl(data.location.href)
-      )
+      path: path,
+      pathGroup: replaceNumberCharByPath(path),
+      urlQuery: jsonStringify(getQueryParamsFromUrl(data.location.href))
     }
   }
 
   return {
-    findUrl: function(startTime){
+    findUrl: function (startTime) {
       return urlContextHistory.find(startTime)
     },
-    stop: function(){
+    stop: function () {
       locationChangeSubscription.unsubscribe()
       urlContextHistory.stop()
-    },
+    }
   }
 }
