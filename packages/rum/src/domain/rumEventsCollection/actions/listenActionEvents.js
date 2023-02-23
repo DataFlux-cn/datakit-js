@@ -1,21 +1,24 @@
 import { addEventListener, DOM_EVENT, each } from '@cloudcare/browser-core'
 
 export function listenActionEvents(events) {
-  var onClick = events.onClick
-  var onPointerDown = events.onPointerDown
-  var hasSelectionChanged = false
   var selectionEmptyAtPointerDown
-  var hasInputChanged = false
+  var userActivity = {
+    selection: false,
+    input: false
+  }
   var clickContext
   var listeners = [
     addEventListener(
       window,
       DOM_EVENT.POINTER_DOWN,
       function (event) {
-        hasSelectionChanged = false
-        selectionEmptyAtPointerDown = isSelectionEmpty()
-        if (isMouseEventOnElement(event)) {
-          clickContext = onPointerDown(event)
+        if (isValidPointerEvent(event)) {
+          selectionEmptyAtPointerDown = isSelectionEmpty()
+          userActivity = {
+            selection: false,
+            input: false
+          }
+          clickContext = events.onPointerDown(event)
         }
       },
       { capture: true }
@@ -26,7 +29,7 @@ export function listenActionEvents(events) {
       DOM_EVENT.SELECTION_CHANGE,
       function () {
         if (!selectionEmptyAtPointerDown || !isSelectionEmpty()) {
-          hasSelectionChanged = true
+          userActivity.selection = true
         }
       },
       { capture: true }
@@ -34,22 +37,13 @@ export function listenActionEvents(events) {
 
     addEventListener(
       window,
-      DOM_EVENT.CLICK,
-      function (clickEvent) {
-        if (isMouseEventOnElement(clickEvent) && clickContext) {
+      DOM_EVENT.POINTER_UP,
+      function (event) {
+        if (isValidPointerEvent(event) && clickContext) {
           // Use a scoped variable to make sure the value is not changed by other clicks
-          var userActivity = {
-            selection: hasSelectionChanged,
-            input: hasInputChanged
-          }
-
-          if (!hasInputChanged) {
-            setTimeout(function () {
-              userActivity.input = hasInputChanged
-            })
-          }
-          onClick(clickContext, clickEvent, function () {
-            return userActivity
+          var localUserActivity = userActivity
+          events.onPointerUp(clickContext, event, function () {
+            return localUserActivity
           })
           clickContext = undefined
         }
@@ -61,7 +55,7 @@ export function listenActionEvents(events) {
       window,
       DOM_EVENT.INPUT,
       function () {
-        hasInputChanged = true
+        userActivity.input = true
       },
       { capture: true }
     )
@@ -80,6 +74,11 @@ function isSelectionEmpty() {
   var selection = window.getSelection()
   return !selection || selection.isCollapsed
 }
-function isMouseEventOnElement(event) {
-  return event.target instanceof Element
+function isValidPointerEvent(event) {
+  return (
+    event.target instanceof Element &&
+    // Only consider 'primary' pointer events for now. Multi-touch support could be implemented in
+    // the future.
+    event.isPrimary !== false
+  )
 }

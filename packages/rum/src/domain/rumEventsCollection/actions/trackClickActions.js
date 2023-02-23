@@ -13,10 +13,15 @@ import {
   map,
   LifeCycleEventType,
   ActionType,
-  isNullUndefinedDefaultValue
+  isNullUndefinedDefaultValue,
+  isArray,
+  includes
 } from '@cloudcare/browser-core'
 import { trackEventCounts } from '../../trackEventCounts'
-import { waitPageActivityEnd } from '../../waitPageActivityEnd'
+import {
+  waitPageActivityEnd,
+  PAGE_ACTIVITY_VALIDATION_DELAY
+} from '../../waitPageActivityEnd'
 import { createClickChain } from './clickChain'
 import { getActionNameFromElement } from './getActionNameFromElement'
 // import { getSelectorsFromElement } from './getSelectorsFromElement'
@@ -42,19 +47,26 @@ export function trackClickActions(
   lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, stopClickChain)
   var _listenActionEvents = listenActionEvents({
     onPointerDown: function (pointerDownEvent) {
-      return processPointerDown(configuration, pointerDownEvent)
+      return processPointerDown(
+        configuration,
+        lifeCycle,
+        domMutationObservable,
+        history,
+        pointerDownEvent
+      )
     },
-    onClick: function (clickActionBase, clickEvent, getUserActivity) {
-      return processClick(
+    onPointerUp: function (data, startEvent, getUserActivity) {
+      startClickAction(
         configuration,
         lifeCycle,
         domMutationObservable,
         history,
         stopObservable,
         appendClickToClickChain,
-        clickActionBase,
-        clickEvent,
-        getUserActivity
+        data.clickActionBase,
+        startEvent,
+        getUserActivity,
+        data.hadActivityOnPointerDown
       )
     }
   })
@@ -89,86 +101,130 @@ export function trackClickActions(
       })
     }
   }
-  function processPointerDown(configuration, pointerDownEvent) {
-    var clickActionBase = computeClickActionBase(
-      pointerDownEvent,
-      configuration.actionNameAttribute
-    )
-    return clickActionBase
+}
+function processPointerDown(
+  configuration,
+  lifeCycle,
+  domMutationObservable,
+  history,
+  pointerDownEvent
+) {
+  if (!configuration.trackFrustrations && history.find()) {
+    // TODO: remove this in a future major version. To keep retrocompatibility, ignore any new
+    // action if another one is already occurring.
+    return
   }
-  function processClick(
-    configuration,
+
+  var clickActionBase = computeClickActionBase(
+    pointerDownEvent,
+    configuration.actionNameAttribute
+  )
+  if (!configuration.trackFrustrations && !clickActionBase.name) {
+    // TODO: remove this in a future major version. To keep retrocompatibility, ignore any action
+    // with a blank name
+    return
+  }
+
+  var hadActivityOnPointerDown = false
+
+  waitPageActivityEnd(
     lifeCycle,
     domMutationObservable,
-    history,
-    stopObservable,
-    appendClickToClickChain,
-    clickActionBase,
-    clickEvent,
-    getUserActivity
-  ) {
-    var click = newClick(
-      lifeCycle,
-      history,
-      getUserActivity,
-      clickActionBase,
-      clickEvent
-    )
-    if (configuration.trackFrustrations) {
-      appendClickToClickChain(click)
+    configuration,
+    function (pageActivityEndEvent) {
+      hadActivityOnPointerDown = pageActivityEndEvent.hadActivity
+    },
+    // We don't care about the activity duration, we just want to know whether an activity did happen
+    // within the "validation delay" or not. Limit the duration so the callback is called sooner.
+    PAGE_ACTIVITY_VALIDATION_DELAY
+  )
+
+  return {
+    clickActionBase: clickActionBase,
+    hadActivityOnPointerDown: function () {
+      return hadActivityOnPointerDown
     }
+  }
+}
+function startClickAction(
+  configuration,
+  lifeCycle,
+  domMutationObservable,
+  history,
+  stopObservable,
+  appendClickToClickChain,
+  clickActionBase,
+  startEvent,
+  getUserActivity,
+  hadActivityOnPointerDown
+) {
+  var click = newClick(
+    lifeCycle,
+    history,
+    getUserActivity,
+    clickActionBase,
+    startEvent
+  )
 
-    var _waitPageActivityEnd = waitPageActivityEnd(
-      lifeCycle,
-      domMutationObservable,
-      configuration,
-      function (pageActivityEndEvent) {
-        if (
-          pageActivityEndEvent.hadActivity &&
-          pageActivityEndEvent.end < click.startClocks.timeStamp
-        ) {
-          // If the clock is looking weird, just discard the click
-          click.discard()
-        } else {
+  if (configuration.trackFrustrations) {
+    appendClickToClickChain(click)
+  }
+  var _waitPageActivityEnd = waitPageActivityEnd(
+    lifeCycle,
+    domMutationObservable,
+    configuration,
+    function (pageActivityEndEvent) {
+      if (
+        pageActivityEndEvent.hadActivity &&
+        pageActivityEndEvent.end < click.startClocks.timeStamp
+      ) {
+        // If the clock is looking weird, just discard the click
+        click.discard()
+      } else {
+        if (pageActivityEndEvent.hadActivity) {
+          click.stop(pageActivityEndEvent.end)
+        } else if (hadActivityOnPointerDown()) {
           click.stop(
-            pageActivityEndEvent.hadActivity
-              ? pageActivityEndEvent.end
-              : undefined
+            // using the click start as activity end, so the click will have some activity but its
+            // duration will be 0 (as the activity started before the click start)
+            click.startClocks.timeStamp
           )
+        } else {
+          click.stop()
+        }
 
-          // Validate or discard the click only if we don't track frustrations. It'll be done when
-          // the click chain is finalized.
-          if (!configuration.trackFrustrations) {
-            if (!pageActivityEndEvent.hadActivity) {
-              // If we are not tracking frustrations, we should discard the click to keep backward
-              // compatibility.
-              click.discard()
-            } else {
-              click.validate()
-            }
+        // Validate or discard the click only if we don't track frustrations. It'll be done when
+        // the click chain is finalized.
+        if (!configuration.trackFrustrations) {
+          if (!pageActivityEndEvent.hadActivity) {
+            // If we are not tracking frustrations, we should discard the click to keep backward
+            // compatibility.
+            click.discard()
+          } else {
+            click.validate()
           }
         }
-      },
-      CLICK_ACTION_MAX_DURATION
-    )
-
-    var viewEndedSubscription = lifeCycle.subscribe(
-      LifeCycleEventType.VIEW_ENDED,
-      function (data) {
-        click.stop(data.endClocks.timeStamp)
       }
-    )
+    },
+    CLICK_ACTION_MAX_DURATION
+  )
+  var stopWaitPageActivityEnd = _waitPageActivityEnd.stop
+  var viewEndedSubscription = lifeCycle.subscribe(
+    LifeCycleEventType.VIEW_ENDED,
+    function (data) {
+      click.stop(data.endClocks.timeStamp)
+    }
+  )
 
-    var stopSubscription = stopObservable.subscribe(function () {
-      click.stop()
-    })
+  var stopSubscription = stopObservable.subscribe(function () {
+    click.stop()
+  })
 
-    click.stopObservable.subscribe(function () {
-      viewEndedSubscription.unsubscribe()
-      _waitPageActivityEnd.stop()
-      stopSubscription.unsubscribe()
-    })
-  }
+  click.stopObservable.subscribe(function () {
+    viewEndedSubscription.unsubscribe()
+    stopWaitPageActivityEnd()
+    stopSubscription.unsubscribe()
+  })
 }
 
 function computeClickActionBase(event, actionNameAttribute) {
@@ -192,7 +248,7 @@ function computeClickActionBase(event, actionNameAttribute) {
   // }
 
   return {
-    type: 'click',
+    type: ActionType.CLICK,
     target: target,
     position: position,
     name: getActionNameFromElement(event.target, actionNameAttribute)
@@ -213,12 +269,22 @@ function newClick(
   history,
   getUserActivity,
   clickActionBase,
-  clickEvent
+  startEvent
 ) {
   var id = UUID()
   var startClocks = clocksNow()
   var historyEntry = history.add(id, startClocks.relative)
-  var eventCountsSubscription = trackEventCounts(lifeCycle)
+  var eventCountsSubscription = trackEventCounts({
+    lifeCycle: lifeCycle,
+    isChildEvent: function (event) {
+      return (
+        event.action !== undefined &&
+        (isArray(event.action.id)
+          ? includes(event.action.id, id)
+          : event.action.id === id)
+      )
+    }
+  })
   var status = ClickStatus.ONGOING
   var activityEndTime
   var frustrationTypes = []
@@ -240,17 +306,20 @@ function newClick(
   }
 
   return {
-    event: clickEvent,
+    event: startEvent,
     stop: stop,
-    startClocks: startClocks,
     stopObservable: stopObservable,
-    hasError: eventCountsSubscription.eventCounts.errorCount > 0,
-    hasPageActivity: activityEndTime !== undefined,
+    hasError: function () {
+      return eventCountsSubscription.eventCounts.errorCount > 0
+    },
+    hasPageActivity: function () {
+      return activityEndTime !== undefined
+    },
     getUserActivity: getUserActivity,
     addFrustration: function (frustrationType) {
       frustrationTypes.push(frustrationType)
     },
-
+    startClocks: startClocks,
     isStopped: function () {
       return status === ClickStatus.STOPPED || status === ClickStatus.FINALIZED
     },
@@ -261,7 +330,7 @@ function newClick(
         history,
         getUserActivity,
         clickActionBase,
-        clickEvent
+        startEvent
       )
     },
 
@@ -283,15 +352,16 @@ function newClick(
           id: id,
           frustrationTypes: frustrationTypes,
           counts: {
-            resourceCount,
-            errorCount,
-            longTaskCount
+            resourceCount: resourceCount,
+            errorCount: errorCount,
+            longTaskCount: longTaskCount
           },
-          events: isNullUndefinedDefaultValue(domEvents, [clickEvent]),
-          event: clickEvent
+          events: isNullUndefinedDefaultValue(domEvents, [startEvent]),
+          event: startEvent
         },
         clickActionBase
       )
+
       lifeCycle.notify(LifeCycleEventType.AUTO_ACTION_COMPLETED, clickAction)
       status = ClickStatus.FINALIZED
     },
@@ -306,6 +376,7 @@ function newClick(
 export function finalizeClicks(clicks, rageClick) {
   var _computeFrustration = computeFrustration(clicks, rageClick)
   var isRage = _computeFrustration.isRage
+
   if (isRage) {
     each(clicks, function (click) {
       click.discard()

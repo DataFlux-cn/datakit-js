@@ -1,4 +1,4 @@
-import { relativeNow, ONE_MINUTE, filter, map, each } from './tools'
+import { relativeNow, ONE_MINUTE, filter, map } from './tools'
 
 var END_OF_TIMES = Infinity
 

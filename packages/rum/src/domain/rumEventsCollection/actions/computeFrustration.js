@@ -11,10 +11,10 @@ var MIN_CLICKS_PER_SECOND_TO_CONSIDER_RAGE = 3
 export function computeFrustration(clicks, rageClick) {
   if (isRage(clicks)) {
     rageClick.addFrustration(FrustrationType.RAGE_CLICK)
-    if (clicks.some(isDead)) {
+    if (some(clicks, isDead)) {
       rageClick.addFrustration(FrustrationType.DEAD_CLICK)
     }
-    if (rageClick.hasError) {
+    if (rageClick.hasError()) {
       rageClick.addFrustration(FrustrationType.ERROR_CLICK)
     }
     return { isRage: true }
@@ -24,7 +24,7 @@ export function computeFrustration(clicks, rageClick) {
     return click.getUserActivity().selection
   })
   each(clicks, function (click) {
-    if (click.hasError) {
+    if (click.hasError()) {
       click.addFrustration(FrustrationType.ERROR_CLICK)
     }
     if (
@@ -69,6 +69,9 @@ var DEAD_CLICK_EXCLUDE_SELECTOR =
   'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]),' +
   'textarea,' +
   'select,' +
+  // contenteditable and their descendants don't always trigger meaningful changes when manipulated
+  '[contenteditable],' +
+  '[contenteditable] *,' +
   // canvas, as there is no good way to detect activity occurring on them
   'canvas,' +
   // links that are interactive (have an href attribute) or any of their descendants, as they can
@@ -77,7 +80,7 @@ var DEAD_CLICK_EXCLUDE_SELECTOR =
   'a[href] *'
 
 export function isDead(click) {
-  if (click.hasPageActivity || click.getUserActivity().input) {
+  if (click.hasPageActivity() || click.getUserActivity().input) {
     return false
   }
   return !elementMatches(click.event.target, DEAD_CLICK_EXCLUDE_SELECTOR)

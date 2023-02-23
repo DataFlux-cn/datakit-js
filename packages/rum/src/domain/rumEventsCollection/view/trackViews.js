@@ -11,12 +11,14 @@ import {
   looksLikeRelativeTime,
   ViewLoadingType,
   LifeCycleEventType,
-  PageExitReason
+  PageExitReason,
+  isHashAnAnchor,
+  getPathFromHash
 } from '@cloudcare/browser-core'
 
 import { trackInitialViewTimings } from './trackInitialViewTimings'
 import { trackViewMetrics } from './trackViewMetrics'
-
+import { trackViewEventCounts } from './trackViewEventCounts'
 export var THROTTLE_VIEW_UPDATE_PERIOD = 3000
 export var SESSION_KEEP_ALIVE_INTERVAL = 5 * ONE_MINUTE
 
@@ -204,6 +206,13 @@ function newView(
   var setLoadEvent = _trackViewMetrics.setLoadEvent
   var stopViewMetricsTracking = _trackViewMetrics.stop
   var viewMetrics = _trackViewMetrics.viewMetrics
+  var _trackViewEventCounts = trackViewEventCounts(
+    lifeCycle,
+    id,
+    scheduleViewUpdate
+  )
+  var scheduleStopEventCountsTracking = _trackViewEventCounts.scheduleStop
+  var eventCounts = _trackViewEventCounts.eventCounts
   // Initial view update
   triggerViewUpdate()
 
@@ -226,7 +235,8 @@ function newView(
           startClocks: startClocks,
           timings: timings,
           duration: elapsed(startClocks.timeStamp, currentEnd),
-          isActive: endClocks === undefined
+          isActive: endClocks === undefined,
+          eventCounts: eventCounts
         },
         viewMetrics
       )
@@ -245,6 +255,7 @@ function newView(
       endClocks = clocks
       lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks: endClocks })
       stopViewMetricsTracking()
+      scheduleStopEventCountsTracking
     },
     triggerUpdate: function () {
       // cancel any pending view updates execution
@@ -286,14 +297,4 @@ function areDifferentLocation(currentLocation, otherLocation) {
       getPathFromHash(otherLocation.hash) !==
         getPathFromHash(currentLocation.hash))
   )
-}
-
-function isHashAnAnchor(hash) {
-  var correspondingId = hash.substr(1)
-  return !!document.getElementById(correspondingId)
-}
-
-function getPathFromHash(hash) {
-  var index = hash.indexOf('?')
-  return index < 0 ? hash : hash.slice(0, index)
 }

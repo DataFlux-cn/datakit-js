@@ -5,7 +5,9 @@ import {
   ContextHistory,
   replaceNumberCharByPath,
   jsonStringify,
-  getQueryParamsFromUrl
+  getQueryParamsFromUrl,
+  isHashAnAnchor,
+  getPathFromHash
 } from '@cloudcare/browser-core'
 
 /**
@@ -61,9 +63,10 @@ export function startUrlContexts(
   })
 
   function buildUrlContext(data) {
-    let path = data.location.pathname
-    if (path === '/' && data.location.hash) {
-      path = '/' + data.location.hash
+    var path = data.location.pathname
+    var hash = data.location.hash
+    if (path === '/' && hash && !isHashAnAnchor(hash)) {
+      path = '/' + getPathFromHash(hash)
     }
     return {
       url: data.url,

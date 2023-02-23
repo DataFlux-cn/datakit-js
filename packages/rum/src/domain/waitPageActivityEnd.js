@@ -73,6 +73,7 @@ export function doWaitPageActivityEnd(
   var validationTimeoutId = setTimeout(function () {
     complete({ hadActivity: false })
   }, PAGE_ACTIVITY_VALIDATION_DELAY)
+
   var maxDurationTimeoutId =
     maxDuration &&
     setTimeout(function () {
@@ -168,8 +169,10 @@ export function createPageActivityObservable(
       )
     )
 
-    trackWindowOpen(notifyPageActivity)
+    var _trackWindowOpen = trackWindowOpen(notifyPageActivity)
+    var stopTrackingWindowOpen = _trackWindowOpen.stop
     return function () {
+      stopTrackingWindowOpen()
       each(subscriptions, function (s) {
         s.unsubscribe()
       })

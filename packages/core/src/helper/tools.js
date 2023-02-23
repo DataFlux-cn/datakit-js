@@ -1973,3 +1973,11 @@ export function tryToClone(response) {
     return
   }
 }
+export function isHashAnAnchor(hash) {
+  var correspondingId = hash.substr(1)
+  return !!document.getElementById(correspondingId)
+}
+export function getPathFromHash(hash) {
+  var index = hash.indexOf('?')
+  return index < 0 ? hash : hash.slice(0, index)
+}

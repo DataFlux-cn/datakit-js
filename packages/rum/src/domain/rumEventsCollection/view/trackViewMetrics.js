@@ -7,7 +7,6 @@ import {
   ViewLoadingType
 } from '@cloudcare/browser-core'
 import { supportPerformanceTimingEvent } from '../../performanceCollection'
-import { trackEventCounts } from '../../trackEventCounts'
 import { waitPageActivityEnd } from '../../waitPageActivityEnd'
 export function trackViewMetrics(
   lifeCycle,
@@ -17,24 +16,8 @@ export function trackViewMetrics(
   loadingType,
   viewStart
 ) {
-  var viewMetrics = {
-    eventCounts: {
-      errorCount: 0,
-      longTaskCount: 0,
-      resourceCount: 0,
-      actionCount: 0,
-      frustrationCount: 0
-    }
-  }
+  var viewMetrics = {}
 
-  var _trackEventCounts = trackEventCounts(
-    lifeCycle,
-    function (newEventCounts) {
-      viewMetrics.eventCounts = newEventCounts
-      scheduleViewUpdate()
-    }
-  )
-  var stopEventCountsTracking = _trackEventCounts.stop
   var _trackLoadingTime = trackLoadingTime(
     lifeCycle,
     domMutationObservable,
@@ -64,7 +47,6 @@ export function trackViewMetrics(
   }
   return {
     stop: function () {
-      stopEventCountsTracking()
       stopLoadingTimeTracking()
       stopCLSTracking()
     },
