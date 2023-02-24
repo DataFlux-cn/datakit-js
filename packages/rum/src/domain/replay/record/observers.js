@@ -95,7 +95,6 @@ export function initObservers(o) {
     },
     stop: function () {
       mutationHandler.stop()
-      mutationHandler()
       mousemoveHandler()
       mouseInteractionHandler()
       scrollHandler()
