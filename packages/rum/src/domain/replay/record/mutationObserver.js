@@ -95,7 +95,7 @@ function processMutations(
   // * should be hidden or ignored
   var filteredMutations = filter(mutations, function (mutation) {
     return (
-      document.contains(mutation.target) &&
+      target.contains(mutation.target) &&
       nodeAndAncestorsHaveSerializedNode(mutation.target) &&
       getNodePrivacyLevel(
         mutation.target,
