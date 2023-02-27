@@ -19,26 +19,29 @@ function workerCodeFn() {
 
     var deflate = new Deflate()
     var rawBytesCount = 0
-    self.addEventListener(
+    var _self = self
+    _self.addEventListener(
       'message',
       monitor(function (event) {
         var data = event.data
         switch (data.action) {
           case 'init':
-            self.postMessage({
+            _self.postMessage({
               type: 'initialized'
             })
             break
           case 'write': {
             var additionalBytesCount = pushData(data.data)
-            var compressedBytesCount = 0
-            each(deflate.chunks, function (chunk) {
-              compressedBytesCount += chunk.length
-            })
-            self.postMessage({
+            _self.postMessage({
               type: 'wrote',
               id: data.id,
-              compressedBytesCount: compressedBytesCount,
+              compressedBytesCount: deflate.chunks.reduce(function (
+                total,
+                chunk
+              ) {
+                return total + chunk.length
+              },
+              0),
               additionalBytesCount: additionalBytesCount
             })
             break
@@ -46,7 +49,7 @@ function workerCodeFn() {
           case 'flush': {
             var additionalBytesCount = data.data ? pushData(data.data) : 0
             deflate.push('', constants.Z_FINISH)
-            self.postMessage({
+            _self.postMessage({
               type: 'flushed',
               id: data.id,
               result: deflate.result,

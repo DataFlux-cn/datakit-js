@@ -12,6 +12,7 @@ export function Segment(
   onFlushed
 ) {
   this.worker = worker
+  this.id = nextId++
   var viewId = context.view.id
 
   this.metadata = assign(
@@ -62,7 +63,6 @@ export function Segment(
     action: 'write'
   })
 }
-Segment.prototype.id = nextId++
 Segment.prototype.addRecord = function (record) {
   this.metadata.start = Math.min(this.metadata.start, record.timestamp)
   this.metadata.end = Math.max(this.metadata.end, record.timestamp)
