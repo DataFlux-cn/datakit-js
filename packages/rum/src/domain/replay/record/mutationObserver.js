@@ -21,7 +21,6 @@ import {
   serializeAttribute,
   SerializationContextStatus
 } from './serialize'
-import { forEach } from './utils'
 import { createMutationBatch } from './mutationBatch'
 
 /**

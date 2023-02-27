@@ -118,7 +118,7 @@ var priorityStrategies = [
         return Boolean(label)
       })
       labelledByAttribute = map(labelledByAttribute, function (ele) {
-        return getTextualContent(ele)
+        return getTextualContent(ele, userProgrammaticAttribute)
       })
       return labelledByAttribute.join(' ')
     }

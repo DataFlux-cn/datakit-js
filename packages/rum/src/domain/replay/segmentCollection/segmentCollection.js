@@ -1,4 +1,8 @@
-import { ONE_SECOND, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  ONE_SECOND,
+  LifeCycleEventType,
+  isPageExitReason
+} from '@cloudcare/browser-core'
 import { buildReplayPayload } from './buildReplayPayload'
 import { Segment } from './segment'
 
