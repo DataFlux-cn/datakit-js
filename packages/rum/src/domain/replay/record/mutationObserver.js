@@ -49,7 +49,7 @@ export function startMutationObserver(
 
   var observer = new MutationObserver(mutationBatch.addMutations)
 
-  observer.observe(document, {
+  observer.observe(target, {
     attributeOldValue: true,
     attributes: true,
     characterData: true,
@@ -164,10 +164,10 @@ function processChildListMutations(
   var removedNodes = new Map()
   for (var i = 0; i < mutations.length; i++) {
     var mutation = mutations[i]
-    forEach(mutation.addedNodes, function (node) {
+    mutation.addedNodes.forEach(function (node) {
       addedAndMovedNodes.add(node)
     })
-    forEach(mutation.removedNodes, function (node) {
+    mutation.removedNodes.forEach(function (node) {
       if (!addedAndMovedNodes.has(node)) {
         removedNodes.set(node, mutation.target)
       }
