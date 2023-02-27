@@ -26,7 +26,6 @@ export function Segment(
     },
     context
   )
-  this.id = nextId++
   replayStats.addSegment(viewId)
   replayStats.addRecord(viewId)
   var _this = this
@@ -63,6 +62,7 @@ export function Segment(
     action: 'write'
   })
 }
+Segment.prototype.id = nextId++
 Segment.prototype.addRecord = function (record) {
   this.metadata.start = Math.min(this.metadata.start, record.timestamp)
   this.metadata.end = Math.max(this.metadata.end, record.timestamp)
