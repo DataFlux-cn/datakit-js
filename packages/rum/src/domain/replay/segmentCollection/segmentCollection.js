@@ -126,10 +126,7 @@ export function doStartSegmentCollection(
           segment.metadata,
           rawSegmentBytesCount
         )
-        if (
-          segment.flushReason === 'visibility_hidden' ||
-          segment.flushReason === 'before_unload'
-        ) {
+        if (isPageExitReason(segment.flushReason)) {
           httpRequest.sendOnExit(payload)
         } else {
           httpRequest.send(payload)

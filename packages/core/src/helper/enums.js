@@ -1,34 +1,37 @@
 export var DOM_EVENT = {
   BEFORE_UNLOAD: 'beforeunload',
-  CLICK : 'click',
-  DBL_CLICK : 'dblclick',
-  KEY_DOWN : 'keydown',
-  LOAD : 'load',
-  POP_STATE : 'popstate',
-  SCROLL : 'scroll',
-  TOUCH_START : 'touchstart',
-  TOUCH_END : 'touchend',
-  TOUCH_MOVE : 'touchmove',
-  VISIBILITY_CHANGE : 'visibilitychange',
-  DOM_CONTENT_LOADED : 'DOMContentLoaded',
-  POINTER_DOWN : 'pointerdown',
-  POINTER_UP : 'pointerup',
-  POINTER_CANCEL : 'pointercancel',
-  HASH_CHANGE : 'hashchange',
-  PAGE_HIDE : 'pagehide',
-  MOUSE_DOWN : 'mousedown',
-  MOUSE_UP : 'mouseup',
-  MOUSE_MOVE : 'mousemove',
-  FOCUS : 'focus',
-  BLUR : 'blur',
-  CONTEXT_MENU : 'contextmenu',
-  RESIZE : 'resize',
-  CHANGE : 'change',
-  INPUT : 'input',
-  PLAY : 'play',
-  PAUSE : 'pause',
-  SECURITY_POLICY_VIOLATION : 'securitypolicyviolation',
-  SELECTION_CHANGE : 'selectionchange',
+  CLICK: 'click',
+  DBL_CLICK: 'dblclick',
+  KEY_DOWN: 'keydown',
+  LOAD: 'load',
+  POP_STATE: 'popstate',
+  SCROLL: 'scroll',
+  TOUCH_START: 'touchstart',
+  TOUCH_END: 'touchend',
+  TOUCH_MOVE: 'touchmove',
+  VISIBILITY_CHANGE: 'visibilitychange',
+  PAGE_SHOW: 'pageshow',
+  FREEZE: 'freeze',
+  RESUME: 'resume',
+  DOM_CONTENT_LOADED: 'DOMContentLoaded',
+  POINTER_DOWN: 'pointerdown',
+  POINTER_UP: 'pointerup',
+  POINTER_CANCEL: 'pointercancel',
+  HASH_CHANGE: 'hashchange',
+  PAGE_HIDE: 'pagehide',
+  MOUSE_DOWN: 'mousedown',
+  MOUSE_UP: 'mouseup',
+  MOUSE_MOVE: 'mousemove',
+  FOCUS: 'focus',
+  BLUR: 'blur',
+  CONTEXT_MENU: 'contextmenu',
+  RESIZE: 'resize',
+  CHANGE: 'change',
+  INPUT: 'input',
+  PLAY: 'play',
+  PAUSE: 'pause',
+  SECURITY_POLICY_VIOLATION: 'securitypolicyviolation',
+  SELECTION_CHANGE: 'selectionchange'
 }
 export var ResourceType = {
   DOCUMENT: 'document',
@@ -48,9 +51,9 @@ export var ActionType = {
   CUSTOM: 'custom'
 }
 export var FrustrationType = {
-  RAGE_CLICK :'rage_click',
-  ERROR_CLICK :'error_click',
-  DEAD_CLICK :'dead_click',
+  RAGE_CLICK: 'rage_click',
+  ERROR_CLICK: 'error_click',
+  DEAD_CLICK: 'dead_click'
 }
 export var RumEventType = {
   ACTION: 'action',
@@ -61,9 +64,9 @@ export var RumEventType = {
   LOGGER: 'logger'
 }
 
-export var ViewLoadingType  = {
+export var ViewLoadingType = {
   INITIAL_LOAD: 'initial_load',
-  ROUTE_CHANGE: 'route_change',
+  ROUTE_CHANGE: 'route_change'
 }
 export var RequestType = {
   FETCH: ResourceType.FETCH,
@@ -76,9 +79,9 @@ export var TraceType = {
   ZIPKIN_SINGLE_HEADER: 'zipkin_single_header',
   W3C_TRACEPARENT: 'w3c_traceparent',
   SKYWALKING_V3: 'skywalking_v3',
-  JAEGER: 'jaeger',
+  JAEGER: 'jaeger'
 }
 export var ErrorHandling = {
   HANDLED: 'handled',
-  UNHANDLED: 'unhandled',
+  UNHANDLED: 'unhandled'
 }

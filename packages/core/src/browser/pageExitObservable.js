@@ -1,9 +1,16 @@
 import { Observable } from '../helper/observable'
-import { addEventListener } from '../helper/tools'
+import {
+  addEventListener,
+  addEventListeners,
+  includes,
+  values
+} from '../helper/tools'
 import { DOM_EVENT } from '../helper/enums'
 export var PageExitReason = {
   HIDDEN: 'visibility_hidden',
-  UNLOADING: 'before_unload'
+  UNLOADING: 'before_unload',
+  PAGEHIDE: 'page_hide',
+  FROZEN: 'page_frozen'
 }
 
 export function createPageExitObservable() {
@@ -12,12 +19,25 @@ export function createPageExitObservable() {
      * Only event that guarantee to fire on mobile devices when the page transitions to background state
      * (e.g. when user switches to a different application, goes to homescreen, etc), or is being unloaded.
      */
-    var visibilityChangeListener = addEventListener(
+    var visibilityChangeListener = addEventListeners(
       document,
-      DOM_EVENT.VISIBILITY_CHANGE,
-      function () {
-        if (document.visibilityState === 'hidden') {
+      [DOM_EVENT.VISIBILITY_CHANGE, DOM_EVENT.FREEZE, DOM_EVENT.PAGE_HIDE],
+      function (event) {
+        if (
+          event.type === DOM_EVENT.VISIBILITY_CHANGE &&
+          document.visibilityState === 'hidden'
+        ) {
+          /**
+           * Only event that guarantee to fire on mobile devices when the page transitions to background state
+           * (e.g. when user switches to a different application, goes to homescreen, etc), or is being unloaded.
+           */
           observable.notify({ reason: PageExitReason.HIDDEN })
+        } else if (event.type === DOM_EVENT.FREEZE) {
+          /**
+           * After transitioning in background a tab can be freezed to preserve resources. (cf: https://developer.chrome.com/blog/page-lifecycle-api)
+           * Allow to collect events happening between hidden and frozen state.
+           */
+          observable.notify({ reason: PageExitReason.FROZEN })
         }
       },
       { capture: true }
@@ -43,4 +63,8 @@ export function createPageExitObservable() {
   })
 
   return observable
+}
+
+export function isPageExitReason(reason) {
+  return includes(values(PageExitReason), reason)
 }

@@ -28,7 +28,6 @@ import {
   switchToAbsoluteUrl,
   serializeStyleSheets
 } from './serializationUtils'
-import { forEach } from './utils'
 
 // Those values are the only one that can be used when inheriting privacy levels from parent to
 // children during serialization, since HIDDEN and IGNORE shouldn't serialize their children. This
@@ -249,7 +248,7 @@ function serializeCDataNode() {
 export function serializeChildNodes(node, options) {
   var result = []
 
-  forEach(node.childNodes, function (childNode) {
+  node.childNodes.forEach(function (childNode) {
     var serializedChildNode = serializeNodeWithId(childNode, options)
     if (serializedChildNode) {
       result.push(serializedChildNode)
