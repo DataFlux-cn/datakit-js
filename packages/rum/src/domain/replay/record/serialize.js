@@ -418,8 +418,6 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
     )
     var cssText = getCssRulesString(stylesheet)
     if (cssText && stylesheet) {
-      delete safeAttrs.rel
-      delete safeAttrs.href
       safeAttrs._cssText = cssText
     }
   }
@@ -477,8 +475,8 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
       scrollLeft = Math.round(element.scrollLeft)
       if (scrollTop || scrollLeft) {
         serializationContext.elementsScrollPositions.set(element, {
-          scrollTop,
-          scrollLeft
+          scrollTop: scrollTop,
+          scrollLeft: scrollLeft
         })
       }
       break
