@@ -368,45 +368,43 @@ export var now =
     return new Date().getTime()
   }
 
-export var throttle = function (func, wait, options) {
-  var timeout, context, args, result
-  var previous = 0
-  if (!options) options = {}
+export var throttle = function (fn, wait, options) {
+  const needLeadingExecution =
+    options && options.leading !== undefined ? options.leading : true
+  const needTrailingExecution =
+    options && options.trailing !== undefined ? options.trailing : true
+  let inWaitPeriod = false
+  let pendingExecutionWithParameters
+  let pendingTimeoutId
 
-  var later = function () {
-    previous = options.leading === false ? 0 : new Date().getTime()
-    timeout = null
-    result = func.apply(context, args)
-    if (!timeout) context = args = null
-  }
-
-  var throttled = function () {
-    args = arguments
-    var now = new Date().getTime()
-    if (!previous && options.leading === false) previous = now
-    //下次触发 func 剩余的时间
-    var remaining = wait - (now - previous)
-    context = this
-    // 如果没有剩余的时间了或者你改了系统时间
-    if (remaining <= 0 || remaining > wait) {
-      if (timeout) {
-        clearTimeout(timeout)
-        timeout = null
+  return {
+    throttled: function () {
+      var parameters = toArray(arguments)
+      if (inWaitPeriod) {
+        pendingExecutionWithParameters = parameters
+        return
       }
-      previous = now
-      result = func.apply(context, args)
-      if (!timeout) context = args = null
-    } else if (!timeout && options.trailing !== false) {
-      timeout = setTimeout(later, remaining)
+      var context = this
+      if (needLeadingExecution) {
+        fn.apply(context, parameters)
+      } else {
+        pendingExecutionWithParameters = parameters
+      }
+      inWaitPeriod = true
+      pendingTimeoutId = setTimeout(function () {
+        if (needTrailingExecution && pendingExecutionWithParameters) {
+          fn.apply(context, pendingExecutionWithParameters)
+        }
+        inWaitPeriod = false
+        pendingExecutionWithParameters = undefined
+      }, wait)
+    },
+    cancel: function () {
+      clearTimeout(pendingTimeoutId)
+      inWaitPeriod = false
+      pendingExecutionWithParameters = undefined
     }
-    return result
   }
-  throttled.cancel = function () {
-    clearTimeout(timeout)
-    previous = 0
-    timeout = null
-  }
-  return throttled
 }
 export var hashCode = function (str) {
   if (typeof str !== 'string') {

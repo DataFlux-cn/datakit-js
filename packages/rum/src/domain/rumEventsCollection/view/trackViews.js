@@ -189,14 +189,15 @@ function newView(
   })
 
   // Update the view every time the measures are changing
-  var scheduleViewUpdate = throttle(
+  var _scheduleViewUpdate = throttle(
     triggerViewUpdate,
     THROTTLE_VIEW_UPDATE_PERIOD,
     {
       leading: false
     }
   )
-  var cancelScheduleViewUpdate = scheduleViewUpdate.cancel
+  var scheduleViewUpdate = _scheduleViewUpdate.throttled
+  var cancelScheduleViewUpdate = _scheduleViewUpdate.cancel
 
   var _trackViewMetrics = trackViewMetrics(
     lifeCycle,

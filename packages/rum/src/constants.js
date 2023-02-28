@@ -7,7 +7,7 @@ export var NodePrivacyLevel = {
   MASK_USER_INPUT: DefaultPrivacyLevel.MASK_USER_INPUT
 }
 
-export var PRIVACY_ATTR_NAME = 'data-gc-privacy'
+export var PRIVACY_ATTR_NAME = 'data-dd-privacy'
 
 // Privacy Attrs
 export var PRIVACY_ATTR_VALUE_ALLOW = 'allow'
@@ -16,10 +16,10 @@ export var PRIVACY_ATTR_VALUE_MASK_USER_INPUT = 'mask-user-input'
 export var PRIVACY_ATTR_VALUE_HIDDEN = 'hidden'
 
 // Privacy Classes - not all customers can set plain HTML attributes, so support classes too
-export var PRIVACY_CLASS_ALLOW = 'gc-privacy-allow'
-export var PRIVACY_CLASS_MASK = 'gc-privacy-mask'
-export var PRIVACY_CLASS_MASK_USER_INPUT = 'gc-privacy-mask-user-input'
-export var PRIVACY_CLASS_HIDDEN = 'gc-privacy-hidden'
+export var PRIVACY_CLASS_ALLOW = 'dd-privacy-allow'
+export var PRIVACY_CLASS_MASK = 'dd-privacy-mask'
+export var PRIVACY_CLASS_MASK_USER_INPUT = 'dd-privacy-mask-user-input'
+export var PRIVACY_CLASS_HIDDEN = 'dd-privacy-hidden'
 
 // Private Replacement Templates
 export var CENSORED_STRING_MARK = '***'

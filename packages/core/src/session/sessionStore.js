@@ -10,11 +10,7 @@ import { retrieveSession, withCookieLockAccess } from './sessionCookieStore'
  * - not tracked, the session does not have an id but it is updated along the user navigation
  * - inactive, no session in store or session expired, waiting for a renew session
  */
-export function startSessionStore(
-  options,
-  productKey,
-  computeSessionState
-) {
+export function startSessionStore(options, productKey, computeSessionState) {
   var renewObservable = new Observable()
   var expireObservable = new Observable()
 
@@ -25,26 +21,28 @@ export function startSessionStore(
     var isTracked
     withCookieLockAccess({
       options: options,
-      process: function(cookieSession){
+      process: function (cookieSession) {
         var synchronizedSession = synchronizeSession(cookieSession)
         isTracked = expandOrRenewCookie(synchronizedSession)
         return synchronizedSession
       },
-      after: function(cookieSession) {
+      after: function (cookieSession) {
         if (isTracked && !hasSessionInCache()) {
           renewSession(cookieSession)
         }
         sessionCache = cookieSession
-      },
+      }
     })
   }
 
   function expandSession() {
     withCookieLockAccess({
       options: options,
-      process: function(cookieSession) {
-        return (hasSessionInCache() ? synchronizeSession(cookieSession) : undefined)
-      },
+      process: function (cookieSession) {
+        return hasSessionInCache()
+          ? synchronizeSession(cookieSession)
+          : undefined
+      }
     })
   }
 
@@ -55,11 +53,11 @@ export function startSessionStore(
    */
   function watchSession() {
     withCookieLockAccess({
-      options:options,
-      process: function(cookieSession) {
-        return (!isActiveSession(cookieSession) ? {} : undefined)
+      options: options,
+      process: function (cookieSession) {
+        return !isActiveSession(cookieSession) ? {} : undefined
       },
-      after: synchronizeSession,
+      after: synchronizeSession
     })
   }
 
@@ -78,7 +76,7 @@ export function startSessionStore(
   }
 
   function expandOrRenewCookie(cookieSession) {
-    var sessionState= computeSessionState(cookieSession[productKey])
+    var sessionState = computeSessionState(cookieSession[productKey])
     var trackingType = sessionState.trackingType
     var isTracked = sessionState.isTracked
     cookieSession[productKey] = trackingType
@@ -94,7 +92,10 @@ export function startSessionStore(
   }
 
   function isSessionInCacheOutdated(cookieSession) {
-    return sessionCache.id !== cookieSession.id || sessionCache[productKey] !== cookieSession[productKey]
+    return (
+      sessionCache.id !== cookieSession.id ||
+      sessionCache[productKey] !== cookieSession[productKey]
+    )
   }
 
   function expireSession() {
@@ -119,21 +120,23 @@ export function startSessionStore(
     // created and expire can be undefined for versions which was not storing them
     // these checks could be removed when older versions will not be available/live anymore
     return (
-      (session.created === undefined || dateNow() - Number(session.created) < SESSION_TIME_OUT_DELAY) &&
+      (session.created === undefined ||
+        dateNow() - Number(session.created) < SESSION_TIME_OUT_DELAY) &&
       (session.expire === undefined || dateNow() < Number(session.expire))
     )
   }
 
   return {
-    expandOrRenewSession: throttle(expandOrRenewSession, COOKIE_ACCESS_DELAY),
+    expandOrRenewSession: throttle(expandOrRenewSession, COOKIE_ACCESS_DELAY)
+      .throttled,
     expandSession: expandSession,
-    getSession: function() {
+    getSession: function () {
       return sessionCache
     },
-    renewObservable:renewObservable,
-    expireObservable:expireObservable,
-    stop: function() {
+    renewObservable: renewObservable,
+    expireObservable: expireObservable,
+    stop: function () {
       clearInterval(watchSessionTimeoutId)
-    },
+    }
   }
 }

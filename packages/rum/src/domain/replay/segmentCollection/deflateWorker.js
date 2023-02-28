@@ -1,5 +1,3 @@
-import { each } from '@cloudcare/browser-core'
-
 var workerURL
 
 export function createDeflateWorker() {
@@ -19,20 +17,19 @@ function workerCodeFn() {
 
     var deflate = new Deflate()
     var rawBytesCount = 0
-    var _self = self
-    _self.addEventListener(
+    self.addEventListener(
       'message',
-      monitor(function (event) {
+      monitor((event) => {
         var data = event.data
         switch (data.action) {
           case 'init':
-            _self.postMessage({
+            self.postMessage({
               type: 'initialized'
             })
             break
           case 'write': {
             var additionalBytesCount = pushData(data.data)
-            _self.postMessage({
+            self.postMessage({
               type: 'wrote',
               id: data.id,
               compressedBytesCount: deflate.chunks.reduce(function (
@@ -49,7 +46,7 @@ function workerCodeFn() {
           case 'flush': {
             var additionalBytesCount = data.data ? pushData(data.data) : 0
             deflate.push('', constants.Z_FINISH)
-            _self.postMessage({
+            self.postMessage({
               type: 'flushed',
               id: data.id,
               result: deflate.result,

@@ -119,7 +119,7 @@ function initMutationObserver(cb, configuration, shadowRootsController) {
 }
 
 function initMoveObserver(cb) {
-  var updatePosition = throttle(
+  var _updatePosition = throttle(
     function (event) {
       var target = getEventTarget(event)
       if (hasSerializedNode(target)) {
@@ -146,7 +146,7 @@ function initMoveObserver(cb) {
       trailing: false
     }
   )
-
+  var updatePosition = _updatePosition.throttled
   return addEventListeners(
     document,
     [DOM_EVENT.MOUSE_MOVE, DOM_EVENT.TOUCH_MOVE],
@@ -232,7 +232,7 @@ function tryToComputeCoordinates(event) {
   return { x: x, y: y }
 }
 function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
-  var updatePosition = throttle(function (event) {
+  var _updatePosition = throttle(function (event) {
     var target = getEventTarget(event)
     if (
       !target ||
@@ -260,6 +260,7 @@ function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
       y: scrollPositions.scrollTop
     })
   }, SCROLL_OBSERVER_THRESHOLD)
+  var updatePosition = _updatePosition.throttled
   return addEventListener(document, DOM_EVENT.SCROLL, updatePosition, {
     capture: true,
     passive: true
@@ -423,8 +424,9 @@ export function initStyleSheetObserver(cb) {
     instrumentationStoppers.push(
       instrumentMethodAndCallOriginal(cls.prototype, 'insertRule', {
         before: function (rule, index) {
-          checkStyleSheetAndCallback(this.parentStyleSheet, function (id) {
-            var path = getPathToNestedCSSRule(this)
+          var _this = this
+          checkStyleSheetAndCallback(_this.parentStyleSheet, function (id) {
+            var path = getPathToNestedCSSRule(_this)
             if (path) {
               path.push(index || 0)
               cb({ id: id, adds: [{ rule: rule, index: path }] })
@@ -434,8 +436,9 @@ export function initStyleSheetObserver(cb) {
       }),
       instrumentMethodAndCallOriginal(cls.prototype, 'deleteRule', {
         before: function (index) {
-          checkStyleSheetAndCallback(this.parentStyleSheet, function (id) {
-            var path = getPathToNestedCSSRule(this)
+          var _this = this
+          checkStyleSheetAndCallback(_this.parentStyleSheet, function (id) {
+            var path = getPathToNestedCSSRule(_this)
             if (path) {
               path.push(index)
               cb({ id: id, removes: [{ index: path }] })
@@ -446,7 +449,7 @@ export function initStyleSheetObserver(cb) {
     )
   }
   return function () {
-    return each(instrumentationStoppers, function (stopper) {
+    each(instrumentationStoppers, function (stopper) {
       stopper.stop()
     })
   }
@@ -493,7 +496,7 @@ function initVisualViewportResizeObserver(cb) {
   if (!window.visualViewport) {
     return noop
   }
-  var updateDimension = throttle(
+  var _updateDimension = throttle(
     function () {
       cb(getVisualViewport())
     },
@@ -502,7 +505,8 @@ function initVisualViewportResizeObserver(cb) {
       trailing: false
     }
   )
-  var cancelThrottle = updateDimension.cancel
+  var cancelThrottle = _updateDimension.cancel
+  var updateDimension = _updateDimension.throttled
   var removeListener = addEventListeners(
     window.visualViewport,
     [DOM_EVENT.RESIZE, DOM_EVENT.SCROLL],

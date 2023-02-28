@@ -13,7 +13,8 @@ export var NodeType = {
   DocumentType: 1,
   Element: 2,
   Text: 3,
-  CDATA: 4
+  CDATA: 4,
+  DocumentFragment: 11
 }
 
 export var IncrementalSource = {

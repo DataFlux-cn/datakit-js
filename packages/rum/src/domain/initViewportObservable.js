@@ -16,10 +16,10 @@ export function initViewportObservable() {
 
 export function createViewportObservable() {
   var observable = new Observable(function () {
-    var updateDimension = throttle(function () {
+    var _throttledUpdateDimension = throttle(function () {
       observable.notify(getViewportDimension())
     }, 200)
-
+    var updateDimension = _throttledUpdateDimension.throttled
     return addEventListener(window, DOM_EVENT.RESIZE, updateDimension, {
       capture: true,
       passive: true

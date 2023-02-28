@@ -1,7 +1,5 @@
 import {
   noop,
-  filter,
-  each,
   isNullUndefinedDefaultValue,
   getChildNodes,
   isNodeShadowHost,
@@ -75,24 +73,21 @@ function processMutations(
   shadowRootsController,
   target
 ) {
-  each(
-    filter(mutations, function (mutation) {
-      return mutation.type === 'childList'
-    }),
-    function (mutation) {
-      mutation.removedNodes.forEach(function (removedNode) {
+  mutations
+    .filter((mutation) => mutation.type === 'childList')
+    .forEach((mutation) => {
+      mutation.removedNodes.forEach((removedNode) => {
         traverseRemovedShadowDom(
           removedNode,
           shadowRootsController.removeShadowRoot
         )
       })
-    }
-  )
+    })
   // Discard any mutation with a 'target' node that:
   // * isn't injected in the current document or isn't known/serialized yet: those nodes are likely
   // part of a mutation occurring in a parent Node
   // * should be hidden or ignored
-  var filteredMutations = filter(mutations, function (mutation) {
+  var filteredMutations = mutations.filter((mutation) => {
     return (
       target.contains(mutation.target) &&
       nodeAndAncestorsHaveSerializedNode(mutation.target) &&
@@ -103,31 +98,26 @@ function processMutations(
     )
   })
   var _processChildListMutations = processChildListMutations(
-    filter(filteredMutations, function (mutation) {
-      return mutation.type === 'childList'
-    }),
+    filteredMutations.filter((mutation) => mutation.type === 'childList'),
     configuration,
     shadowRootsController
   )
   var adds = _processChildListMutations.adds
   var removes = _processChildListMutations.removes
   var hasBeenSerialized = _processChildListMutations.hasBeenSerialized
-
   var texts = processCharacterDataMutations(
-    filter(filteredMutations, function (mutation) {
-      return (
+    filteredMutations.filter(
+      (mutation) =>
         mutation.type === 'characterData' && !hasBeenSerialized(mutation.target)
-      )
-    }),
+    ),
     configuration
   )
 
   var attributes = processAttributesMutations(
-    filter(filteredMutations, function (mutation) {
-      return (
+    filteredMutations.filter(
+      (mutation) =>
         mutation.type === 'attributes' && !hasBeenSerialized(mutation.target)
-      )
-    }),
+    ),
     configuration
   )
 
@@ -161,8 +151,7 @@ function processChildListMutations(
   // the node will be in both sets.
   var addedAndMovedNodes = new Set()
   var removedNodes = new Map()
-  for (var i = 0; i < mutations.length; i++) {
-    var mutation = mutations[i]
+  for (var mutation of mutations) {
     mutation.addedNodes.forEach(function (node) {
       addedAndMovedNodes.add(node)
     })
@@ -192,8 +181,7 @@ function processChildListMutations(
   var serializedNodeIds = new Set()
 
   var addedNodeMutations = []
-  for (var i = 0; i < sortedAddedAndMovedNodes.length; i++) {
-    var node = sortedAddedAndMovedNodes[i]
+  for (var node of sortedAddedAndMovedNodes) {
     if (hasBeenSerialized(node)) {
       continue
     }
@@ -231,7 +219,7 @@ function processChildListMutations(
 
   // Finally, we emit remove mutations.
   var removedNodeMutations = []
-  each(removedNodes, function (parent, node) {
+  removedNodes.forEach((parent, node) => {
     if (hasSerializedNode(node)) {
       removedNodeMutations.push({
         parentId: getSerializedNodeId(parent),
@@ -271,15 +259,14 @@ function processCharacterDataMutations(mutations, configuration) {
 
   // Deduplicate mutations based on their target node
   var handledNodes = new Set()
-  var filteredMutations = filter(mutations, function (mutation) {
+  var filteredMutations = mutations.filter((mutation) => {
     if (handledNodes.has(mutation.target)) {
       return false
     }
     handledNodes.add(mutation.target)
     return true
   })
-  for (var i = 0; i < filteredMutations.length; i++) {
-    var mutation = filteredMutations[i]
+  for (var mutation of filteredMutations) {
     var value = mutation.target.textContent
     if (value === mutation.oldValue) {
       continue
@@ -289,6 +276,7 @@ function processCharacterDataMutations(mutations, configuration) {
       getParentNode(mutation.target),
       configuration.defaultPrivacyLevel
     )
+
     if (
       parentNodePrivacyLevel === NodePrivacyLevel.HIDDEN ||
       parentNodePrivacyLevel === NodePrivacyLevel.IGNORE
@@ -314,9 +302,9 @@ function processAttributesMutations(mutations, configuration) {
 
   // Deduplicate mutations based on their target node and changed attribute
   var handledElements = new Map()
-  var filteredMutations = filter(mutations, function (mutation) {
+  var filteredMutations = mutations.filter((mutation) => {
     var handledAttributes = handledElements.get(mutation.target)
-    if (handledAttributes && handledAttributes.has(mutation.attributeName)) {
+    if (handledAttributes?.has(mutation.attributeName)) {
       return false
     }
     if (!handledAttributes) {
@@ -329,8 +317,7 @@ function processAttributesMutations(mutations, configuration) {
 
   // Emit mutations
   var emittedMutations = new Map()
-  for (var i = 0; i < filteredMutations.length; i++) {
-    var mutation = filteredMutations[i]
+  for (var mutation of filteredMutations) {
     var uncensoredValue = mutation.target.getAttribute(mutation.attributeName)
     if (uncensoredValue === mutation.oldValue) {
       continue
@@ -347,6 +334,7 @@ function processAttributesMutations(mutations, configuration) {
     )
 
     var transformedValue
+
     if (mutation.attributeName === 'value') {
       var inputValue = getElementInputValue(mutation.target, privacyLevel)
       if (inputValue === undefined) {

@@ -268,7 +268,9 @@ export function serializeAttribute(
     // dup condition for direct access case
     return null
   }
+
   var attributeValue = element.getAttribute(attributeName)
+
   if (
     nodePrivacyLevel === NodePrivacyLevel.MASK &&
     attributeName !== PRIVACY_ATTR_NAME &&
@@ -276,7 +278,6 @@ export function serializeAttribute(
     attributeName !== configuration.actionNameAttribute
   ) {
     var tagName = element.tagName
-
     switch (attributeName) {
       // Mask Attribute text content
       case 'title':
@@ -313,7 +314,6 @@ export function serializeAttribute(
   ) {
     return 'data:truncated'
   }
-
   return attributeValue
 }
 
@@ -343,7 +343,6 @@ function getCssRulesString(s) {
       var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
       return switchToAbsoluteUrl(styleSheetCssText, s.href)
     }
-
     return null
   } catch (error) {
     return null

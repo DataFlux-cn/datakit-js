@@ -25,7 +25,8 @@ export function createMutationBatch(processMutationBatch) {
           timeout: MUTATION_PROCESS_MAX_DELAY
         })
       }
-      Array.prototype.push.apply(pendingMutations, mutations)
+      pendingMutations.push(...mutations)
+      //   Array.prototype.push.apply(pendingMutations, mutations)
     },
 
     flush: flush,
