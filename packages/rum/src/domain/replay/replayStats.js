@@ -53,7 +53,6 @@ function deleteOldestStats() {
     return
   }
   if (statsPerView.keys) {
-    console.log('====statsPerView', statsPerView.keys())
     statsPerView.delete(statsPerView.keys().next().value)
   } else {
     // IE11 doesn't support map.keys
