@@ -89,12 +89,10 @@ export function record(options) {
   }
 
   takeFullSnapshot()
-  var _initObservers
-
   var _initObservers = initObservers({
     lifeCycle: options.lifeCycle,
     configuration: options.configuration,
-    elementsScrollPositions,
+    elementsScrollPositions: elementsScrollPositions,
     inputCb: inputCb,
     mediaInteractionCb: function (p) {
       emit(assembleIncrementalSnapshot(IncrementalSource.MediaInteraction, p))
@@ -132,7 +130,7 @@ export function record(options) {
         timestamp: timeStampNow()
       })
     },
-    shadowRootsController
+    shadowRootsController: shadowRootsController
   })
   var stopObservers = _initObservers.stop
   var flushMutationsFromObservers = _initObservers.flush
