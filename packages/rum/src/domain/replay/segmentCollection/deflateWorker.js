@@ -1,26 +1,23 @@
-var workerURL
+let workerURL
 
 export function createDeflateWorker() {
   // Lazily compute the worker URL to allow importing the SDK in NodeJS
   if (!workerURL) {
-    workerURL = URL.createObjectURL(new Blob(['(' + workerCodeFn + ')(self)']))
+    workerURL = URL.createObjectURL(new Blob([`(${workerCodeFn})(self)`]))
   }
   return new Worker(workerURL)
 }
 
 function workerCodeFn() {
   monitor(function () {
-    var makePakoDeflateObj = makePakoDeflate()
-    var Deflate = makePakoDeflateObj.Deflate
-    var constants = makePakoDeflateObj.constants
-    var string2buf = makePakoDeflateObj.string2buf
+    const { Deflate, constants, string2buf } = makePakoDeflate()
 
-    var deflate = new Deflate()
-    var rawBytesCount = 0
+    let deflate = new Deflate()
+    let rawBytesCount = 0
     self.addEventListener(
       'message',
       monitor((event) => {
-        var data = event.data
+        const data = event.data
         switch (data.action) {
           case 'init':
             self.postMessage({
@@ -28,30 +25,27 @@ function workerCodeFn() {
             })
             break
           case 'write': {
-            var additionalBytesCount = pushData(data.data)
+            const additionalBytesCount = pushData(data.data)
             self.postMessage({
               type: 'wrote',
               id: data.id,
-              compressedBytesCount: deflate.chunks.reduce(function (
-                total,
-                chunk
-              ) {
-                return total + chunk.length
-              },
-              0),
-              additionalBytesCount: additionalBytesCount
+              compressedBytesCount: deflate.chunks.reduce(
+                (total, chunk) => total + chunk.length,
+                0
+              ),
+              additionalBytesCount
             })
             break
           }
           case 'flush': {
-            var additionalBytesCount = data.data ? pushData(data.data) : 0
+            const additionalBytesCount = data.data ? pushData(data.data) : 0
             deflate.push('', constants.Z_FINISH)
             self.postMessage({
               type: 'flushed',
               id: data.id,
               result: deflate.result,
-              additionalBytesCount: additionalBytesCount,
-              rawBytesCount: rawBytesCount
+              additionalBytesCount,
+              rawBytesCount
             })
             deflate = new Deflate()
             rawBytesCount = 0
@@ -63,7 +57,7 @@ function workerCodeFn() {
 
     function pushData(data) {
       // TextEncoder is not supported on old browser version like Edge 18, therefore we use string2buf
-      var binaryData = string2buf(data)
+      const binaryData = string2buf(data)
       deflate.push(binaryData, constants.Z_SYNC_FLUSH)
       rawBytesCount += binaryData.length
       return binaryData.length
@@ -84,7 +78,7 @@ function workerCodeFn() {
           // DATA_CLONE_ERR, cf https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
           self.postMessage({
             type: 'errored',
-            error: '' + e
+            error: `${e}`
           })
         }
       }
@@ -4520,13 +4514,13 @@ function workerCodeFn() {
         return new TextEncoder().encode(str)
       }
 
-      var buf
-      var c
-      var c2
-      var m_pos
-      var i
-      var str_len = str.length
-      var buf_len = 0
+      let buf
+      let c
+      let c2
+      let m_pos
+      let i
+      let str_len = str.length
+      let buf_len = 0
 
       // count binary size
       for (m_pos = 0; m_pos < str_len; m_pos++) {
@@ -4578,6 +4572,6 @@ function workerCodeFn() {
       return buf
     }
 
-    return { Deflate: Deflate, constants: constants, string2buf: string2buf }
+    return { Deflate, constants, string2buf }
   }
 }

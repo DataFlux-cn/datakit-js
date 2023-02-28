@@ -369,26 +369,25 @@ export var now =
   }
 
 export var throttle = function (fn, wait, options) {
-  const needLeadingExecution =
+  var needLeadingExecution =
     options && options.leading !== undefined ? options.leading : true
-  const needTrailingExecution =
+  var needTrailingExecution =
     options && options.trailing !== undefined ? options.trailing : true
   let inWaitPeriod = false
   let pendingExecutionWithParameters
   let pendingTimeoutId
-
+  var context = this
   return {
     throttled: function () {
-      var parameters = toArray(arguments)
       if (inWaitPeriod) {
-        pendingExecutionWithParameters = parameters
+        pendingExecutionWithParameters = arguments
         return
       }
-      var context = this
+
       if (needLeadingExecution) {
-        fn.apply(context, parameters)
+        fn.apply(context, arguments)
       } else {
-        pendingExecutionWithParameters = parameters
+        pendingExecutionWithParameters = arguments
       }
       inWaitPeriod = true
       pendingTimeoutId = setTimeout(function () {

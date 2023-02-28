@@ -18,32 +18,33 @@ export function record(options) {
   }
 
   var elementsScrollPositions = createElementsScrollPositions()
+
   var mutationCb = function (mutation) {
-    return emit(
-      assembleIncrementalSnapshot(IncrementalSource.Mutation, mutation)
-    )
+    emit(assembleIncrementalSnapshot(IncrementalSource.Mutation, mutation))
   }
-  var inputCb = function (v) {
-    return emit(assembleIncrementalSnapshot(IncrementalSource.Input, v))
+  var inputCb = function (s) {
+    emit(assembleIncrementalSnapshot(IncrementalSource.Input, s))
   }
+
   var shadowRootsController = initShadowRootsController(options.configuration, {
-    mutationCb: mutationCb,
-    inputCb: inputCb
+    mutationCb,
+    inputCb
   })
+
   var takeFullSnapshot = function (timestamp, serializationContext) {
-    if (timestamp === undefined) {
+    if (typeof timestamp === 'undefined') {
       timestamp = timeStampNow()
     }
-    if (serializationContext === undefined) {
+    if (typeof serializationContext === 'undefined') {
       serializationContext = {
         status: SerializationContextStatus.INITIAL_FULL_SNAPSHOT,
         elementsScrollPositions: elementsScrollPositions,
         shadowRootsController: shadowRootsController
       }
     }
-    var viewportDimension = getViewportDimension()
-    var width = viewportDimension.width
-    var height = viewportDimension.height
+    var _viewportDimension = getViewportDimension()
+    var width = _viewportDimension.width
+    var height = _viewportDimension.height
     emit({
       data: {
         height: height,
@@ -88,56 +89,50 @@ export function record(options) {
   }
 
   takeFullSnapshot()
+  var _initObservers
 
   var _initObservers = initObservers({
     lifeCycle: options.lifeCycle,
     configuration: options.configuration,
-    elementsScrollPositions: elementsScrollPositions,
+    elementsScrollPositions,
     inputCb: inputCb,
     mediaInteractionCb: function (p) {
-      return emit(
-        assembleIncrementalSnapshot(IncrementalSource.MediaInteraction, p)
-      )
+      emit(assembleIncrementalSnapshot(IncrementalSource.MediaInteraction, p))
     },
     mouseInteractionCb: function (mouseInteractionRecord) {
-      return emit(mouseInteractionRecord)
+      emit(mouseInteractionRecord)
     },
     mousemoveCb: function (positions, source) {
-      return emit(assembleIncrementalSnapshot(source, { positions: positions }))
+      emit(assembleIncrementalSnapshot(source, { positions: positions }))
     },
-
     mutationCb: mutationCb,
     scrollCb: function (p) {
-      return emit(assembleIncrementalSnapshot(IncrementalSource.Scroll, p))
+      emit(assembleIncrementalSnapshot(IncrementalSource.Scroll, p))
     },
     styleSheetCb: function (r) {
-      return emit(
-        assembleIncrementalSnapshot(IncrementalSource.StyleSheetRule, r)
-      )
+      emit(assembleIncrementalSnapshot(IncrementalSource.StyleSheetRule, r))
     },
     viewportResizeCb: function (d) {
-      return emit(
-        assembleIncrementalSnapshot(IncrementalSource.ViewportResize, d)
-      )
+      emit(assembleIncrementalSnapshot(IncrementalSource.ViewportResize, d))
     },
     frustrationCb: function (frustrationRecord) {
-      return emit(frustrationRecord)
+      emit(frustrationRecord)
     },
     focusCb: function (data) {
-      return emit({
+      emit({
         data: data,
         type: RecordType.Focus,
         timestamp: timeStampNow()
       })
     },
     visualViewportResizeCb: function (data) {
-      return emit({
+      emit({
         data: data,
         type: RecordType.VisualViewport,
         timestamp: timeStampNow()
       })
     },
-    shadowRootsController: shadowRootsController
+    shadowRootsController
   })
   var stopObservers = _initObservers.stop
   var flushMutationsFromObservers = _initObservers.flush
@@ -145,6 +140,7 @@ export function record(options) {
     shadowRootsController.flush()
     flushMutationsFromObservers()
   }
+
   return {
     stop: function () {
       shadowRootsController.stop()
@@ -152,7 +148,7 @@ export function record(options) {
     },
     takeSubsequentFullSnapshot: function (timestamp) {
       flushMutations()
-      return takeFullSnapshot(timestamp, {
+      takeFullSnapshot(timestamp, {
         shadowRootsController: shadowRootsController,
         status: SerializationContextStatus.SUBSEQUENT_FULL_SNAPSHOT,
         elementsScrollPositions: elementsScrollPositions

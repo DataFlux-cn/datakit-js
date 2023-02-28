@@ -1,13 +1,13 @@
 export function isTextNode(node) {
-  return node.nodeType === node.TEXT_NODE
+  return node.nodeType === Node.TEXT_NODE
 }
 
 export function isCommentNode(node) {
-  return node.nodeType === node.COMMENT_NODE
+  return node.nodeType === Node.COMMENT_NODE
 }
 
 export function isElementNode(node) {
-  return node.nodeType === node.ELEMENT_NODE
+  return node.nodeType === Node.ELEMENT_NODE
 }
 
 export function isNodeShadowHost(node) {
@@ -18,7 +18,7 @@ export function isNodeShadowRoot(node) {
   var shadowRoot = node
   return (
     !!shadowRoot.host &&
-    shadowRoot.nodeType === node.DOCUMENT_FRAGMENT_NODE &&
+    shadowRoot.nodeType === Node.DOCUMENT_FRAGMENT_NODE &&
     isElementNode(shadowRoot.host)
   )
 }

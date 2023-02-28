@@ -187,7 +187,7 @@ export function getTextContent(
 ) {
   // The parent node may not be a html element which has a tagName attribute.
   // So just let it be undefined which is ok in this use case.
-  var parentTagName = textNode.parentElement && textNode.parentElement.tagName
+  var parentTagName = textNode.parentElement?.tagName
   var textContent = textNode.textContent || ''
 
   if (ignoreWhiteSpace && !textContent.trim()) {
@@ -243,8 +243,8 @@ export function shouldIgnoreElement(element) {
   if (element.nodeName === 'LINK') {
     var relAttribute = getLowerCaseAttribute('rel')
     return (
-      // Scripts
-      (relAttribute === 'preload' &&
+      // Link as script - Ignore only when rel=preload, modulepreload or prefetch
+      (/preload|prefetch/i.test(relAttribute) &&
         getLowerCaseAttribute('as') === 'script') ||
       // Favicons
       relAttribute === 'shortcut icon' ||

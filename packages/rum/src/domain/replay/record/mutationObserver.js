@@ -1,6 +1,5 @@
 import {
   noop,
-  isNullUndefinedDefaultValue,
   getChildNodes,
   isNodeShadowHost,
   getParentNode
@@ -34,6 +33,7 @@ export function startMutationObserver(
   if (!MutationObserver) {
     return { stop: noop, flush: noop }
   }
+
   var mutationBatch = createMutationBatch(function (mutations) {
     processMutations(
       mutations.concat(observer.takeRecords()),
@@ -85,6 +85,7 @@ function processMutations(
         )
       })
     })
+
   // Discard any mutation with a 'target' node that:
   // * isn't injected in the current document or isn't known/serialized yet: those nodes are likely
   // part of a mutation occurring in a parent Node
@@ -208,11 +209,12 @@ function processChildListMutations(
         status: SerializationContextStatus.MUTATION,
         shadowRootsController: shadowRootsController
       },
-      configuration: configuration
+      configuration
     })
     if (!serializedNode) {
       continue
     }
+
     var parentNode = getParentNode(node)
     addedNodeMutations.push({
       nextId: getNextSibling(node),
@@ -220,7 +222,6 @@ function processChildListMutations(
       node: serializedNode
     })
   }
-
   // Finally, we emit remove mutations.
   var removedNodeMutations = []
   removedNodes.forEach(function (parent, node) {
@@ -270,6 +271,8 @@ function processCharacterDataMutations(mutations, configuration) {
     handledNodes.add(mutation.target)
     return true
   })
+
+  // Emit mutations
   for (var mutation of filteredMutations) {
     var value = mutation.target.textContent
     if (value === mutation.oldValue) {
@@ -280,7 +283,6 @@ function processCharacterDataMutations(mutations, configuration) {
       getParentNode(mutation.target),
       configuration.defaultPrivacyLevel
     )
-
     if (
       parentNodePrivacyLevel === NodePrivacyLevel.HIDDEN ||
       parentNodePrivacyLevel === NodePrivacyLevel.IGNORE
@@ -291,10 +293,8 @@ function processCharacterDataMutations(mutations, configuration) {
     textMutations.push({
       id: getSerializedNodeId(mutation.target),
       // TODO: pass a valid "ignoreWhiteSpace" argument
-      value: isNullUndefinedDefaultValue(
-        getTextContent(mutation.target, false, parentNodePrivacyLevel),
-        null
-      )
+      value:
+        getTextContent(mutation.target, false, parentNodePrivacyLevel) ?? null
     })
   }
 
@@ -338,7 +338,6 @@ function processAttributesMutations(mutations, configuration) {
     )
 
     var transformedValue
-
     if (mutation.attributeName === 'value') {
       var inputValue = getElementInputValue(mutation.target, privacyLevel)
       if (inputValue === undefined) {
@@ -384,7 +383,6 @@ export function sortAddedAndMovedNodes(nodes) {
     return 0
   })
 }
-
 function traverseRemovedShadowDom(removedNode, shadowDomRemovedCallback) {
   if (isNodeShadowHost(removedNode)) {
     shadowDomRemovedCallback(removedNode.shadowRoot)

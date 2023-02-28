@@ -1,8 +1,7 @@
 import {
-  buildUrl,
   getParentNode,
   isNodeShadowRoot,
-  map
+  buildUrl
 } from '@cloudcare/browser-core'
 import { CENSORED_STRING_MARK } from '../../../constants'
 import { shouldMaskNode } from './privacy'
@@ -99,7 +98,7 @@ export function switchToAbsoluteUrl(cssText, cssHref) {
       }
 
       var quote = singleQuote || doubleQuote || ''
-      return 'url(' + quote + makeUrlAbsolute(url.cssHref) + quote + ')'
+      return `url(${quote}${makeUrlAbsolute(url, cssHref)}${quote})`
     }
   )
 }
@@ -111,18 +110,19 @@ export function makeUrlAbsolute(url, baseUrl) {
     return url
   }
 }
+
 export function serializeStyleSheets(cssStyleSheets) {
   if (cssStyleSheets === undefined || cssStyleSheets.length === 0) {
     return undefined
   }
-  return map(cssStyleSheets, function (cssStyleSheet) {
+  return cssStyleSheets.map(function (cssStyleSheet) {
     var rules = cssStyleSheet.cssRules || cssStyleSheet.rules
     var cssRules = Array.from(rules, function (cssRule) {
       return cssRule.cssText
     })
 
     var styleSheet = {
-      cssRules,
+      cssRules: cssRules,
       disabled: cssStyleSheet.disabled || undefined,
       media:
         cssStyleSheet.media.length > 0

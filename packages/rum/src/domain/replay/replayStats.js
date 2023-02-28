@@ -1,4 +1,3 @@
-import { each } from '@cloudcare/browser-core'
 export var MAX_STATS_HISTORY = 10
 var statsPerView
 
@@ -54,11 +53,12 @@ function deleteOldestStats() {
     return
   }
   if (statsPerView.keys) {
+    console.log('====statsPerView', statsPerView.keys())
     statsPerView.delete(statsPerView.keys().next().value)
   } else {
     // IE11 doesn't support map.keys
     var isFirst = true
-    each(statsPerView, function (_value, key) {
+    statsPerView.forEach(function (_value, key) {
       if (isFirst) {
         statsPerView.delete(key)
         isFirst = false

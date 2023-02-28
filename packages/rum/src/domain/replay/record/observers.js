@@ -1,6 +1,7 @@
 import {
   instrumentSetter,
   instrumentMethodAndCallOriginal,
+  assign,
   throttle,
   DOM_EVENT,
   addEventListeners,
@@ -9,14 +10,11 @@ import {
   LifeCycleEventType,
   RumEventType,
   ActionType,
-  keys,
-  map,
-  each,
-  assign,
   isNodeShadowHost
 } from '@cloudcare/browser-core'
 import { initViewportObservable } from '../../initViewportObservable'
 import { NodePrivacyLevel } from '../../../constants'
+
 import {
   RecordType,
   IncrementalSource,
@@ -48,15 +46,14 @@ var SCROLL_OBSERVER_THRESHOLD = 100
 var VISUAL_VIEWPORT_OBSERVER_THRESHOLD = 200
 
 var recordIds = new WeakMap()
-var nextId = 1
+let nextId = 1
 
-function getRecordIdForEvent(event) {
+export function getRecordIdForEvent(event) {
   if (!recordIds.has(event)) {
     recordIds.set(event, nextId++)
   }
   return recordIds.get(event)
 }
-
 export function initObservers(o) {
   var mutationHandler = initMutationObserver(
     o.mutationCb,
@@ -109,7 +106,7 @@ export function initObservers(o) {
   }
 }
 
-function initMutationObserver(cb, configuration, shadowRootsController) {
+export function initMutationObserver(cb, configuration, shadowRootsController) {
   return startMutationObserver(
     cb,
     configuration,
@@ -118,7 +115,7 @@ function initMutationObserver(cb, configuration, shadowRootsController) {
   )
 }
 
-function initMoveObserver(cb) {
+export function initMoveObserver(cb) {
   var _updatePosition = throttle(
     function (event) {
       var target = getEventTarget(event)
@@ -133,6 +130,7 @@ function initMoveObserver(cb) {
           x: coordinates.x,
           y: coordinates.y
         }
+
         cb(
           [position],
           isTouchEvent(event)
@@ -146,11 +144,11 @@ function initMoveObserver(cb) {
       trailing: false
     }
   )
-  var updatePosition = _updatePosition.throttled
+
   return addEventListeners(
     document,
     [DOM_EVENT.MOUSE_MOVE, DOM_EVENT.TOUCH_MOVE],
-    updatePosition,
+    _updatePosition.throttled,
     {
       capture: true,
       passive: true
@@ -159,7 +157,16 @@ function initMoveObserver(cb) {
 }
 
 var eventTypeToMouseInteraction = {
+  // Listen for pointerup DOM events instead of mouseup for MouseInteraction/MouseUp records. This
+  // allows to reference such records from Frustration records.
+  //
+  // In the context of supporting Mobile Session Replay, we introduced `PointerInteraction` records
+  // used by the Mobile SDKs in place of `MouseInteraction`. In the future, we should replace
+  // `MouseInteraction` by `PointerInteraction` in the Browser SDK so we have an uniform way to
+  // convey such interaction. This would cleanly solve the issue since we would have
+  // `PointerInteraction/Up` records that we could reference from `Frustration` records.
   [DOM_EVENT.POINTER_UP]: MouseInteractionType.MouseUp,
+
   [DOM_EVENT.MOUSE_DOWN]: MouseInteractionType.MouseDown,
   [DOM_EVENT.CLICK]: MouseInteractionType.Click,
   [DOM_EVENT.CONTEXT_MENU]: MouseInteractionType.ContextMenu,
@@ -169,7 +176,7 @@ var eventTypeToMouseInteraction = {
   [DOM_EVENT.TOUCH_START]: MouseInteractionType.TouchStart,
   [DOM_EVENT.TOUCH_END]: MouseInteractionType.TouchEnd
 }
-function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
+export function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
   var handler = function (event) {
     var target = getEventTarget(event)
     if (
@@ -181,6 +188,7 @@ function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
     }
     var id = getSerializedNodeId(target)
     var type = eventTypeToMouseInteraction[event.type]
+
     var interaction
     if (
       type !== MouseInteractionType.Blur &&
@@ -206,7 +214,7 @@ function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
   }
   return addEventListeners(
     document,
-    keys(eventTypeToMouseInteraction),
+    Object.keys(eventTypeToMouseInteraction),
     handler,
     {
       capture: true,
@@ -214,23 +222,23 @@ function initMouseInteractionObserver(cb, defaultPrivacyLevel) {
     }
   ).stop
 }
-function tryToComputeCoordinates(event) {
-  var commonEvent = isTouchEvent(event) ? event.changedTouches[0] : event
-  var x = commonEvent.clientX
-  var y = commonEvent.clientY
-  if (window.visualViewport) {
-    var mouseEventCoordinates = convertMouseEventToLayoutCoordinates(x, y)
-    var visualViewportX = mouseEventCoordinates.visualViewportX
-    var visualViewportY = mouseEventCoordinates.visualViewportY
-    x = visualViewportX
-    y = visualViewportY
-  }
 
+function tryToComputeCoordinates(event) {
+  var _event = isTouchEvent(event) ? event.changedTouches[0] : event
+  var x = _event.clientX
+  var y = _event.clientY
+  if (window.visualViewport) {
+    var _convertMouseEventToLayoutCoordinates =
+      convertMouseEventToLayoutCoordinates(x, y)
+    x = _convertMouseEventToLayoutCoordinates.visualViewportX
+    y = _convertMouseEventToLayoutCoordinates.visualViewportY
+  }
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return undefined
   }
-  return { x: x, y: y }
+  return { x, y }
 }
+
 function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
   var _updatePosition = throttle(function (event) {
     var target = getEventTarget(event)
@@ -260,29 +268,27 @@ function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
       y: scrollPositions.scrollTop
     })
   }, SCROLL_OBSERVER_THRESHOLD)
-  var updatePosition = _updatePosition.throttled
-  return addEventListener(document, DOM_EVENT.SCROLL, updatePosition, {
-    capture: true,
-    passive: true
-  }).stop
+  return addEventListener(
+    document,
+    DOM_EVENT.SCROLL,
+    _updatePosition.throttled,
+    {
+      capture: true,
+      passive: true
+    }
+  ).stop
 }
 
 function initViewportResizeObserver(cb) {
   return initViewportObservable().subscribe(cb).unsubscribe
 }
 
-export function initInputObserver(
-  cb,
-  defaultPrivacyLevel,
-  inputObserverOptions
-) {
-  var domEvents = (inputObserverOptions && inputObserverOptions.domEvents) || [
+export function initInputObserver(cb, defaultPrivacyLevel, options) {
+  var domEvents = (options && options.domEvents) || [
     DOM_EVENT.INPUT,
     DOM_EVENT.CHANGE
   ]
-
-  var target = (inputObserverOptions && inputObserverOptions.target) || document
-
+  var target = (options && options.target) || document
   var lastInputStateMap = new WeakMap()
 
   function onElementChange(target) {
@@ -293,7 +299,7 @@ export function initInputObserver(
 
     var type = target.type
 
-    var inputState
+    let inputState
     if (type === 'radio' || type === 'checkbox') {
       if (shouldMaskNode(target, nodePrivacyLevel)) {
         return
@@ -349,6 +355,7 @@ export function initInputObserver(
       )
     }
   }
+
   var _addEventListeners = addEventListeners(
     target,
     domEvents,
@@ -368,7 +375,6 @@ export function initInputObserver(
     }
   )
 
-  var stopEventListeners = _addEventListeners.stop
   var instrumentationStoppers = [
     instrumentSetter(HTMLInputElement.prototype, 'value', onElementChange),
     instrumentSetter(HTMLInputElement.prototype, 'checked', onElementChange),
@@ -382,10 +388,10 @@ export function initInputObserver(
   ]
 
   return function () {
-    each(instrumentationStoppers, function (stopper) {
+    instrumentationStoppers.forEach(function (stopper) {
       stopper.stop()
     })
-    stopEventListeners()
+    _addEventListeners.stop()
   }
 }
 
@@ -425,7 +431,7 @@ export function initStyleSheetObserver(cb) {
       instrumentMethodAndCallOriginal(cls.prototype, 'insertRule', {
         before: function (rule, index) {
           var _this = this
-          checkStyleSheetAndCallback(_this.parentStyleSheet, function (id) {
+          checkStyleSheetAndCallback(this.parentStyleSheet, function (id) {
             var path = getPathToNestedCSSRule(_this)
             if (path) {
               path.push(index || 0)
@@ -437,7 +443,7 @@ export function initStyleSheetObserver(cb) {
       instrumentMethodAndCallOriginal(cls.prototype, 'deleteRule', {
         before: function (index) {
           var _this = this
-          checkStyleSheetAndCallback(_this.parentStyleSheet, function (id) {
+          checkStyleSheetAndCallback(this.parentStyleSheet, function (id) {
             var path = getPathToNestedCSSRule(_this)
             if (path) {
               path.push(index)
@@ -448,8 +454,9 @@ export function initStyleSheetObserver(cb) {
       })
     )
   }
+
   return function () {
-    each(instrumentationStoppers, function (stopper) {
+    instrumentationStoppers.forEach(function (stopper) {
       stopper.stop()
     })
   }
@@ -505,18 +512,16 @@ function initVisualViewportResizeObserver(cb) {
       trailing: false
     }
   )
-  var cancelThrottle = _updateDimension.cancel
-  var updateDimension = _updateDimension.throttled
   var removeListener = addEventListeners(
     window.visualViewport,
     [DOM_EVENT.RESIZE, DOM_EVENT.SCROLL],
-    updateDimension,
+    _updateDimension.throttled,
     {
       capture: true,
       passive: true
     }
   ).stop
-
+  var cancelThrottle = _updateDimension.cancel
   return function stop() {
     removeListener()
     cancelThrottle()
@@ -530,19 +535,16 @@ export function initFrustrationObserver(lifeCycle, frustrationCb) {
       if (
         data.rawRumEvent.type === RumEventType.ACTION &&
         data.rawRumEvent.action.type === ActionType.CLICK &&
-        data.rawRumEvent.action.frustration &&
-        data.rawRumEvent.action.frustration.type &&
-        data.rawRumEvent.action.frustration.type.length &&
+        data.rawRumEvent.action.frustration?.type?.length &&
         'events' in data.domainContext &&
-        data.domainContext.events &&
-        data.domainContext.events.length
+        data.domainContext.events?.length
       ) {
         frustrationCb({
           timestamp: data.rawRumEvent.date,
           type: RecordType.FrustrationRecord,
           data: {
             frustrationTypes: data.rawRumEvent.action.frustration.type,
-            recordIds: map(data.domainContext.events, function (e) {
+            recordIds: data.domainContext.events.map(function (e) {
               return getRecordIdForEvent(e)
             })
           }
@@ -551,6 +553,7 @@ export function initFrustrationObserver(lifeCycle, frustrationCb) {
     }
   ).unsubscribe
 }
+
 function getEventTarget(event) {
   if (event.composed === true && isNodeShadowHost(event.target)) {
     return event.composedPath()[0]

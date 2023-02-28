@@ -1,10 +1,10 @@
 import {
   assign,
   startsWith,
-  isNodeShadowRoot,
-  isNodeShadowHost
+  isNodeShadowHost,
+  isNodeShadowRoot
 } from '@cloudcare/browser-core'
-import { STABLE_ATTRIBUTES } from '../../../domain/rumEventsCollection/actions/getSelectorsFromElement'
+import { STABLE_ATTRIBUTES } from '../../rumEventsCollection/actions/getSelectorsFromElement'
 import {
   NodePrivacyLevel,
   PRIVACY_ATTR_NAME,
@@ -102,6 +102,7 @@ function serializeDocumentTypeNode(documentType) {
     systemId: documentType.systemId
   }
 }
+
 function serializeDocumentFragmentNode(element, options) {
   var childNodes = []
   if (element.childNodes.length) {
@@ -152,18 +153,17 @@ export function serializeElementNode(element, options) {
   )
 
   if (nodePrivacyLevel === NodePrivacyLevel.HIDDEN) {
-    var boundClientRect = element.getBoundingClientRect()
-    var width = boundClientRect.width
-    var height = boundClientRect.height
-    var _attributes = {
-      rr_width: width + 'px',
-      rr_height: height + 'px'
-    }
-    _attributes[PRIVACY_ATTR_NAME] = PRIVACY_ATTR_VALUE_HIDDEN
+    var _boundingClientRect = element.getBoundingClientRect()
+    var width = _boundingClientRect.width
+    var height = _boundingClientRect.height
     return {
       type: NodeType.Element,
       tagName: tagName,
-      attributes: _attributes,
+      attributes: {
+        rr_width: width + 'px',
+        rr_height: height + 'px',
+        [PRIVACY_ATTR_NAME]: PRIVACY_ATTR_VALUE_HIDDEN
+      },
       childNodes: [],
       isSVG: isSVG
     }
@@ -199,12 +199,14 @@ export function serializeElementNode(element, options) {
     }
     childNodes = serializeChildNodes(element, childNodesSerializationOptions)
   }
+
   if (isNodeShadowHost(element)) {
     var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
     if (shadowRoot !== null) {
       childNodes.push(shadowRoot)
     }
   }
+
   return {
     type: NodeType.Element,
     tagName: tagName,
@@ -222,7 +224,7 @@ export function serializeElementNode(element, options) {
 function serializeTextNode(textNode, options) {
   // The parent node may not be a html element which has a tagName attribute.
   // So just let it be undefined which is ok in this use case.
-  var parentTagName = textNode.parentElement && textNode.parentElement.tagName
+  var parentTagName = textNode.parentElement?.tagName
   var textContent = getTextContent(
     textNode,
     options.ignoreWhiteSpace || false,
@@ -247,14 +249,12 @@ function serializeCDataNode() {
 
 export function serializeChildNodes(node, options) {
   var result = []
-
   node.childNodes.forEach(function (childNode) {
     var serializedChildNode = serializeNodeWithId(childNode, options)
     if (serializedChildNode) {
       result.push(serializedChildNode)
     }
   })
-
   return result
 }
 
@@ -268,9 +268,7 @@ export function serializeAttribute(
     // dup condition for direct access case
     return null
   }
-
   var attributeValue = element.getAttribute(attributeName)
-
   if (
     nodePrivacyLevel === NodePrivacyLevel.MASK &&
     attributeName !== PRIVACY_ATTR_NAME &&
@@ -278,6 +276,7 @@ export function serializeAttribute(
     attributeName !== configuration.actionNameAttribute
   ) {
     var tagName = element.tagName
+
     switch (attributeName) {
       // Mask Attribute text content
       case 'title':
@@ -314,6 +313,7 @@ export function serializeAttribute(
   ) {
     return 'data:truncated'
   }
+
   return attributeValue
 }
 
@@ -343,6 +343,7 @@ function getCssRulesString(s) {
       var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
       return switchToAbsoluteUrl(styleSheetCssText, s.href)
     }
+
     return null
   } catch (error) {
     return null
@@ -449,7 +450,7 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
     if (nodePrivacyLevel === NodePrivacyLevel.ALLOW) {
       safeAttrs.checked = !!inputElement.checked
     } else if (shouldMaskNode(inputElement, nodePrivacyLevel)) {
-      safeAttrs.checked = CENSORED_STRING_MARK
+      delete safeAttrs.checked
     }
   }
 
@@ -464,8 +465,8 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
   /**
    * Serialize the scroll state for each element only for full snapshot
    */
-  var scrollTop
-  var scrollLeft
+  let scrollTop
+  let scrollLeft
   var serializationContext = options.serializationContext
   switch (serializationContext.status) {
     case SerializationContextStatus.INITIAL_FULL_SNAPSHOT:
@@ -480,10 +481,8 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
       break
     case SerializationContextStatus.SUBSEQUENT_FULL_SNAPSHOT:
       if (serializationContext.elementsScrollPositions.has(element)) {
-        var scrollElement =
-          serializationContext.elementsScrollPositions.get(element)
-        scrollTop = scrollElement.scrollTop
-        scrollLeft = scrollElement.scrollLeft
+        ;({ scrollTop, scrollLeft } =
+          serializationContext.elementsScrollPositions.get(element))
       }
       break
   }
