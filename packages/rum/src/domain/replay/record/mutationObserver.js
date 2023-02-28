@@ -74,9 +74,11 @@ function processMutations(
   target
 ) {
   mutations
-    .filter((mutation) => mutation.type === 'childList')
-    .forEach((mutation) => {
-      mutation.removedNodes.forEach((removedNode) => {
+    .filter(function (mutation) {
+      return mutation.type === 'childList'
+    })
+    .forEach(function (mutation) {
+      mutation.removedNodes.forEach(function (removedNode) {
         traverseRemovedShadowDom(
           removedNode,
           shadowRootsController.removeShadowRoot
@@ -87,7 +89,7 @@ function processMutations(
   // * isn't injected in the current document or isn't known/serialized yet: those nodes are likely
   // part of a mutation occurring in a parent Node
   // * should be hidden or ignored
-  var filteredMutations = mutations.filter((mutation) => {
+  var filteredMutations = mutations.filter(function (mutation) {
     return (
       target.contains(mutation.target) &&
       nodeAndAncestorsHaveSerializedNode(mutation.target) &&
@@ -98,7 +100,9 @@ function processMutations(
     )
   })
   var _processChildListMutations = processChildListMutations(
-    filteredMutations.filter((mutation) => mutation.type === 'childList'),
+    filteredMutations.filter(function (mutation) {
+      return mutation.type === 'childList'
+    }),
     configuration,
     shadowRootsController
   )
@@ -106,18 +110,18 @@ function processMutations(
   var removes = _processChildListMutations.removes
   var hasBeenSerialized = _processChildListMutations.hasBeenSerialized
   var texts = processCharacterDataMutations(
-    filteredMutations.filter(
-      (mutation) =>
+    filteredMutations.filter(function (mutation) {
+      return (
         mutation.type === 'characterData' && !hasBeenSerialized(mutation.target)
-    ),
+      )
+    }),
     configuration
   )
 
   var attributes = processAttributesMutations(
-    filteredMutations.filter(
-      (mutation) =>
-        mutation.type === 'attributes' && !hasBeenSerialized(mutation.target)
-    ),
+    filteredMutations.filter(function (mutation) {
+      mutation.type === 'attributes' && !hasBeenSerialized(mutation.target)
+    }),
     configuration
   )
 
@@ -219,7 +223,7 @@ function processChildListMutations(
 
   // Finally, we emit remove mutations.
   var removedNodeMutations = []
-  removedNodes.forEach((parent, node) => {
+  removedNodes.forEach(function (parent, node) {
     if (hasSerializedNode(node)) {
       removedNodeMutations.push({
         parentId: getSerializedNodeId(parent),
@@ -259,7 +263,7 @@ function processCharacterDataMutations(mutations, configuration) {
 
   // Deduplicate mutations based on their target node
   var handledNodes = new Set()
-  var filteredMutations = mutations.filter((mutation) => {
+  var filteredMutations = mutations.filter(function (mutation) {
     if (handledNodes.has(mutation.target)) {
       return false
     }
@@ -302,7 +306,7 @@ function processAttributesMutations(mutations, configuration) {
 
   // Deduplicate mutations based on their target node and changed attribute
   var handledElements = new Map()
-  var filteredMutations = mutations.filter((mutation) => {
+  var filteredMutations = mutations.filter(function (mutation) {
     var handledAttributes = handledElements.get(mutation.target)
     if (handledAttributes?.has(mutation.attributeName)) {
       return false

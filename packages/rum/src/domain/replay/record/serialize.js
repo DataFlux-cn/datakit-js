@@ -411,9 +411,9 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
 
   // remote css
   if (tagName === 'link') {
-    var stylesheet = Array.from(doc.styleSheets).find(
-      (s) => s.href === element.href
-    )
+    var stylesheet = Array.from(doc.styleSheets).find(function (s) {
+      return s.href === element.href
+    })
     var cssText = getCssRulesString(stylesheet)
     if (cssText && stylesheet) {
       safeAttrs._cssText = cssText
