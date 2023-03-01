@@ -10,14 +10,17 @@ export function createDeflateWorker() {
 
 function workerCodeFn() {
   monitor(function () {
-    const { Deflate, constants, string2buf } = makePakoDeflate()
+    var _makePakoDeflate = makePakoDeflate()
+    var Deflate = _makePakoDeflate.Deflate
+    var constants = _makePakoDeflate.constants
+    var string2buf = _makePakoDeflate.string2buf
 
-    let deflate = new Deflate()
-    let rawBytesCount = 0
+    var deflate = new Deflate()
+    var rawBytesCount = 0
     self.addEventListener(
       'message',
-      monitor((event) => {
-        const data = event.data
+      monitor(function (event) {
+        var data = event.data
         switch (data.action) {
           case 'init':
             self.postMessage({
@@ -25,20 +28,23 @@ function workerCodeFn() {
             })
             break
           case 'write': {
-            const additionalBytesCount = pushData(data.data)
+            var additionalBytesCount = pushData(data.data)
             self.postMessage({
               type: 'wrote',
               id: data.id,
-              compressedBytesCount: deflate.chunks.reduce(
-                (total, chunk) => total + chunk.length,
-                0
-              ),
+              compressedBytesCount: deflate.chunks.reduce(function (
+                total,
+                chunk
+              ) {
+                return total + chunk.length
+              },
+              0),
               additionalBytesCount
             })
             break
           }
           case 'flush': {
-            const additionalBytesCount = data.data ? pushData(data.data) : 0
+            var additionalBytesCount = data.data ? pushData(data.data) : 0
             deflate.push('', constants.Z_FINISH)
             self.postMessage({
               type: 'flushed',
@@ -57,7 +63,7 @@ function workerCodeFn() {
 
     function pushData(data) {
       // TextEncoder is not supported on old browser version like Edge 18, therefore we use string2buf
-      const binaryData = string2buf(data)
+      var binaryData = string2buf(data)
       deflate.push(binaryData, constants.Z_SYNC_FLUSH)
       rawBytesCount += binaryData.length
       return binaryData.length

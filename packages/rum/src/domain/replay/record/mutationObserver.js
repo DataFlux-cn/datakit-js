@@ -293,8 +293,9 @@ function processCharacterDataMutations(mutations, configuration) {
     textMutations.push({
       id: getSerializedNodeId(mutation.target),
       // TODO: pass a valid "ignoreWhiteSpace" argument
-      value:
-        getTextContent(mutation.target, false, parentNodePrivacyLevel) ?? null
+      value: isNullUndefinedDefaultValue(
+        getTextContent(mutation.target, false, parentNodePrivacyLevel, null)
+      )
     })
   }
 
@@ -308,7 +309,7 @@ function processAttributesMutations(mutations, configuration) {
   var handledElements = new Map()
   var filteredMutations = mutations.filter(function (mutation) {
     var handledAttributes = handledElements.get(mutation.target)
-    if (handledAttributes?.has(mutation.attributeName)) {
+    if (handledAttributes && handledAttributes.has(mutation.attributeName)) {
       return false
     }
     if (!handledAttributes) {
