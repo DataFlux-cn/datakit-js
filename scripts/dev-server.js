@@ -13,5 +13,5 @@ for (const config of [rumConfig, logsConfig]) {
   app.use(middleware(webpack(config(null, { mode: 'development' }))))
 }
 
-const port = 8080
+const port = 8082
 app.listen(port, () => console.log(`server listening on port ${port}.`))

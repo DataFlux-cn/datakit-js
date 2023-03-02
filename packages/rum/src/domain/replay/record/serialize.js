@@ -343,7 +343,6 @@ function getCssRulesString(s) {
       var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
       return switchToAbsoluteUrl(styleSheetCssText, s.href)
     }
-
     return null
   } catch (error) {
     return null
@@ -416,6 +415,7 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
       return s.href === element.href
     })
     var cssText = getCssRulesString(stylesheet)
+
     if (cssText && stylesheet) {
       safeAttrs._cssText = cssText
     }
@@ -465,8 +465,8 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
   /**
    * Serialize the scroll state for each element only for full snapshot
    */
-  let scrollTop
-  let scrollLeft
+  var scrollTop
+  var scrollLeft
   var serializationContext = options.serializationContext
   switch (serializationContext.status) {
     case SerializationContextStatus.INITIAL_FULL_SNAPSHOT:

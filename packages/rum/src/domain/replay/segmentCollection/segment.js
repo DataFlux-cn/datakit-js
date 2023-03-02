@@ -35,7 +35,6 @@ export function Segment(
     if (data.type === 'errored' || data.type === 'initialized') {
       return
     }
-
     if (data.id === _this.id) {
       replayStats.addWroteData(viewId, data.additionalBytesCount)
       if (data.type === 'flushed') {

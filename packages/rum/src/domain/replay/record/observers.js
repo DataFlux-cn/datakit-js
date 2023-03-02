@@ -542,16 +542,16 @@ export function initFrustrationObserver(lifeCycle, frustrationCb) {
         data.domainContext.events &&
         data.domainContext.events.length
       ) {
-        frustrationCb({
-          timestamp: data.rawRumEvent.date,
-          type: RecordType.FrustrationRecord,
-          data: {
-            frustrationTypes: data.rawRumEvent.action.frustration.type,
-            recordIds: data.domainContext.events.map(function (e) {
-              return getRecordIdForEvent(e)
-            })
-          }
-        })
+        // frustrationCb({
+        //   timestamp: data.rawRumEvent.date,
+        //   type: RecordType.FrustrationRecord,
+        //   data: {
+        //     frustrationTypes: data.rawRumEvent.action.frustration.type,
+        //     recordIds: data.domainContext.events.map(function (e) {
+        //       return getRecordIdForEvent(e)
+        //     })
+        //   }
+        // })
       }
     }
   ).unsubscribe
