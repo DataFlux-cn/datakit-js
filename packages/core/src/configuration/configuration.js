@@ -23,6 +23,15 @@ export function validateAndBuildConfiguration(initConfiguration) {
     display.error('Sample Rate should be a number between 0 and 100')
     return
   }
+  if (
+    initConfiguration.sessionSampleRate !== undefined &&
+    !isPercentage(initConfiguration.sessionSampleRate)
+  ) {
+    display.error('Sample Rate should be a number between 0 and 100')
+    return
+  }
+  var sessionSampleRate =
+    initConfiguration.sessionSampleRate || initConfiguration.sampleRate
   return assign(
     {
       beforeSend:
@@ -32,10 +41,7 @@ export function validateAndBuildConfiguration(initConfiguration) {
           'beforeSend threw an error:'
         ),
       cookieOptions: buildCookieOptions(initConfiguration),
-      sampleRate: isNullUndefinedDefaultValue(
-        initConfiguration.sampleRate,
-        100
-      ),
+      sessionSampleRate: isNullUndefinedDefaultValue(sessionSampleRate, 100),
       service: initConfiguration.service,
       version: initConfiguration.version,
       env: initConfiguration.env,
