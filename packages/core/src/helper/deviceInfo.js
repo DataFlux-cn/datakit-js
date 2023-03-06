@@ -88,7 +88,7 @@ var MethodLibrary = {
       Safari: u.indexOf('Safari') > -1,
       Chrome: u.indexOf('Chrome') > -1 || u.indexOf('CriOS') > -1,
       IE: u.indexOf('MSIE') > -1 || u.indexOf('Trident') > -1,
-      Edge: u.indexOf('Edge') > -1,
+      Edge: u.indexOf('Edge') > -1 || u.indexOf('Edg') > -1,
       Firefox: u.indexOf('Firefox') > -1 || u.indexOf('FxiOS') > -1,
       'Firefox Focus': u.indexOf('Focus') > -1,
       Chromium: u.indexOf('Chromium') > -1,
@@ -390,7 +390,7 @@ var MethodLibrary = {
           .replace(/^.*rv:([\d.]+).*$/, '$1')
       },
       Edge: function () {
-        return u.replace(/^.*Edge\/([\d.]+).*$/, '$1')
+        return u.replace(/^.*Edge?\/([\d.]+).*$/, '$1')
       },
       Firefox: function () {
         return u
