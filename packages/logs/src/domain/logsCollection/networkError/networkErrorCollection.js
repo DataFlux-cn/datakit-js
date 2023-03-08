@@ -23,12 +23,12 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
 
   var xhrSubscription = initXhrObservable().subscribe(function (context) {
     if (context.state === 'complete') {
-      handleCompleteRequest(RequestType.XHR, context, configuration)
+      handleCompleteRequest(RequestType.XHR, context)
     }
   })
   var fetchSubscription = initFetchObservable().subscribe(function (context) {
-    if (context.state === 'complete') {
-      handleCompleteRequest(RequestType.FETCH, context, configuration)
+    if (context.state === 'resolve') {
+      handleCompleteRequest(RequestType.FETCH, context)
     }
   })
 
