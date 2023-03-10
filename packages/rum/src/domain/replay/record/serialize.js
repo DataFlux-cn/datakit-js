@@ -26,7 +26,9 @@ import {
   setSerializedNodeId,
   getElementInputValue,
   switchToAbsoluteUrl,
-  serializeStyleSheets
+  serializeStyleSheets,
+  absoluteToDoc,
+  getAbsoluteSrcsetString
 } from './serializationUtils'
 
 // Those values are the only one that can be used when inheriting privacy levels from parent to
@@ -224,7 +226,7 @@ export function serializeElementNode(element, options) {
 function serializeTextNode(textNode, options) {
   // The parent node may not be a html element which has a tagName attribute.
   // So just let it be undefined which is ok in this use case.
-  var parentTagName = textNode.parentElement?.tagName
+  var parentTagName = textNode.parentElement && textNode.parentElement.tagName
   var textContent = getTextContent(
     textNode,
     options.ignoreWhiteSpace || false,
@@ -336,17 +338,21 @@ function getValidTagName(tagName) {
   return processedTagName
 }
 
-function getCssRulesString(s) {
-  try {
-    var rules = s.rules || s.cssRules
-    if (rules) {
-      var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
-      return switchToAbsoluteUrl(styleSheetCssText, s.href)
-    }
-    return null
-  } catch (error) {
+function getCssRulesString(cssStyleSheet) {
+  if (!cssStyleSheet) {
     return null
   }
+  var rules
+  try {
+    rules = cssStyleSheet.rules || cssStyleSheet.cssRules
+  } catch {
+    // if css is protected by CORS we cannot access cssRules see: https://www.w3.org/TR/cssom-1/#the-cssstylesheet-interface
+  }
+  if (!rules) {
+    return null
+  }
+  var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
+  return switchToAbsoluteUrl(styleSheetCssText, cssStyleSheet.href)
 }
 
 function getCssRuleString(rule) {
@@ -362,7 +368,35 @@ function isCSSImportRule(rule) {
 function isSVGElement(el) {
   return el.tagName === 'svg' || el instanceof SVGElement
 }
-
+function transformAttribute(doc, tagName, name, value) {
+  if (
+    name === 'src' ||
+    (name === 'href' && value && !(tagName === 'use' && value[0] === '#'))
+  ) {
+    return absoluteToDoc(doc, value)
+  } else if (name === 'xlink:href' && value && value[0] !== '#') {
+    return absoluteToDoc(doc, value)
+  } else if (
+    name === 'background' &&
+    value &&
+    (tagName === 'table' || tagName === 'td' || tagName === 'th')
+  ) {
+    return absoluteToDoc(doc, value)
+  } else if (name === 'srcset' && value) {
+    return getAbsoluteSrcsetString(doc, value)
+  } else if (name === 'style' && value) {
+    return switchToAbsoluteUrl(value, getHref())
+  } else if (tagName === 'object' && name === 'data' && value) {
+    return absoluteToDoc(doc, value)
+  } else {
+    return value
+  }
+}
+function getHref() {
+  var a = document.createElement('a')
+  a.href = ''
+  return a.href
+}
 function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
   if (nodePrivacyLevel === NodePrivacyLevel.HIDDEN) {
     return {}
@@ -381,7 +415,12 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
       options.configuration
     )
     if (attributeValue !== null) {
-      safeAttrs[attributeName] = attributeValue
+      safeAttrs[attributeName] = transformAttribute(
+        doc,
+        tagName,
+        attributeName,
+        attributeValue
+      )
     }
   }
 
