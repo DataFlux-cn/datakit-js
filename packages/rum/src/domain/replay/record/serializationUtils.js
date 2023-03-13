@@ -105,13 +105,13 @@ export function switchToAbsoluteUrl(cssText, cssHref) {
       if (!cssHref || !url || ABSOLUTE_URL.test(url) || DATA_URI.test(url)) {
         return matchingSubstring
       }
+      var quote = singleQuote || doubleQuote || ''
       if (url[0] === '/') {
         return 'url('
           .concat(quote)
           .concat(extractOrigin(cssHref) + url)
           .concat(quote, ')')
       }
-      var quote = singleQuote || doubleQuote || ''
       return `url(${quote}${makeUrlAbsolute(url, cssHref)}${quote})`
     }
   )
