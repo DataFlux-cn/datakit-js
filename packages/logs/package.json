@@ -2,9 +2,9 @@
   "name": "@cloudcare/browser-logs",
   "main": "cjs/index.js",
   "module": "esm/index.js",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "dependencies": {
-    "@cloudcare/browser-core": "2.0.1"
+    "@cloudcare/browser-core": "2.0.2"
   },
   "scripts": {
     "dev": "webpack serve --open --mode=development",
