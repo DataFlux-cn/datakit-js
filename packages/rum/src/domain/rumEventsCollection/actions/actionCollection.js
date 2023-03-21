@@ -26,7 +26,7 @@ export function startActionCollection(
   )
 
   var actionContexts = { findActionId: noop }
-  if (configuration.trackInteractions) {
+  if (configuration.trackUserInteractions) {
     actionContexts = trackClickActions(
       lifeCycle,
       domMutationObservable,

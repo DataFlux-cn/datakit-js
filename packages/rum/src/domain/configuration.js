@@ -64,17 +64,16 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
   if (!baseConfiguration) {
     return
   }
-
+  var trackUserInteractions = !!isNullUndefinedDefaultValue(
+    initConfiguration.trackUserInteractions,
+    initConfiguration.trackInteractions
+  )
   var trackFrustrations = !!initConfiguration.trackFrustrations
 
   return assign(
     {
       applicationId: initConfiguration.applicationId,
       actionNameAttribute: initConfiguration.actionNameAttribute,
-      sessionReplaySampleRate: isNullUndefinedDefaultValue(
-        initConfiguration.sessionReplaySampleRate,
-        100
-      ),
       tracingSampleRate: initConfiguration.tracingSampleRate,
       allowedTracingOrigins: isNullUndefinedDefaultValue(
         initConfiguration.allowedTracingOrigins ||
@@ -85,8 +84,7 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
         initConfiguration.excludedActivityUrls,
         []
       ),
-      trackInteractions:
-        !!initConfiguration.trackInteractions || trackFrustrations,
+      trackUserInteractions: trackUserInteractions || trackFrustrations,
       trackFrustrations: trackFrustrations,
       trackViewsManually: !!initConfiguration.trackViewsManually,
       traceType: isNullUndefinedDefaultValue(

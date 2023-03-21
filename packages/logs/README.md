@@ -97,7 +97,7 @@ datafluxLogs.init({
 | `service`             | String  | 否       | `browser` | 日志service名称                                                                                                                     |
 | `env`                 | String  | 否       |           | web 应用当前环境， 如 prod：线上环境；gray：灰度环境；pre：预发布环境 common：日常环境；local：本地环境；                           |
 | `version`             | String  | 否       |           | web 应用的版本号                                                                                                                    |
-| `sampleRate`          | Number  | 否       | `100`     | 指标数据收集百分比: `100`表示全收集，`0`表示不收集                                                                                  |
+| `sessionSampleRate`          | Number  | 否       | `100`     | 指标数据收集百分比: `100`表示全收集，`0`表示不收集                                                                                  |
 | `forwardErrorsToLogs` | Boolean | 否       | `true`    | 设置为`false` 表示停止采集console.error、 js、以及网络错误上报到DataFlux日志数据中                                                  |
 | `silentMultipleInit`  | Boolean | 否       | `false`   | 不允许有多个日志对象被初始化                                                                                                        |
 

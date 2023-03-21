@@ -73,9 +73,9 @@ export function trackClickActions(
   var stopActionEventsListener = _listenActionEvents.stop
   var actionContexts = {
     findActionId: function (startTime) {
-      return configuration.trackFrustrations
-        ? history.findAll(startTime)
-        : history.find(startTime)
+      return history.find(startTime)
+      // ? history.findAll(startTime)
+      // : history.find(startTime)
     }
   }
 
