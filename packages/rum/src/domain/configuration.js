@@ -74,6 +74,10 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
     {
       applicationId: initConfiguration.applicationId,
       actionNameAttribute: initConfiguration.actionNameAttribute,
+      sessionReplaySampleRate: isNullUndefinedDefaultValue(
+        initConfiguration.sessionReplaySampleRate,
+        100
+      ),
       tracingSampleRate: initConfiguration.tracingSampleRate,
       allowedTracingOrigins: isNullUndefinedDefaultValue(
         initConfiguration.allowedTracingOrigins ||
