@@ -369,12 +369,13 @@ function isSVGElement(el) {
   return el.tagName === 'svg' || el instanceof SVGElement
 }
 function transformAttribute(doc, tagName, name, value) {
+  if (!value) return value
   if (
     name === 'src' ||
-    (name === 'href' && value && !(tagName === 'use' && value[0] === '#'))
+    (name === 'href' && !(tagName === 'use' && value[0] === '#'))
   ) {
     return absoluteToDoc(doc, value)
-  } else if (name === 'xlink:href' && value && value[0] !== '#') {
+  } else if (name === 'xlink:href' && value[0] !== '#') {
     return absoluteToDoc(doc, value)
   } else if (
     name === 'background' &&
@@ -382,11 +383,11 @@ function transformAttribute(doc, tagName, name, value) {
     (tagName === 'table' || tagName === 'td' || tagName === 'th')
   ) {
     return absoluteToDoc(doc, value)
-  } else if (name === 'srcset' && value) {
+  } else if (name === 'srcset') {
     return getAbsoluteSrcsetString(doc, value)
-  } else if (name === 'style' && value) {
+  } else if (name === 'style') {
     return switchToAbsoluteUrl(value, getHref())
-  } else if (tagName === 'object' && name === 'data' && value) {
+  } else if (tagName === 'object' && name === 'data') {
     return absoluteToDoc(doc, value)
   } else {
     return value
