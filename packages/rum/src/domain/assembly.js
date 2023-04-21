@@ -40,7 +40,7 @@ export function startRumAssembly(
   viewContexts,
   urlContexts,
   actionContexts,
-  getCommonContext,
+  buildCommonContext,
   reportError
 ) {
   var eventRateLimiters = {}
@@ -69,7 +69,7 @@ export function startRumAssembly(
       )
       if (session && viewContext && urlContext) {
         var actionId = actionContexts.findActionId(startTime)
-        var commonContext = savedCommonContext || getCommonContext()
+        var commonContext = savedCommonContext || buildCommonContext()
         var rumContext = {
           _dd: {
             sdkName: configuration.sdkName,

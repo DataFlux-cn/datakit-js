@@ -1,4 +1,8 @@
-import { performDraw, startSessionManager } from '@cloudcare/browser-core'
+import {
+  performDraw,
+  startSessionManager,
+  Observable
+} from '@cloudcare/browser-core'
 
 export var LOGS_SESSION_KEY = 'logs'
 
@@ -23,17 +27,22 @@ export function startLogsSessionManager(configuration) {
             id: session.id
           }
         : undefined
-    }
+    },
+    expireObservable: sessionManager.expireObservable
   }
 }
 
-// export function startLogsSessionManagerStub(configuration) {
-//   var isTracked = computeTrackingType(configuration) === LoggerTrackingType.TRACKED
-//   var session = isTracked ? {} : undefined
-//   return {
-//     findTrackedSession: function() { return session },
-//   }
-// }
+export function startLogsSessionManagerStub(configuration) {
+  var isTracked =
+    computeTrackingType(configuration) === LoggerTrackingType.TRACKED
+  var session = isTracked ? {} : undefined
+  return {
+    findTrackedSession: function () {
+      return session
+    },
+    expireObservable: new Observable()
+  }
+}
 
 function computeTrackingType(configuration) {
   if (!performDraw(configuration.sessionSampleRate)) {

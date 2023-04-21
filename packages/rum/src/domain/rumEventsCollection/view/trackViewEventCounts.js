@@ -1,4 +1,4 @@
-import { ONE_MINUTE } from '@cloudcare/browser-core'
+import { ONE_MINUTE, setTimeout } from '@cloudcare/browser-core'
 import { trackEventCounts } from '../../trackEventCounts'
 
 // Some events are not being counted as they transcend views. To reduce the occurrence;

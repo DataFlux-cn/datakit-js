@@ -4,10 +4,10 @@ import { display } from '../helper/display'
 import {
   assign,
   isPercentage,
-  ONE_KIBI_BYTE,
   ONE_SECOND,
   isNullUndefinedDefaultValue
 } from '../helper/tools'
+import { ONE_KIBI_BYTE } from '../helper/byteUtils'
 import { computeTransportConfiguration } from './transportConfiguration'
 
 export var DefaultPrivacyLevel = {

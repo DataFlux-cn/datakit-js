@@ -2,9 +2,12 @@ import {
   BoundedBuffer,
   createContextManager,
   makePublicApi,
+  CustomerDataType,
   display,
   deepClone,
   timeStampNow,
+  checkUser,
+  sanitizeUser
 } from '@cloudcare/browser-core'
 import { validateAndBuildLogsConfiguration } from '../domain/configuration'
 import { Logger } from '../domain/logger'
@@ -12,53 +15,57 @@ import { Logger } from '../domain/logger'
 export function makeLogsPublicApi(startLogsImpl) {
   var isAlreadyInitialized = false
 
-  var globalContextManager = createContextManager()
+  var globalContextManager = createContextManager(
+    CustomerDataType.GlobalContext
+  )
+  var userContextManager = createContextManager(CustomerDataType.User)
   var customLoggers = {}
-  var getInternalContextStrategy = function() {
+  var getInternalContextStrategy = function () {
     return undefined
   }
 
   var beforeInitLoggerLog = new BoundedBuffer()
 
-  var handleLogStrategy = function(
+  var handleLogStrategy = function (
     logsMessage,
     logger,
     savedCommonContext,
     date
-  ){
+  ) {
     if (typeof savedCommonContext === 'undefined') {
-      savedCommonContext = deepClone(getCommonContext())
+      savedCommonContext = deepClone(buildCommonContext())
     }
     if (typeof date === 'undefined') {
       date = timeStampNow()
     }
-    beforeInitLoggerLog.add(function() {
+    beforeInitLoggerLog.add(function () {
       return handleLogStrategy(logsMessage, logger, savedCommonContext, date)
     })
   }
 
-  var getInitConfigurationStrategy = function() {
+  var getInitConfigurationStrategy = function () {
     return undefined
   }
 
-  var mainLogger = new Logger(function() {
+  var mainLogger = new Logger(function () {
     return handleLogStrategy.apply(this, arguments)
   })
 
-  function getCommonContext() {
+  function buildCommonContext() {
     return {
       view: {
         referrer: document.referrer,
-        url: window.location.href,
+        url: window.location.href
       },
-      context: globalContextManager.get(),
+      context: globalContextManager.getContext(),
+      user: userContextManager.getContext()
     }
   }
 
   return makePublicApi({
     logger: mainLogger,
 
-    init: function(initConfiguration) {
+    init: function (initConfiguration) {
       if (!canInitLogs(initConfiguration)) {
         return
       }
@@ -67,10 +74,14 @@ export function makeLogsPublicApi(startLogsImpl) {
       if (!configuration) {
         return
       }
-      var _startLogsImpl = startLogsImpl(configuration, getCommonContext, mainLogger)
+      var _startLogsImpl = startLogsImpl(
+        configuration,
+        buildCommonContext,
+        mainLogger
+      )
       handleLogStrategy = _startLogsImpl.handleLog
       getInternalContextStrategy = _startLogsImpl.getInternalContext
-      getInitConfigurationStrategy = function() {
+      getInitConfigurationStrategy = function () {
         return deepClone(initConfiguration)
       }
       beforeInitLoggerLog.drain()
@@ -92,13 +103,13 @@ export function makeLogsPublicApi(startLogsImpl) {
 
     clearGlobalContext: globalContextManager.clearContext,
 
-    createLogger: function(name, conf){
+    createLogger: function (name, conf) {
       if (typeof conf == 'undefined') {
         conf = {}
       }
       customLoggers[name] = new Logger(
-        function() {
-          return handleLogStrategy(this. arguments)
+        function () {
+          return handleLogStrategy(this.arguments)
         },
         name,
         conf.handler,
@@ -108,19 +119,26 @@ export function makeLogsPublicApi(startLogsImpl) {
       return customLoggers[name]
     },
 
-    getLogger: function(name) {
+    getLogger: function (name) {
       return customLoggers[name]
     },
 
-    getInitConfiguration: function() {
+    getInitConfiguration: function () {
       return getInitConfigurationStrategy()
     },
 
-    getInternalContext: function(startTime) {
+    getInternalContext: function (startTime) {
       return getInternalContextStrategy(startTime)
     },
+    setUser: function (newUser) {
+      if (checkUser(newUser)) {
+        userContextManager.setContext(sanitizeUser(newUser))
+      }
+    },
+    getUser: userContextManager.getContext,
+    removeUserProperty: userContextManager.removeContextProperty,
+    clearUser: userContextManager.clearContext
   })
-
 
   function canInitLogs(initConfiguration) {
     if (isAlreadyInitialized) {

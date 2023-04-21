@@ -1,5 +1,12 @@
-import { deepClone, assign, extend2Lev, createContextManager, ErrorSource, keys } from '@cloudcare/browser-core'
-
+import {
+  deepClone,
+  assign,
+  extend2Lev,
+  createContextManager,
+  ErrorSource,
+  keys,
+  CustomerDataType
+} from '@cloudcare/browser-core'
 
 export var StatusType = {
   debug: 'debug',
@@ -12,13 +19,19 @@ export var StatusType = {
 export var HandlerType = {
   console: 'console',
   http: 'http',
-  silent: 'silent',
+  silent: 'silent'
 }
 
 export var STATUSES = keys(StatusType)
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export function Logger(handleLogStrategy, name, handlerType, level, loggerContext) {
-  this.contextManager = createContextManager()
+export function Logger(
+  handleLogStrategy,
+  name,
+  handlerType,
+  level,
+  loggerContext
+) {
+  this.contextManager = createContextManager(CustomerDataType.LoggerContext)
   if (typeof handlerType === 'undefined') {
     handlerType = HandlerType.http
   }
@@ -31,66 +44,71 @@ export function Logger(handleLogStrategy, name, handlerType, level, loggerContex
   this.handleLogStrategy = handleLogStrategy
   this.handlerType = handlerType
   this.level = level
-  this.contextManager.set(assign({}, loggerContext, name ? { logger: { name: name } } : undefined))
+  this.contextManager.set(
+    assign({}, loggerContext, name ? { logger: { name: name } } : undefined)
+  )
 }
 Logger.prototype = {
-  log: function(message, messageContext, status) {
+  log: function (message, messageContext, status) {
     if (typeof status === 'undefined') {
       status = StatusType.info
     }
-    this.handleLogStrategy({ message: message, context: deepClone(messageContext), status:status }, this)
+    this.handleLogStrategy(
+      { message: message, context: deepClone(messageContext), status: status },
+      this
+    )
   },
 
-  debug: function(message, messageContext) {
+  debug: function (message, messageContext) {
     this.log(message, messageContext, StatusType.debug)
   },
 
-  info: function(message, messageContext) {
+  info: function (message, messageContext) {
     this.log(message, messageContext, StatusType.info)
   },
 
-  warn: function(message, messageContext) {
+  warn: function (message, messageContext) {
     this.log(message, messageContext, StatusType.warn)
   },
-  critical: function(message, messageContext) {
+  critical: function (message, messageContext) {
     this.log(message, messageContext, StatusType.critical)
   },
-  error: function(message, messageContext) {
+  error: function (message, messageContext) {
     var errorOrigin = {
       error: {
-        origin: ErrorSource.LOGGER,
-      },
+        origin: ErrorSource.LOGGER
+      }
     }
     this.log(message, extend2Lev(errorOrigin, messageContext), StatusType.error)
   },
 
-  setContext:function(context) {
+  setContext: function (context) {
     this.contextManager.set(context)
   },
 
-  getContext: function() {
+  getContext: function () {
     return this.contextManager.get()
   },
 
-  addContext: function(key, value) {
+  addContext: function (key, value) {
     this.contextManager.add(key, value)
   },
 
-  removeContext: function(key) {
+  removeContext: function (key) {
     this.contextManager.remove(key)
   },
 
-  setHandler:function(handler) {
+  setHandler: function (handler) {
     this.handlerType = handler
   },
 
-  getHandler: function() {
+  getHandler: function () {
     return this.handlerType
   },
-  setLevel: function(level) {
+  setLevel: function (level) {
     this.level = level
   },
-  getLevel: function() {
+  getLevel: function () {
     return this.level
   }
 }

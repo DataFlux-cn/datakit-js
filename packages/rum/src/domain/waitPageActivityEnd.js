@@ -5,7 +5,9 @@ import {
   LifeCycleEventType,
   some,
   matchList,
-  instrumentMethodAndCallOriginal
+  instrumentMethodAndCallOriginal,
+  setTimeout,
+  clearTimeout
 } from '@cloudcare/browser-core'
 
 // Delay to wait for a page activity to validate the tracking process

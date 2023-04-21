@@ -10,7 +10,9 @@ import {
   relativeNow,
   DOM_EVENT,
   LifeCycleEventType,
-  runOnReadyState
+  runOnReadyState,
+  setTimeout,
+  addEventListener
 } from '@cloudcare/browser-core'
 import {
   FAKE_INITIAL_DOCUMENT,
@@ -73,7 +75,7 @@ export function startPerformanceCollection(lifeCycle, configuration) {
     mainObserver.observe({ entryTypes: mainEntries })
     if (supportPerformanceObject() && 'addEventListener' in performance) {
       // https://bugzilla.mozilla.org/show_bug.cgi?id=1559377
-      performance.addEventListener('resourcetimingbufferfull', function () {
+      addEventListener(performance, 'resourcetimingbufferfull', function () {
         performance.clearResourceTimings()
       })
     }

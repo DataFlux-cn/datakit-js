@@ -1,4 +1,9 @@
-import { display, includes, each } from '@cloudcare/browser-core'
+import {
+  display,
+  includes,
+  each,
+  addEventListener
+} from '@cloudcare/browser-core'
 import { createDeflateWorker } from './deflateWorker'
 
 /**
@@ -55,8 +60,8 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
   }
   try {
     var worker = createDeflateWorkerImpl()
-    worker.addEventListener('error', onError)
-    worker.addEventListener('message', function (event) {
+    addEventListener(worker, 'error', onError)
+    addEventListener(worker, 'message', function (event) {
       var data = event.data
       if (data.type === 'errored') {
         onError(data.error)

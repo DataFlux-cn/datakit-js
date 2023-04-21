@@ -3,6 +3,7 @@ import { Observable } from '../helper/observable'
 import { dateNow, UUID, throttle } from '../helper/tools'
 import { SESSION_TIME_OUT_DELAY } from './sessionConstants'
 import { retrieveSession, withCookieLockAccess } from './sessionCookieStore'
+import { clearInterval, setInterval } from '../helper/timer'
 
 /**
  * Different session concepts:
@@ -67,7 +68,7 @@ export function startSessionStore(options, productKey, computeSessionState) {
     }
     if (hasSessionInCache()) {
       if (isSessionInCacheOutdated(cookieSession)) {
-        expireSession()
+        expireSessionInCache()
       } else {
         sessionCache = cookieSession
       }
@@ -98,7 +99,7 @@ export function startSessionStore(options, productKey, computeSessionState) {
     )
   }
 
-  function expireSession() {
+  function expireSessionInCache() {
     sessionCache = {}
     expireObservable.notify()
   }
@@ -135,6 +136,10 @@ export function startSessionStore(options, productKey, computeSessionState) {
     },
     renewObservable: renewObservable,
     expireObservable: expireObservable,
+    expire: function () {
+      deleteSessionCookie(options)
+      synchronizeSession({})
+    },
     stop: function () {
       clearInterval(watchSessionTimeoutId)
     }

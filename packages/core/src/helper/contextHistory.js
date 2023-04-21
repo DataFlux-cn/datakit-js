@@ -1,5 +1,5 @@
 import { relativeNow, ONE_MINUTE, filter, map } from './tools'
-
+import { setInterval, clearInterval } from './timer'
 var END_OF_TIMES = Infinity
 
 export var CLEAR_OLD_CONTEXTS_INTERVAL = ONE_MINUTE

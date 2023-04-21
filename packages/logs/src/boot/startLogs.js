@@ -2,9 +2,13 @@ import {
   ErrorSource,
   LifeCycle,
   LifeCycleEventType,
-  createPageExitObservable
+  createPageExitObservable,
+  areCookiesAuthorized
 } from '@cloudcare/browser-core'
-import { startLogsSessionManager } from '../domain/logsSessionManager'
+import {
+  startLogsSessionManager,
+  startLogsSessionManagerStub
+} from '../domain/logsSessionManager'
 import { startLogsAssembly } from '../domain/assembly'
 import { startConsoleCollection } from '../domain/logsCollection/console/consoleCollection'
 import { startReportCollection } from '../domain/logsCollection/report/reportCollection'
@@ -15,7 +19,7 @@ import { startLogsBatch } from '../transport/startLogsBatch'
 import { StatusType } from '../domain/logger'
 import { startInternalContext } from '../domain/internalContext'
 
-export function startLogs(configuration, getCommonContext, mainLogger) {
+export function startLogs(configuration, buildCommonContext, mainLogger) {
   var lifeCycle = new LifeCycle()
 
   var reportError = function (error) {
@@ -32,23 +36,31 @@ export function startLogs(configuration, getCommonContext, mainLogger) {
     })
   }
   var pageExitObservable = createPageExitObservable()
+  var session = areCookiesAuthorized(configuration.cookieOptions)
+    ? startLogsSessionManager(configuration)
+    : startLogsSessionManagerStub(configuration)
   startNetworkErrorCollection(configuration, lifeCycle)
   startRuntimeErrorCollection(configuration, lifeCycle)
   startConsoleCollection(configuration, lifeCycle)
   startReportCollection(configuration, lifeCycle)
   var _startLoggerCollection = startLoggerCollection(lifeCycle)
 
-  var session = startLogsSessionManager(configuration)
   startLogsAssembly(
     session,
     configuration,
     lifeCycle,
-    getCommonContext,
+    buildCommonContext,
     mainLogger,
     reportError
   )
 
-  startLogsBatch(configuration, lifeCycle, reportError, pageExitObservable)
+  startLogsBatch(
+    configuration,
+    lifeCycle,
+    reportError,
+    pageExitObservable,
+    session.expireObservable
+  )
 
   var internalContext = startInternalContext(session)
 

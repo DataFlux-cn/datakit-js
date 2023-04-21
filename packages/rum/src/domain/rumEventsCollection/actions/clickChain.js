@@ -1,4 +1,9 @@
-import { ONE_SECOND, every } from '@cloudcare/browser-core'
+import {
+  ONE_SECOND,
+  every,
+  setTimeout,
+  clearTimeout
+} from '@cloudcare/browser-core'
 
 export var MAX_DURATION_BETWEEN_CLICKS = ONE_SECOND
 export var MAX_DISTANCE_BETWEEN_CLICKS = 100

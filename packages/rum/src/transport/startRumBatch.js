@@ -2,16 +2,23 @@ import {
   Batch,
   createHttpRequest,
   LifeCycleEventType,
-  RumEventType
+  RumEventType,
+  createFlushController
 } from '@cloudcare/browser-core'
 
 export function startRumBatch(
   configuration,
   lifeCycle,
   reportError,
-  pageExitObservable
+  pageExitObservable,
+  sessionExpireObservable
 ) {
-  var batch = makeRumBatch(configuration, reportError, pageExitObservable)
+  var batch = makeRumBatch(
+    configuration,
+    reportError,
+    pageExitObservable,
+    sessionExpireObservable
+  )
 
   lifeCycle.subscribe(
     LifeCycleEventType.RUM_EVENT_COLLECTED,
@@ -25,24 +32,40 @@ export function startRumBatch(
   )
 }
 
-function makeRumBatch(configuration, reportError, pageExitObservable) {
-  var primaryBatch = createRumBatch(configuration.datakitUrl)
-  function createRumBatch(endpointUrl, unloadCallback) {
-    return new Batch(
+function makeRumBatch(
+  configuration,
+  reportError,
+  pageExitObservable,
+  sessionExpireObservable
+) {
+  var rumBatch = createRumBatch(configuration.datakitUrl)
+  var primaryBatch = rumBatch.batch
+  var primaryFlushController = rumBatch.flushController
+  function createRumBatch(endpointUrl) {
+    var flushController = createFlushController({
+      messagesLimit: configuration.batchMessagesLimit,
+      bytesLimit: configuration.batchBytesLimit,
+      durationLimit: configuration.flushTimeout,
+      pageExitObservable: pageExitObservable,
+      sessionExpireObservable: sessionExpireObservable
+    })
+    var batch = new Batch(
       createHttpRequest(
         endpointUrl,
         configuration.batchBytesLimit,
         reportError
       ),
-      configuration.batchMessagesLimit,
-      configuration.batchBytesLimit,
-      configuration.messageBytesLimit,
-      configuration.flushTimeout,
-      pageExitObservable
+      flushController,
+      configuration.messageBytesLimit
     )
+    return {
+      batch: batch,
+      flushController: flushController
+    }
   }
 
   return {
+    flushObservable: primaryFlushController.flushObservable,
     add: function (message) {
       primaryBatch.add(message)
     },

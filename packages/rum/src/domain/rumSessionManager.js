@@ -52,7 +52,9 @@ export function startRumSessionManager(configuration, lifeCycle) {
         plan: plan,
         sessionReplayAllowed: plan === RumSessionPlan.WITH_SESSION_REPLAY
       }
-    }
+    },
+    expire: sessionManager.expire,
+    expireObservable: sessionManager.expireObservable
   }
 }
 

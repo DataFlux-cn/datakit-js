@@ -1,11 +1,7 @@
-import {
-  clocksNow,
-  ONE_KIBI_BYTE,
-  ONE_MEBI_BYTE,
-  ONE_SECOND
-} from '../helper/tools'
+import { clocksNow, ONE_SECOND } from '../helper/tools'
+import { ONE_MEBI_BYTE, ONE_KIBI_BYTE } from '../helper/byteUtils'
 import { ErrorSource } from '../helper/errorTools'
-
+import { setTimeout } from '../helper/timer'
 export var MAX_ONGOING_BYTES_COUNT = 80 * ONE_KIBI_BYTE
 export var MAX_ONGOING_REQUESTS = 32
 export var MAX_QUEUE_BYTES_COUNT = 3 * ONE_MEBI_BYTE

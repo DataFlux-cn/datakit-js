@@ -1,7 +1,15 @@
 import { getCookie, setCookie } from '../browser/cookie'
-import { isChromium, dateNow, isEmptyObject, UUID, objectEntries,map, each, } from '../helper/tools'
+import {
+  isChromium,
+  dateNow,
+  isEmptyObject,
+  UUID,
+  objectEntries,
+  map,
+  each
+} from '../helper/tools'
 import { SESSION_EXPIRATION_DELAY } from './sessionConstants'
-
+import { setTimeout } from '../helper/timer'
 var SESSION_ENTRY_REGEXP = /^([a-z]+)=([a-z0-9-]+)$/
 var SESSION_ENTRY_SEPARATOR = '&'
 
@@ -11,8 +19,7 @@ export var SESSION_COOKIE_NAME = '_dataflux_s'
 export var LOCK_RETRY_DELAY = 10
 export var MAX_NUMBER_OF_LOCK_RETRIES = 100
 
-
-var bufferedOperations= []
+var bufferedOperations = []
 var ongoingOperations
 
 export function withCookieLockAccess(operations, numberOfRetries) {
@@ -93,12 +100,9 @@ function isCookieLockEnabled() {
 }
 
 function retryLater(operations, currentNumberOfRetries) {
-  setTimeout(
-    function() {
-      withCookieLockAccess(operations, currentNumberOfRetries + 1)
-    },
-    LOCK_RETRY_DELAY
-  )
+  setTimeout(function () {
+    withCookieLockAccess(operations, currentNumberOfRetries + 1)
+  }, LOCK_RETRY_DELAY)
 }
 
 function next() {
@@ -119,11 +123,16 @@ export function persistSession(session, options) {
 }
 
 function setSession(session, options) {
-  setCookie(SESSION_COOKIE_NAME, toSessionString(session), SESSION_EXPIRATION_DELAY, options)
+  setCookie(
+    SESSION_COOKIE_NAME,
+    toSessionString(session),
+    SESSION_EXPIRATION_DELAY,
+    options
+  )
 }
 
 export function toSessionString(session) {
-  return map(objectEntries(session), function(item) {
+  return map(objectEntries(session), function (item) {
     return item[0] + '=' + item[1]
   }).join(SESSION_ENTRY_SEPARATOR)
 }
@@ -132,7 +141,7 @@ export function retrieveSession() {
   var sessionString = getCookie(SESSION_COOKIE_NAME)
   var session = {}
   if (isValidSessionString(sessionString)) {
-    each(sessionString.split(SESSION_ENTRY_SEPARATOR), function(entry) {
+    each(sessionString.split(SESSION_ENTRY_SEPARATOR), function (entry) {
       var matches = SESSION_ENTRY_REGEXP.exec(entry)
       if (matches !== null) {
         var key = matches[1]
@@ -147,7 +156,8 @@ export function retrieveSession() {
 function isValidSessionString(sessionString) {
   return (
     sessionString !== undefined &&
-    (sessionString.indexOf(SESSION_ENTRY_SEPARATOR) !== -1 || SESSION_ENTRY_REGEXP.test(sessionString))
+    (sessionString.indexOf(SESSION_ENTRY_SEPARATOR) !== -1 ||
+      SESSION_ENTRY_REGEXP.test(sessionString))
   )
 }
 

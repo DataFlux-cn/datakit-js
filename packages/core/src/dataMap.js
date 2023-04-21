@@ -47,6 +47,7 @@ export var dataMap = {
     },
     fields: {
       session_replay_stats: '_dd.replay_stats',
+      session_is_active: 'session.is_active',
       view_error_count: 'view.error.count',
       view_resource_count: 'view.resource.count',
       view_long_task_count: 'view.long_task.count',

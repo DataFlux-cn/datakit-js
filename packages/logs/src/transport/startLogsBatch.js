@@ -7,13 +7,15 @@ export function startLogsBatch(
   configuration,
   lifeCycle,
   reportError,
-  pageExitObservable
+  pageExitObservable,
+  sessionExpireObservable
 ) {
   var batch = startBatchWithReplica(
     configuration,
     configuration.logsEndpoint,
     reportError,
-    pageExitObservable
+    pageExitObservable,
+    sessionExpireObservable
   )
 
   lifeCycle.subscribe(

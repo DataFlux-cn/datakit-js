@@ -1,6 +1,5 @@
 import { DOM_EVENT } from './enums'
-import { getZoneJsOriginalValue } from './getZoneJsOriginalValue'
-
+import { setTimeout, clearTimeout } from './timer'
 var ArrayProto = Array.prototype
 var FuncProto = Function.prototype
 var ObjProto = Object.prototype
@@ -735,109 +734,7 @@ export function elementMatches(element, selector) {
   }
   return false
 }
-export var addEvent = function () {
-  function fixEvent(event) {
-    if (event) {
-      event.preventDefault = fixEvent.preventDefault
-      event.stopPropagation = fixEvent.stopPropagation
-      event._getPath = fixEvent._getPath
-    }
-    return event
-  }
-  fixEvent._getPath = function () {
-    var ev = this
-    var polyfill = function () {
-      try {
-        var element = ev.target
-        var pathArr = [element]
-        if (element === null || element.parentElement === null) {
-          return []
-        }
-        while (element.parentElement !== null) {
-          element = element.parentElement
-          pathArr.unshift(element)
-        }
-        return pathArr
-      } catch (error) {
-        return []
-      }
-    }
-    return (
-      this.path || (this.composedPath() && this.composedPath()) || polyfill()
-    )
-  }
-  fixEvent.preventDefault = function () {
-    this.returnValue = false
-  }
-  fixEvent.stopPropagation = function () {
-    this.cancelBubble = true
-  }
-  var register_event = function (element, type, handle) {
-    if (element && element.addEventListener) {
-      element.addEventListener(
-        type,
-        function (e) {
-          e._getPath = fixEvent._getPath
-          handler.call(this, e)
-        },
-        false
-      )
-    } else {
-      var ontype = 'on' + type
-      var old_handler = element[ontype]
-      element[ontype] = makeHandler(element, handler, old_handler)
-    }
-  }
-  function makeHandler(element, new_handler, old_handlers) {
-    var handler = function (event) {
-      event = event || fixEvent(window.event)
-      if (!event) {
-        return undefined
-      }
-      event.target = event.srcElement
 
-      var ret = true
-      var old_result, new_result
-      if (typeof old_handlers === 'function') {
-        old_result = old_handlers(event)
-      }
-      new_result = new_handler.call(element, event)
-      if (false === old_result || false === new_result) {
-        ret = false
-      }
-      return ret
-    }
-    return handler
-  }
-
-  register_event.apply(null, arguments)
-}
-export var addHashEvent = function (callback) {
-  var hashEvent = 'pushState' in window.history ? 'popstate' : 'hashchange'
-  addEvent(window, hashEvent, callback)
-}
-export var addSinglePageEvent = function (callback) {
-  var current_url = location.href
-  var historyPushState = window.history.pushState
-  var historyReplaceState = window.history.replaceState
-
-  window.history.pushState = function () {
-    historyPushState.apply(window.history, arguments)
-    callback(current_url)
-    current_url = location.href
-  }
-  window.history.replaceState = function () {
-    historyReplaceState.apply(window.history, arguments)
-    callback(current_url)
-    current_url = location.href
-  }
-
-  var singlePageEvent = historyPushState ? 'popstate' : 'hashchange'
-  addEvent(window, singlePageEvent, function () {
-    callback(current_url)
-    current_url = location.href
-  })
-}
 export var cookie = {
   get: function (name) {
     var nameEQ = name + '='
@@ -1493,51 +1390,6 @@ export var getReferrer = function () {
 export var typeDecide = function (o, type) {
   return toString.call(o) === '[object ' + type + ']'
 }
-export function jsonStringify(value, replacer, space) {
-  if (value === null || value === undefined) {
-    return JSON.stringify(value)
-  }
-  var originalToJSON = [false, undefined]
-  if (hasToJSON(value)) {
-    // We need to add a flag and not rely on the truthiness of value.toJSON
-    // because it can be set but undefined and that's actually significant.
-    originalToJSON = [true, value.toJSON]
-    delete value.toJSON
-  }
-
-  var originalProtoToJSON = [false, undefined]
-  var prototype
-  if (typeof value === 'object') {
-    prototype = Object.getPrototypeOf(value)
-    if (hasToJSON(prototype)) {
-      originalProtoToJSON = [true, prototype.toJSON]
-      delete prototype.toJSON
-    }
-  }
-
-  var result
-  try {
-    result = JSON.stringify(value, undefined, space)
-  } catch (e) {
-    result = '<error: unable to serialize object>'
-  } finally {
-    if (originalToJSON[0]) {
-      value.toJSON = originalToJSON[1]
-    }
-    if (originalProtoToJSON[0]) {
-      prototype.toJSON = originalProtoToJSON[1]
-    }
-  }
-  return result
-}
-
-function hasToJSON(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    value.hasOwnProperty('toJSON')
-  )
-}
 
 export function noop() {}
 
@@ -1546,8 +1398,7 @@ export var ONE_MINUTE = 60 * ONE_SECOND
 export var ONE_HOUR = 60 * ONE_MINUTE
 export var ONE_DAY = 24 * ONE_HOUR
 export var ONE_YEAR = 365 * ONE_DAY
-export var ONE_KIBI_BYTE = 1024
-export var ONE_MEBI_BYTE = 1024 * ONE_KIBI_BYTE
+
 /**
  * Return true if the draw is successful
  * @param threshold between 0 and 100
@@ -1679,108 +1530,11 @@ export function safeTruncate(candidate, length) {
   return candidate.slice(0, length)
 }
 
-export function addEventListener(eventTarget, event, listener, options) {
-  return addEventListeners(eventTarget, [event], listener, options)
-}
-
-/**
- * Add event listeners to an event emitter object (Window, Element, mock object...).  This provides
- * a few conveniences compared to using `element.addEventListener` directly:
- *
- * * supports IE11 by:
- *   * using an option object only if needed
- *   * emulating the `once` option
- *
- * * wraps the listener with a `monitor` function
- *
- * * returns a `stop` function to remove the listener
- *
- * * with `once: true`, the listener will be called at most once, even if different events are
- *   listened
- */
-
-export function addEventListeners(eventTarget, events, listener, options) {
-  var wrappedListener =
-    options && options.once
-      ? function (event) {
-          stop()
-          listener(event)
-        }
-      : listener
-
-  options =
-    options && options.passive
-      ? { capture: options.capture, passive: options.passive }
-      : options && options.capture
-  var add = getZoneJsOriginalValue(eventTarget, 'addEventListener')
-
-  each(events, function (event) {
-    add.call(eventTarget, event, wrappedListener, options)
-  })
-  var stop = function () {
-    var remove = getZoneJsOriginalValue(eventTarget, 'removeEventListener')
-    each(events, function (event) {
-      remove.call(eventTarget, event, wrappedListener, options)
-    })
-  }
-  return {
-    stop: stop
-  }
-}
-
 export function includes(candidate, search) {
   // tslint:disable-next-line: no-unsafe-any
   return candidate.indexOf(search) !== -1
 }
 
-export function createContextManager() {
-  var context = {}
-
-  return {
-    get: function () {
-      return context
-    },
-
-    add: function (key, value) {
-      if (isString(key)) {
-        context[key] = value
-      } else {
-        console.error('key 需要传递字符串类型')
-      }
-    },
-
-    remove: function (key) {
-      delete context[key]
-    },
-
-    set: function (newContext) {
-      if (isObject(newContext)) {
-        context = newContext
-      } else {
-        console.error('content 需要传递对象类型数据')
-      }
-    },
-    getContext: function () {
-      return deepClone(context)
-    },
-
-    setContext: function (newContext) {
-      context = deepClone(newContext)
-    },
-
-    setContextProperty: function (key, property) {
-      context[key] = deepClone(property)
-    },
-
-    removeContextProperty: function (key) {
-      delete context[key]
-    },
-
-    clearContext: function () {
-      context = {}
-    }
-  }
-}
 export function find(array, predicate) {
   for (var i = 0; i < array.length; i += 1) {
     var item = array[i]
@@ -1871,64 +1625,11 @@ export function toSnakeCase(word) {
     .replace(/-/g, '_')
 }
 
-export function escapeRowData(str) {
-  if (typeof str === 'object' && str) {
-    str = jsonStringify(str)
-  } else if (!isString(str)) {
-    return str
-  }
-  var reg = /[\s=,"]/g
-  return String(str).replace(reg, function (word) {
-    return '\\' + word
-  })
-}
-
-export function escapeJsonValue(value) {
-  if (isString(value)) {
-    return value
-  } else {
-    return jsonStringify(value)
-  }
-}
-export function escapeFieldValueStr(str) {
-  return (
-    '"' +
-    str
-      .replace(/\\/g, '\\\\')
-      .replace(/[\\]*"/g, '"')
-      .replace(/"/g, '\\"') +
-    '"'
-  )
-}
-export function escapeRowField(value) {
-  if (typeof value === 'object' && value) {
-    return escapeFieldValueStr(jsonStringify(value))
-  } else if (isString(value)) {
-    return escapeFieldValueStr(value)
-  } else {
-    return value
-  }
-}
 export function isNullUndefinedDefaultValue(data, defaultValue) {
   if (data !== null && data !== void 0) {
     return data
   } else {
     return defaultValue
-  }
-}
-
-export function runOnReadyState(expectedReadyState, callback) {
-  if (
-    document.readyState === expectedReadyState ||
-    document.readyState === 'complete'
-  ) {
-    callback()
-  } else {
-    var eventName =
-      expectedReadyState === 'complete'
-        ? DOM_EVENT.LOAD
-        : DOM_EVENT.DOM_CONTENT_LOADED
-    addEventListener(window, eventName, callback, { once: true })
   }
 }
 

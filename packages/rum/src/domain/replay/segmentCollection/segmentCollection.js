@@ -1,7 +1,9 @@
 import {
   ONE_SECOND,
   LifeCycleEventType,
-  isPageExitReason
+  isPageExitReason,
+  setTimeout,
+  clearTimeout
 } from '@cloudcare/browser-core'
 import { buildReplayPayload } from './buildReplayPayload'
 import { Segment } from './segment'

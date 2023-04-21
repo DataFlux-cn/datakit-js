@@ -127,7 +127,8 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
       )
     },
     session: {
-      has_replay: replayStats ? true : undefined
+      has_replay: replayStats ? true : undefined,
+      is_active: view.sessionIsActive ? undefined : false
     }
   }
   if (!isEmptyObject(view.customTimings)) {

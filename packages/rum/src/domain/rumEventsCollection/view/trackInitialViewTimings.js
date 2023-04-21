@@ -6,19 +6,38 @@ import {
   find,
   findLast,
   LifeCycleEventType,
-  ONE_MINUTE
+  ONE_MINUTE,
+  setTimeout,
+  relativeNow
 } from '@cloudcare/browser-core'
 import { trackFirstHidden } from './trackFirstHidden'
 // Discard LCP and FCP timings above a certain delay to avoid incorrect data
 // It happens in some cases like sleep mode or some browser implementations
 export var TIMING_MAXIMUM_DELAY = 10 * ONE_MINUTE
-export function trackInitialViewTimings(lifeCycle, callback) {
+/**
+ * The initial view can finish quickly, before some metrics can be produced (ex: before the page load
+ * event, or the first input). Also, we don't want to trigger a view update indefinitely, to avoid
+ * updates on views that ended a long time ago. Keep watching for metrics after the view ends for a
+ * limited amount of time.
+ */
+export const KEEP_TRACKING_TIMINGS_AFTER_VIEW_DELAY = 5 * ONE_MINUTE
+export function trackInitialViewTimings(
+  lifeCycle,
+  setLoadEvent,
+  scheduleViewUpdate
+) {
   var timings = {}
   function setTimings(newTimings) {
     timings = extend(timings, newTimings)
-    callback(timings)
+    scheduleViewUpdate()
   }
-  var _trackNavigationTimings = trackNavigationTimings(lifeCycle, setTimings)
+  var _trackNavigationTimings = trackNavigationTimings(
+    lifeCycle,
+    function (newTimings) {
+      setLoadEvent(newTimings.loadEvent)
+      setTimings(newTimings)
+    }
+  )
   var stopNavigationTracking = _trackNavigationTimings.stop
   var _trackFirstContentfulPaint = trackFirstContentfulPaint(
     lifeCycle,
@@ -45,13 +64,17 @@ export function trackInitialViewTimings(lifeCycle, callback) {
     }
   )
   var stopFIDTracking = _trackFirstInputTimings.stop
-
+  function stop() {
+    stopNavigationTracking()
+    stopFCPTracking()
+    stopLCPTracking()
+    stopFIDTracking()
+  }
   return {
-    stop: function () {
-      stopNavigationTracking()
-      stopFCPTracking()
-      stopLCPTracking()
-      stopFIDTracking()
+    stop: stop,
+    timings: timings,
+    scheduleStop: function () {
+      setTimeout(stop, KEEP_TRACKING_TIMINGS_AFTER_VIEW_DELAY)
     }
   }
 }
@@ -73,7 +96,15 @@ export function trackNavigationTimings(lifeCycle, callback) {
             loadEventEnd: entry.loadEventEnd,
             loadEventStart: entry.loadEventStart,
             domContentLoadedEventEnd: entry.domContentLoadedEventEnd,
-            domContentLoadedEventStart: entry.domContentLoadedEventStart
+            domContentLoadedEventStart: entry.domContentLoadedEventStart,
+            // In some cases the value reported is negative or is larger
+            // than the current page time. Ignore these cases:
+            // https://github.com/GoogleChrome/web-vitals/issues/137
+            // https://github.com/GoogleChrome/web-vitals/issues/162
+            firstByte:
+              entry.responseStart >= 0 && entry.responseStart <= relativeNow()
+                ? entry.responseStart
+                : undefined
           })
         }
       }

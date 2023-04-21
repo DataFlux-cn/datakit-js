@@ -1,11 +1,12 @@
 import { Batch } from './batch'
 import { createHttpRequest } from './httpRequest'
-
+import { createFlushController } from './flushController'
 export function startBatchWithReplica(
   configuration,
   endpointUrl,
   reportError,
-  pageExitObservable
+  pageExitObservable,
+  sessionExpireObservable
 ) {
   var primaryBatch = createBatch(endpointUrl)
 
@@ -16,11 +17,14 @@ export function startBatchWithReplica(
         configuration.batchBytesLimit,
         reportError
       ),
-      configuration.batchMessagesLimit,
-      configuration.batchBytesLimit,
-      configuration.messageBytesLimit,
-      configuration.flushTimeout,
-      pageExitObservable
+      createFlushController({
+        messagesLimit: configuration.batchMessagesLimit,
+        bytesLimit: configuration.batchBytesLimit,
+        durationLimit: configuration.flushTimeout,
+        pageExitObservable: pageExitObservable,
+        sessionExpireObservable: sessionExpireObservable
+      }),
+      configuration.messageBytesLimit
     )
   }
 

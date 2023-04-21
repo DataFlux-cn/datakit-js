@@ -1,23 +1,39 @@
 import {
   makePublicApi,
-  assign,
   areCookiesAuthorized,
   BoundedBuffer,
   display,
   buildCookieOptions,
   createContextManager,
+  CustomerDataType,
   clocksNow,
   timeStampNow,
   ActionType,
   deepClone,
-  createHandlingStack
+  createHandlingStack,
+  sanitizeUser,
+  checkUser,
+  noop
 } from '@cloudcare/browser-core'
 import { validateAndBuildRumConfiguration } from '../domain/configuration'
+import { buildCommonContext } from '../domain/contexts/commonContext'
 export function makeRumPublicApi(startRumImpl, recorderApi) {
   var isAlreadyInitialized = false
 
-  var globalContextManager = createContextManager()
-  var userContextManager = createContextManager()
+  var globalContextManager = createContextManager(
+    CustomerDataType.GlobalContext
+  )
+  var userContextManager = createContextManager(CustomerDataType.User)
+
+  var getInternalContextStrategy = function () {
+    return undefined
+  }
+  var getInitConfigurationStrategy = function () {
+    return undefined
+  }
+  var stopSessionStrategy = function () {
+    return noop()
+  }
   var bufferApiCalls = new BoundedBuffer()
   var addTimingStrategy = function (name, time) {
     if (typeof time === 'undefined') {
@@ -37,10 +53,11 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   }
   var addActionStrategy = function (action, commonContext) {
     if (typeof commonContext == 'undefined') {
-      commonContext = {
-        context: globalContextManager.getContext(),
-        user: userContextManager.getContext()
-      }
+      commonContext = buildCommonContext(
+        globalContextManager,
+        userContextManager,
+        recorderApi
+      )
     }
     bufferApiCalls.add(function () {
       return addActionStrategy(action, commonContext)
@@ -48,21 +65,15 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   }
   var addErrorStrategy = function (providedError, commonContext) {
     if (typeof commonContext == 'undefined') {
-      commonContext = {
-        context: globalContextManager.getContext(),
-        user: userContextManager.getContext()
-      }
+      commonContext = buildCommonContext(
+        globalContextManager,
+        userContextManager,
+        recorderApi
+      )
     }
     bufferApiCalls.add(function () {
       return addErrorStrategy(providedError, commonContext)
     })
-  }
-
-  var getInternalContextStrategy = function () {
-    return undefined
-  }
-  var getInitConfigurationStrategy = function () {
-    return undefined
   }
 
   function initRum(initConfiguration) {
@@ -102,14 +113,9 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   function doStartRum(configuration, initialViewOptions) {
     var startRumResults = startRumImpl(
       configuration,
-      function () {
-        return {
-          user: userContextManager.getContext(),
-          context: globalContextManager.getContext(),
-          hasReplay: recorderApi.isRecording() ? true : undefined
-        }
-      },
       recorderApi,
+      globalContextManager,
+      userContextManager,
       initialViewOptions
     )
     startViewStrategy = startRumResults.startView
@@ -117,6 +123,7 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
     addErrorStrategy = startRumResults.addError
     addTimingStrategy = startRumResults.addTiming
     getInternalContextStrategy = startRumResults.getInternalContext
+    stopSessionStrategy = startRumResults.stopSession
     bufferApiCalls.drain()
     recorderApi.onRumStart(
       startRumResults.lifeCycle,
@@ -167,14 +174,6 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
         type: ActionType.CUSTOM
       })
     },
-
-    /**
-     * @deprecated use addAction instead
-     */
-    // addUserAction: function (name, context) {
-    //   rumPublicApi.addAction(name, context)
-    // },
-
     addError: function (error, context) {
       var handlingStack = createHandlingStack()
       addErrorStrategy({
@@ -188,9 +187,7 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
       addTimingStrategy(name, time)
     },
     setUser: function (newUser) {
-      if (typeof newUser !== 'object' || !newUser) {
-        display.error('Unsupported user:', newUser)
-      } else {
+      if (checkUser(newUser)) {
         userContextManager.setContext(sanitizeUser(newUser))
       }
     },
@@ -207,24 +204,13 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
     removeUser: userContextManager.clearContext,
     clearUser: userContextManager.clearContext,
     startView: startView,
+    stopSession: function () {
+      stopSessionStrategy()
+    },
     startSessionReplayRecording: recorderApi.start,
     stopSessionReplayRecording: recorderApi.stop
   })
   return rumPublicApi
-
-  function sanitizeUser(newUser) {
-    var shallowClonedUser = assign(newUser, {})
-    if ('id' in shallowClonedUser) {
-      shallowClonedUser.id = String(shallowClonedUser.id)
-    }
-    if ('name' in shallowClonedUser) {
-      shallowClonedUser.name = String(shallowClonedUser.name)
-    }
-    if ('email' in shallowClonedUser) {
-      shallowClonedUser.email = String(shallowClonedUser.email)
-    }
-    return shallowClonedUser
-  }
   function canHandleSession(initConfiguration) {
     if (!areCookiesAuthorized(buildCookieOptions(initConfiguration))) {
       display.warn('Cookies are not authorized, we will not send any data.')

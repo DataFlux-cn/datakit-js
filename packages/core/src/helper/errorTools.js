@@ -1,4 +1,5 @@
-import { each, noop, jsonStringify } from './tools'
+import { each, noop } from './tools'
+import { jsonStringify } from '../helper/serialisation/jsonStringify'
 import { computeStackTrace } from '../tracekit'
 
 export var ErrorSource = {

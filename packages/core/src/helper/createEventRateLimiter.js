@@ -1,16 +1,13 @@
 import { ErrorSource } from './errorTools'
 import { clocksNow, ONE_MINUTE } from './tools'
-export function createEventRateLimiter(
-  eventType,
-  limit,
-  onLimitReached
-) {
+import { setTimeout } from './timer'
+export function createEventRateLimiter(eventType, limit, onLimitReached) {
   var eventCount = 0
   var allowNextEvent = false
   return {
-    isLimitReached: function() {
+    isLimitReached: function () {
       if (eventCount === 0) {
-        setTimeout(function(){
+        setTimeout(function () {
           eventCount = 0
         }, ONE_MINUTE)
       }
@@ -23,9 +20,10 @@ export function createEventRateLimiter(
         allowNextEvent = true
         try {
           onLimitReached({
-            message: 'Reached max number of ' + eventType +'s by minute: ' + limit,
+            message:
+              'Reached max number of ' + eventType + 's by minute: ' + limit,
             source: ErrorSource.AGENT,
-            startClocks: clocksNow(),
+            startClocks: clocksNow()
           })
         } finally {
           allowNextEvent = false

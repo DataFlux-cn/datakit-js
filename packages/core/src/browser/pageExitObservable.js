@@ -1,11 +1,10 @@
 import { Observable } from '../helper/observable'
+import { includes, values } from '../helper/tools'
+import { DOM_EVENT } from '../helper/enums'
 import {
   addEventListener,
-  addEventListeners,
-  includes,
-  values
-} from '../helper/tools'
-import { DOM_EVENT } from '../helper/enums'
+  addEventListeners
+} from '../browser/addEventListener'
 export var PageExitReason = {
   HIDDEN: 'visibility_hidden',
   UNLOADING: 'before_unload',

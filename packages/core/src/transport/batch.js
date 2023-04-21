@@ -1,10 +1,7 @@
 import { display } from '../helper/display'
 import {
-  addEventListener,
-  noop,
   values,
   findByPath,
-  escapeRowData,
   each,
   isNumber,
   isArray,
@@ -13,12 +10,17 @@ import {
   toServerDuration,
   isBoolean,
   isEmptyObject,
-  isObject,
-  escapeJsonValue,
-  escapeRowField
+  isObject
 } from '../helper/tools'
+import {
+  escapeJsonValue,
+  escapeRowField,
+  escapeRowData
+} from '../helper/serialisation/rowData'
 import { commonTags, dataMap, commonFields } from '../dataMap'
-import { DOM_EVENT, RumEventType } from '../helper/enums'
+import { RumEventType } from '../helper/enums'
+import { computeBytesCount } from '../helper/byteUtils'
+import { isPageExitReason } from '../browser/pageExitObservable'
 // https://en.wikipedia.org/wiki/UTF-8
 // eslint-disable-next-line no-control-regex
 var HAS_MULTI_BYTES_CHARACTERS = /[^\u0000-\u007F]/
@@ -133,28 +135,16 @@ export var processedMessageByDataMap = function (message) {
     rowData: hasFileds ? rowData : undefined
   }
 }
-var batch = function (
-  request,
-  batchMessagesLimit,
-  batchBytesLimit,
-  messageBytesLimit,
-  flushTimeout,
-  pageExitObservable
-) {
+var batch = function (request, flushController, messageBytesLimit) {
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
-  this.bufferBytesCount = 0
-  this.bufferMessagesCount = 0
   this.request = request
-  this.batchMessagesLimit = batchMessagesLimit
-  this.batchBytesLimit = batchBytesLimit
+  this.flushController = flushController
   this.messageBytesLimit = messageBytesLimit
-  this.flushTimeout = flushTimeout
   var _this = this
-  pageExitObservable.subscribe(function () {
-    _this.flush(_this.request.sendOnExit)
+  this.flushController.flushObservable.subscribe(function (event) {
+    _this.flush(event)
   })
-  this.flushPeriodically()
 }
 batch.prototype.add = function (message) {
   this.addOrUpdate(message)
@@ -162,37 +152,24 @@ batch.prototype.add = function (message) {
 batch.prototype.upsert = function (message, key) {
   this.addOrUpdate(message, key)
 }
-batch.prototype.flush = function (sendFn) {
-  if (typeof sendFn !== 'function') {
-    sendFn = this.request.send
-  }
-  if (this.bufferMessagesCount !== 0) {
-    var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
-    var bytesCount = this.bufferBytesCount
-    this.pushOnlyBuffer = []
-    this.upsertBuffer = {}
-    this.bufferBytesCount = 0
-    this.bufferMessagesCount = 0
-    if (messages.length > 0) {
-      sendFn({ data: messages.join('\n'), bytesCount: bytesCount })
+batch.prototype.flush = function (event) {
+  var messages = this.pushOnlyBuffer.concat(values(this.upsertBuffer))
+  this.pushOnlyBuffer = []
+  this.upsertBuffer = {}
+  if (messages.length > 0) {
+    var payload = {
+      data: messages.join('\n'),
+      bytesCount: event.bytesCount,
+      flushReason: event.reason
+    }
+    if (isPageExitReason(event.reason)) {
+      this.request.sendOnExit(payload)
+    } else {
+      this.request.send(payload)
     }
   }
 }
-batch.prototype.flushOnExit = function () {
-  this.flush(this.request.sendOnExit)
-}
-batch.prototype.computeBytesCount = function (candidate) {
-  // Accurate bytes count computations can degrade performances when there is a lot of events to process
-  if (!HAS_MULTI_BYTES_CHARACTERS.test(candidate)) {
-    return candidate.length
-  }
 
-  if (window.TextEncoder !== undefined) {
-    return new TextEncoder().encode(candidate).length
-  }
-
-  return new Blob([candidate]).size
-}
 batch.prototype.addOrUpdate = function (message, key) {
   var _process = this.process(message)
   var processedMessage = _process.processedMessage
@@ -208,18 +185,11 @@ batch.prototype.addOrUpdate = function (message, key) {
   if (this.hasMessageFor(key)) {
     this.remove(key)
   }
-  if (this.willReachedBytesLimitWith(messageBytesCount)) {
-    this.flush()
-  }
-
   this.push(processedMessage, messageBytesCount, key)
-  if (this.isFull()) {
-    this.flush()
-  }
 }
 batch.prototype.process = function (message) {
   var processedMessage = processedMessageByDataMap(message).rowStr
-  var messageBytesCount = this.computeBytesCount(processedMessage)
+  var messageBytesCount = computeBytesCount(processedMessage)
   return {
     processedMessage: processedMessage,
     messageBytesCount: messageBytesCount
@@ -227,52 +197,30 @@ batch.prototype.process = function (message) {
 }
 
 batch.prototype.push = function (processedMessage, messageBytesCount, key) {
-  if (this.bufferMessagesCount > 0) {
-    // \n separator at serialization
-    this.bufferBytesCount += 1
-  }
+  var separatorBytesCount = this.flushController.getMessagesCount() > 0 ? 1 : 0
+  this.flushController.notifyBeforeAddMessage(
+    messageBytesCount + separatorBytesCount
+  )
   if (key !== undefined) {
     this.upsertBuffer[key] = processedMessage
   } else {
     this.pushOnlyBuffer.push(processedMessage)
   }
-  this.bufferBytesCount += messageBytesCount
-  this.bufferMessagesCount += 1
+  this.flushController.notifyAfterAddMessage()
 }
 
 batch.prototype.remove = function (key) {
   var removedMessage = this.upsertBuffer[key]
   delete this.upsertBuffer[key]
-  var messageBytesCount = this.computeBytesCount(removedMessage)
-  this.bufferBytesCount -= messageBytesCount
-  this.bufferMessagesCount -= 1
-  if (this.bufferMessagesCount > 0) {
-    this.bufferBytesCount -= 1
-  }
+  var messageBytesCount = computeBytesCount(removedMessage)
+  // If there are other messages, a '\n' will be added at serialization
+  var separatorBytesCount = this.flushController.getMessagesCount() > 1 ? 1 : 0
+  this.flushController.notifyAfterRemoveMessage(
+    messageBytesCount + separatorBytesCount
+  )
 }
 
 batch.prototype.hasMessageFor = function (key) {
   return key !== undefined && this.upsertBuffer[key] !== undefined
 }
-
-batch.prototype.willReachedBytesLimitWith = function (messageBytesCount) {
-  // byte of the separator at the end of the message
-  return this.bufferBytesCount + messageBytesCount + 1 >= this.batchBytesLimit
-}
-
-batch.prototype.isFull = function () {
-  return (
-    this.bufferMessagesCount === this.batchMessagesLimit ||
-    this.bufferBytesCount >= this.batchBytesLimit
-  )
-}
-
-batch.prototype.flushPeriodically = function () {
-  var _this = this
-  setTimeout(function () {
-    _this.flush()
-    _this.flushPeriodically()
-  }, this.flushTimeout)
-}
-
 export var Batch = batch

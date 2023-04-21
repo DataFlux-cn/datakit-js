@@ -161,6 +161,7 @@ function isBrowserSupported() {
     // this test is not sufficient.
     typeof Array.from === 'function' &&
     typeof CSSSupportsRule === 'function' &&
+    typeof URL.createObjectURL === 'function' &&
     'forEach' in NodeList.prototype
   )
 }
