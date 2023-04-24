@@ -77,10 +77,11 @@ export function doWaitPageActivityEnd(
   }, PAGE_ACTIVITY_VALIDATION_DELAY)
 
   var maxDurationTimeoutId =
-    maxDuration &&
-    setTimeout(function () {
-      return complete({ hadActivity: true, end: timeStampNow() })
-    }, maxDuration)
+    maxDuration !== undefined
+      ? setTimeout(function () {
+          return complete({ hadActivity: true, end: timeStampNow() })
+        }, maxDuration)
+      : undefined
 
   var pageActivitySubscription = pageActivityObservable.subscribe(function (
     data

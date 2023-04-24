@@ -1,24 +1,24 @@
 {
-  "name": "@cloudcare/browser-core",
-  "version": "2.0.4",
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
-  "scripts": {
-    "build": "run-p build:cjs build:esm",
-    "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src",
-    "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src "
-  },
-  "keywords": [
-    "dataflux",
-    "logs",
-    "sdk"
-  ],
-  "repository": {
-    "url": "https://github.com/DataFlux-cn/datakit-js",
-    "type": "git"
-  },
-  "author": "dataflux",
-  "license": "MIT",
-  "description": "DataFlux RUM Web 端数据指标监控",
-  "gitHead": "e73550d0362e289b1c133980dc7458cb0e5175b5"
+    "name": "@cloudcare/browser-core",
+    "version": "2.0.5",
+    "main": "cjs/index.js",
+    "module": "esm/index.js",
+    "scripts": {
+        "build": "run-p build:cjs build:esm",
+        "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src",
+        "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src "
+    },
+    "keywords": [
+        "dataflux",
+        "logs",
+        "sdk"
+    ],
+    "repository": {
+        "url": "https://github.com/DataFlux-cn/datakit-js",
+        "type": "git"
+    },
+    "author": "dataflux",
+    "license": "MIT",
+    "description": "DataFlux RUM Web 端数据指标监控",
+    "gitHead": "e73550d0362e289b1c133980dc7458cb0e5175b5"
 }
