@@ -2,9 +2,9 @@ import { DOM_EVENT, addEventListeners } from '@cloudcare/browser-core'
 var trackFirstHiddenSingleton
 var stopListeners
 
-export function trackFirstHidden(emitter) {
-  if (typeof emitter === 'undefined') {
-    emitter = window
+export function trackFirstHidden(eventTarget) {
+  if (typeof eventTarget === 'undefined') {
+    eventTarget = window
   }
   if (!trackFirstHiddenSingleton) {
     if (document.visibilityState === 'hidden') {
@@ -14,7 +14,7 @@ export function trackFirstHidden(emitter) {
         timeStamp: Infinity
       }
       var listeners = addEventListeners(
-        emitter,
+        eventTarget,
         [DOM_EVENT.PAGE_HIDE, DOM_EVENT.VISIBILITY_CHANGE],
         function (event) {
           if (

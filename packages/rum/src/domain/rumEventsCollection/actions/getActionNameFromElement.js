@@ -261,7 +261,6 @@ function getTextualContent(element, userProgrammaticAttribute) {
  * from a parent element innerText.
  *
  * [1]: https://web.archive.org/web/20210602165716/http://perfectionkills.com/the-poor-misunderstood-innerText/#diff-with-textContent
- * [2]: https://github.com/DataDog/browser-sdk/issues/1084
  */
 function supportsInnerTextScriptAndStyleRemoval() {
   return !isIE()

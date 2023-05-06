@@ -39,21 +39,22 @@ export function trackInitialViewTimings(
     }
   )
   var stopNavigationTracking = _trackNavigationTimings.stop
-  var _trackFirstContentfulPaint = trackFirstContentfulPaint(
+
+  var _trackFirstContentfulPaintTiming = trackFirstContentfulPaintTiming(
     lifeCycle,
     function (firstContentfulPaint) {
       setTimings({ firstContentfulPaint: firstContentfulPaint })
     }
   )
-  var stopFCPTracking = _trackFirstContentfulPaint.stop
-  var _trackLargestContentfulPaint = trackLargestContentfulPaint(
+  var stopFCPTracking = _trackFirstContentfulPaintTiming.stop
+  var _trackLargestContentfulPaintTiming = trackLargestContentfulPaintTiming(
     lifeCycle,
     window,
     function (largestContentfulPaint) {
       setTimings({ largestContentfulPaint: largestContentfulPaint })
     }
   )
-  var stopLCPTracking = _trackLargestContentfulPaint.stop
+  var stopLCPTracking = _trackLargestContentfulPaintTiming.stop
   var _trackFirstInputTimings = trackFirstInputTimings(
     lifeCycle,
     function (firttime) {
@@ -114,7 +115,7 @@ export function trackNavigationTimings(lifeCycle, callback) {
   return { stop: subscribe.unsubscribe }
 }
 
-export function trackFirstContentfulPaint(lifeCycle, callback) {
+export function trackFirstContentfulPaintTiming(lifeCycle, callback) {
   var firstHidden = trackFirstHidden()
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
@@ -141,7 +142,11 @@ export function trackFirstContentfulPaint(lifeCycle, callback) {
  * Documentation: https://web.dev/lcp/
  * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/master/src/getLCP.ts
  */
-export function trackLargestContentfulPaint(lifeCycle, emitter, callback) {
+export function trackLargestContentfulPaintTiming(
+  lifeCycle,
+  emitter,
+  callback
+) {
   var firstHidden = trackFirstHidden()
 
   // Ignore entries that come after the first user interaction.  According to the documentation, the
