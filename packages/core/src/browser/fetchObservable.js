@@ -47,10 +47,9 @@ function createFetchObservable() {
 
 function beforeSend(observable, input, init) {
   var method =
-    (init && init.method) ||
-    (typeof input === 'object' && input.method) ||
-    'GET'
-  var url = normalizeUrl((typeof input === 'object' && input.url) || input)
+    (init && init.method) || (input instanceof Request && input.method) || 'GET'
+  var url = input instanceof Request ? input.url : normalizeUrl(String(input))
+
   var startClocks = clocksNow()
 
   var context = {
@@ -80,7 +79,8 @@ function afterSend(observable, responsePromise, startContext) {
       context.error = response
     } else if ('status' in response) {
       context.response = response
-      context.responseType = response.type
+      context.responseType =
+        (response instanceof Response && response.type) || '' // issue The Response type getter can only be used on instances of Response
       context.status = response.status
       context.isAborted = false
     }

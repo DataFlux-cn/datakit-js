@@ -36,7 +36,7 @@ export function startLogsAssembly(
     // { rawLogsEvent, messageContext = undefined, savedCommonContext = undefined, logger = mainLogger }
     var rawLogsEvent = data.rawLogsEvent
     var messageContext = data.messageContext || undefined
-    var savedCommonContext = data.messageContext || undefined
+    var savedCommonContext = data.savedCommonContext || undefined
     var logger = data.logger || mainLogger
     var startTime = getRelativeTime(rawLogsEvent.date)
     var session = sessionManager.findTrackedSession(startTime)
