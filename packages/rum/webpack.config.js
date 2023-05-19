@@ -42,7 +42,7 @@ const getBaseConfig = (env) => {
           new TerserPlugin({
             terserOptions: {
               compress: {
-                drop_console: false
+                drop_console: true
               }
             }
           })
