@@ -1,6 +1,6 @@
 import { instrumentMethod } from '../helper/instrumentMethod'
 import { Observable } from '../helper/observable'
-import { elapsed, clocksNow, timeStampNow } from '../helper/tools'
+import { clocksNow } from '../helper/tools'
 import { normalizeUrl } from '../helper/urlPolyfill'
 
 var fetchObservable
