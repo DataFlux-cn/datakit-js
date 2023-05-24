@@ -109,10 +109,7 @@ export var processedMessageByDataMap = function (message) {
       if (message.type === RumEventType.LOGGER) {
         // 这里处理日志类型数据自定义字段
         each(message, function (value, key) {
-          if (
-            filterFileds.indexOf(key) === -1 &&
-            (isNumber(value) || isString(value) || isBoolean(value))
-          ) {
+          if (filterFileds.indexOf(key) === -1 && (isNumber(value) || value)) {
             rowData.fields[key] = value // 这里不需要转译
             fieldsStr.push(escapeRowData(key) + '=' + escapeRowField(value))
           }
