@@ -7,7 +7,8 @@ import {
   getPathName,
   isValidUrl,
   isIntakeRequest,
-  ResourceType
+  ResourceType,
+  preferredNow
 } from '@cloudcare/browser-core'
 export var FAKE_INITIAL_DOCUMENT = 'initial_document'
 
@@ -241,9 +242,11 @@ export function computePerformanceResourceDetails(entry) {
   var details = {
     firstbyte: msToNs(responseStart - domainLookupStart),
     trans: msToNs(responseEnd - responseStart),
-    ttfb: msToNs(responseStart - requestStart),
     downloadTime: formatTiming(startTime, responseStart, responseEnd),
     firstByteTime: formatTiming(startTime, requestStart, responseStart)
+  }
+  if (responseStart > 0 && responseStart <= preferredNow()) {
+    details.ttfb = msToNs(responseStart - requestStart)
   }
   // Make sure a connection occurred
   if (connectEnd !== fetchStart) {

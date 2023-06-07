@@ -49,9 +49,7 @@ function computePerformanceViewDetails(entry) {
     loadEventEnd = validEntry.loadEventEnd,
     loadEventStart = validEntry.loadEventStart,
     domContentLoadedEventEnd = validEntry.domContentLoadedEventEnd
-  var details = {
-    fmp: toServerDuration(validEntry.largestContentfulPaint)
-  }
+  var details = {}
   if (responseEnd !== fetchStart) {
     details.fpt = toServerDuration(responseEnd - fetchStart)
     var apdexLevel = parseInt((responseEnd - fetchStart) / 1000) // 秒数取整

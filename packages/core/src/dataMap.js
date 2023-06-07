@@ -62,7 +62,6 @@ export var dataMap = {
       dom_complete: 'view.dom_complete',
       load_event: 'view.load_event',
       first_input_time: 'view.first_input_time',
-      first_meaningful_paint: 'view.largest_contentful_paint',
       first_paint_time: 'view.fpt',
       resource_load_time: 'view.resource_load_time',
       time_to_interactive: 'view.tti',
