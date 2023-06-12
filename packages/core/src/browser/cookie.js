@@ -28,7 +28,6 @@ export function deleteCookie(name, options) {
   setCookie(name, '', 0, options)
 }
 
-
 export function areCookiesAuthorized(options) {
   if (document.cookie === undefined || document.cookie === null) {
     return false
@@ -41,7 +40,6 @@ export function areCookiesAuthorized(options) {
     setCookie(testCookieName, testCookieValue, ONE_SECOND, options)
     return getCookie(testCookieName) === testCookieValue
   } catch (error) {
-    console.error(error)
     return false
   }
 }
