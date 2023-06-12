@@ -42,10 +42,10 @@ export var dataMap = {
     type: RumEventType.VIEW,
     tags: {
       view_loading_type: 'view.loading_type',
-      view_apdex_level: 'view.apdex_level',
-      is_active: 'view.is_active'
+      view_apdex_level: 'view.apdex_level'
     },
     fields: {
+      is_active: 'view.is_active',
       session_replay_stats: '_dd.replay_stats',
       session_is_active: 'session.is_active',
       view_error_count: 'view.error.count',

@@ -55,18 +55,11 @@ export var processedMessageByDataMap = function (message) {
       var fields = extend({}, commonFields, value.fields)
       each(fields, function (_value, _key) {
         if (isArray(_value) && _value.length === 2) {
-          var type = _value[0],
-            value_path = _value[1]
+          var value_path = _value[1]
           var _valueData = findByPath(message, value_path)
           filterFileds.push(_key)
-          if (_valueData || isNumber(_valueData)) {
+          if (_valueData !== undefined && _valueData !== null) {
             rowData.fields[_key] = _valueData // 这里不需要转译
-            // _valueData =
-            //   type === 'string'
-            //     ? '"' +
-            //       _valueData.replace(/[\\]*"/g, '"').replace(/"/g, '\\"') +
-            //       '"'
-            //     : escapeRowData(_valueData)
             fieldsStr.push(
               escapeRowData(_key) + '=' + escapeRowField(_valueData)
             )
@@ -74,7 +67,7 @@ export var processedMessageByDataMap = function (message) {
         } else if (isString(_value)) {
           var _valueData = findByPath(message, _value)
           filterFileds.push(_key)
-          if (_valueData || isNumber(_valueData)) {
+          if (_valueData !== undefined && _valueData !== null) {
             rowData.fields[_key] = _valueData // 这里不需要转译
             fieldsStr.push(
               escapeRowData(_key) + '=' + escapeRowField(_valueData)
@@ -93,7 +86,7 @@ export var processedMessageByDataMap = function (message) {
           // 如果和之前tag重名，则舍弃
           if (filterFileds.indexOf(_key) > -1) return
           filterFileds.push(_key)
-          if (_value || isNumber(_value)) {
+          if (_value !== undefined && _value !== null) {
             _tagKeys.push(_key)
             rowData.fields[_key] = _value // 这里不需要转译
             fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_value))
@@ -109,7 +102,11 @@ export var processedMessageByDataMap = function (message) {
       if (message.type === RumEventType.LOGGER) {
         // 这里处理日志类型数据自定义字段
         each(message, function (value, key) {
-          if (filterFileds.indexOf(key) === -1 && (isNumber(value) || value)) {
+          if (
+            filterFileds.indexOf(key) === -1 &&
+            value !== undefined &&
+            value !== null
+          ) {
             rowData.fields[key] = value // 这里不需要转译
             fieldsStr.push(escapeRowData(key) + '=' + escapeRowField(value))
           }

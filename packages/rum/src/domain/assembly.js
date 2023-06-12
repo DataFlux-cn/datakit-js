@@ -145,7 +145,6 @@ export function startRumAssembly(
           if (isEmptyObject(serverRumEvent.tags)) {
             delete serverRumEvent.tags
           }
-
           lifeCycle.notify(
             LifeCycleEventType.RUM_EVENT_COLLECTED,
             serverRumEvent
