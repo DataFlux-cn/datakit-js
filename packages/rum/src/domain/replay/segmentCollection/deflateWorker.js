@@ -75,7 +75,6 @@ function workerCodeFn() {
       try {
         return fn.apply(this, arguments)
       } catch (e) {
-        console.error('===monitor', e)
         try {
           self.postMessage({
             type: 'errored',

@@ -72,7 +72,6 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
     worker.postMessage({ action: 'init' })
     return worker
   } catch (error) {
-    console.errror('====doStartDeflateWorker', error)
     onError(error)
   }
 }
