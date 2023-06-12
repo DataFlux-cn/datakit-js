@@ -1,16 +1,18 @@
-import { relativeNow, ONE_MINUTE, filter, map } from './tools'
+import { relativeNow, ONE_MINUTE, filter, map, addDuration } from './tools'
 import { setInterval, clearInterval } from './timer'
 var END_OF_TIMES = Infinity
 
 export var CLEAR_OLD_CONTEXTS_INTERVAL = ONE_MINUTE
-export function ContextHistory(expireDelay) {
+export function ContextHistory(expireDelay, maxEntries) {
   this.expireDelay = expireDelay
   this.entries = []
+  this.maxEntries = maxEntries
   var _this = this
   this.clearOldContextsInterval = setInterval(function () {
     _this.clearOldContexts()
   }, CLEAR_OLD_CONTEXTS_INTERVAL)
 }
+
 ContextHistory.prototype.add = function (context, startTime) {
   var _this = this
   var entry = {
@@ -26,6 +28,9 @@ ContextHistory.prototype.add = function (context, startTime) {
     close: function (endTime) {
       entry.endTime = endTime
     }
+  }
+  if (this.maxEntries && this.entries.length >= this.maxEntries) {
+    this.entries.pop()
   }
   this.entries.unshift(entry)
   return entry
@@ -58,12 +63,16 @@ ContextHistory.prototype.closeActive = function (endTime) {
  * Return all contexts that were active during `startTime`, or all currently active contexts if no
  * `startTime` is provided.
  */
-ContextHistory.prototype.findAll = function (startTime) {
+ContextHistory.prototype.findAll = function (startTime, duration) {
+  if (typeof duration === 'undefined') {
+    duration = 0
+  }
+  var endTime = addDuration(startTime, duration)
   if (typeof startTime === 'undefined') {
     startTime = END_OF_TIMES
   }
   var result = filter(this.entries, function (entry) {
-    return entry.startTime <= startTime && startTime <= entry.endTime
+    return entry.startTime <= endTime && startTime <= entry.endTime
   })
   return map(result, function (entry) {
     return entry.context

@@ -67,6 +67,9 @@ export function startRumAssembly(
       var session = sessionManager.findTrackedSession(
         rawRumEvent.type !== RumEventType.VIEW ? startTime : undefined
       )
+      if (rawRumEvent.type === 'view') {
+        console.log('====rawRumEvent', rawRumEvent.session, session)
+      }
       if (session && viewContext && urlContext) {
         var actionId = actionContexts.findActionId(startTime)
         var commonContext = savedCommonContext || buildCommonContext()
@@ -144,6 +147,9 @@ export function startRumAssembly(
         ) {
           if (isEmptyObject(serverRumEvent.tags)) {
             delete serverRumEvent.tags
+          }
+          if (serverRumEvent.type === 'view') {
+            console.log('====serverRumEvent', serverRumEvent.session)
           }
           lifeCycle.notify(
             LifeCycleEventType.RUM_EVENT_COLLECTED,

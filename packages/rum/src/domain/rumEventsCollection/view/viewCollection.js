@@ -129,6 +129,7 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
       is_active: view.sessionIsActive ? undefined : false
     }
   }
+  console.log('=====sessionIsActive', view.sessionIsActive)
   if (!isEmptyObject(view.customTimings)) {
     viewEvent.view.custom_timings = mapValues(
       view.customTimings,
