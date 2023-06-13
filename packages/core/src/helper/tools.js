@@ -1,4 +1,4 @@
-import { DOM_EVENT } from './enums'
+import { display } from './display'
 import { setTimeout, clearTimeout } from './timer'
 var ArrayProto = Array.prototype
 var FuncProto = Function.prototype
@@ -214,9 +214,22 @@ export var every = function (arr, fn, self) {
   }
   return flag
 }
-export var matchList = function (list, value) {
+export var matchList = function (list, value, useStartsWith) {
+  if (useStartsWith === undefined) {
+    useStartsWith = false
+  }
   return some(list, function (item) {
-    return item === value || (item instanceof RegExp && item.test(value))
+    try {
+      if (typeof item === 'function') {
+        return item(value)
+      } else if (item instanceof RegExp) {
+        return item.test(value)
+      } else if (typeof item === 'string') {
+        return useStartsWith ? startsWith(value, item) : item === value
+      }
+    } catch (e) {
+      display.error(e)
+    }
   })
 }
 // https://github.com/jquery/jquery/blob/a684e6ba836f7c553968d7d026ed7941e1a612d8/src/selector/escapeSelector.js
