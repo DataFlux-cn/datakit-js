@@ -21,14 +21,7 @@ export function escapeJsonValue(value) {
 }
 
 export function escapeFieldValueStr(str) {
-  return (
-    '"' +
-    str
-      .replace(/\\/g, '\\\\')
-      .replace(/[\\]*"/g, '"')
-      .replace(/"/g, '\\"') +
-    '"'
-  )
+  return '"' + str.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
 }
 export function escapeRowField(value) {
   if (typeof value === 'object' && value) {
