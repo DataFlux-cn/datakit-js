@@ -148,7 +148,9 @@ export var dataMap = {
       action_error_count: 'action.error.count',
       action_resource_count: 'action.resource.count',
       action_frustration_types: 'action.frustration.type',
-      action_long_task_count: 'action.long_task.count'
+      action_long_task_count: 'action.long_task.count',
+      action_target: '_dd.action.target',
+      action_position: '_dd.action.position'
     }
   },
   browser_log: {

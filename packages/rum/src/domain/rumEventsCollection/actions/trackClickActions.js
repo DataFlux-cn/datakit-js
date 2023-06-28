@@ -24,6 +24,7 @@ import {
 } from '../../waitPageActivityEnd'
 import { createClickChain } from './clickChain'
 import { getActionNameFromElement } from './getActionNameFromElement'
+import { getSelectorFromElement } from './getSelectorsFromElement'
 // import { getSelectorsFromElement } from './getSelectorsFromElement'
 import { listenActionEvents } from './listenActionEvents'
 import { computeFrustration } from './computeFrustration'
@@ -228,29 +229,18 @@ function startClickAction(
 }
 
 function computeClickActionBase(event, actionNameAttribute) {
-  var target
-  var position
-
-  // if (isExperimentalFeatureEnabled('clickmap')) {
-  //   var rect = event.target.getBoundingClientRect()
-  //   target = assign(
-  //     {
-  //       width: Math.round(rect.width),
-  //       height: Math.round(rect.height),
-  //     },
-  //     getSelectorsFromElement(event.target, actionNameAttribute)
-  //   )
-  //   position = {
-  //     // Use clientX and Y because for SVG element offsetX and Y are relatives to the <svg> element
-  //     x: Math.round(event.clientX - rect.left),
-  //     y: Math.round(event.clientY - rect.top),
-  //   }
-  // }
-
+  var rect = event.target.getBoundingClientRect()
   return {
     type: ActionType.CLICK,
-    target: target,
-    position: position,
+    target: {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      selector: getSelectorFromElement(event.target, actionNameAttribute)
+    },
+    position: {
+      x: Math.round(event.clientX - rect.left),
+      y: Math.round(event.clientY - rect.top)
+    },
     name: getActionNameFromElement(event.target, actionNameAttribute)
   }
 }
@@ -361,7 +351,6 @@ function newClick(
         },
         clickActionBase
       )
-
       lifeCycle.notify(LifeCycleEventType.AUTO_ACTION_COMPLETED, clickAction)
       status = ClickStatus.FINALIZED
     },

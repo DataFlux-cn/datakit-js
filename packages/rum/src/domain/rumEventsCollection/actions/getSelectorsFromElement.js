@@ -43,7 +43,7 @@ var UNIQUE_AMONG_CHILDREN_SELECTOR_GETTERS = [
 ]
 
 export function getSelectorFromElement(targetElement, actionNameAttribute) {
-  var targetElementSelector = []
+  var targetElementSelector = ''
   var element = targetElement
 
   while (element && element.nodeName !== 'HTML') {

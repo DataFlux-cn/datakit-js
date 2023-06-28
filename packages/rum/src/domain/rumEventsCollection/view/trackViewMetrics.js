@@ -17,7 +17,6 @@ export function trackViewMetrics(
   viewStart
 ) {
   var viewMetrics = {}
-
   var _trackLoadingTime = trackLoadingTime(
     lifeCycle,
     domMutationObservable,
