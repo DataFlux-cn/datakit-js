@@ -79,8 +79,13 @@ function afterSend(observable, responsePromise, startContext) {
       context.error = response
     } else if ('status' in response) {
       context.response = response
-      context.responseType =
-        (response.constructor === Response && response.type) || '' // issue The Response type getter can only be used on instances of Response
+      try {
+        context.responseType =
+          (response.constructor === Response && response.type) || '' // issue The Response type getter can only be used on instances of Response
+      } catch (err) {
+        context.responseType = ''
+      }
+
       context.status = response.status
       context.isAborted = false
     }
