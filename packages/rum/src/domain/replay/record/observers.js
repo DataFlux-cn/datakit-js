@@ -283,13 +283,61 @@ function initViewportResizeObserver(cb) {
   return initViewportObservable().subscribe(cb).unsubscribe
 }
 
-export function initInputObserver(cb, defaultPrivacyLevel, options) {
-  var domEvents = (options && options.domEvents) || [
-    DOM_EVENT.INPUT,
-    DOM_EVENT.CHANGE
-  ]
-  var target = (options && options.target) || document
+export function initInputObserver(cb, defaultPrivacyLevel, target) {
+  if (target === undefined) {
+    target = document
+  }
   var lastInputStateMap = new WeakMap()
+  var isShadowRoot = target !== document
+
+  var _addEventListeners = addEventListeners(
+    target,
+    // The 'input' event bubbles across shadow roots, so we don't have to listen for it on shadow
+    // roots since it will be handled by the event listener that we did add to the document. Only
+    // the 'change' event is blocked and needs to be handled on shadow roots.
+    isShadowRoot ? [DOM_EVENT.CHANGE] : [DOM_EVENT.INPUT, DOM_EVENT.CHANGE],
+    function (event) {
+      var target = getEventTarget(event)
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement
+      ) {
+        onElementChange(target)
+      }
+    },
+    {
+      capture: true,
+      passive: true
+    }
+  )
+  var stopEventListeners = _addEventListeners.stop
+  var stopPropertySetterInstrumentation
+  if (!isShadowRoot) {
+    const instrumentationStoppers = [
+      instrumentSetter(HTMLInputElement.prototype, 'value', onElementChange),
+      instrumentSetter(HTMLInputElement.prototype, 'checked', onElementChange),
+      instrumentSetter(HTMLSelectElement.prototype, 'value', onElementChange),
+      instrumentSetter(HTMLTextAreaElement.prototype, 'value', onElementChange),
+      instrumentSetter(
+        HTMLSelectElement.prototype,
+        'selectedIndex',
+        onElementChange
+      )
+    ]
+    stopPropertySetterInstrumentation = function () {
+      instrumentationStoppers.forEach(function (stopper) {
+        return stopper.stop()
+      })
+    }
+  } else {
+    stopPropertySetterInstrumentation = noop
+  }
+
+  return function () {
+    stopPropertySetterInstrumentation()
+    stopEventListeners()
+  }
 
   function onElementChange(target) {
     var nodePrivacyLevel = getNodePrivacyLevel(target, defaultPrivacyLevel)
@@ -354,44 +402,6 @@ export function initInputObserver(cb, defaultPrivacyLevel, options) {
         )
       )
     }
-  }
-
-  var _addEventListeners = addEventListeners(
-    target,
-    domEvents,
-    function (event) {
-      var target = getEventTarget(event)
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement
-      ) {
-        onElementChange(target)
-      }
-    },
-    {
-      capture: true,
-      passive: true
-    }
-  )
-
-  var instrumentationStoppers = [
-    instrumentSetter(HTMLInputElement.prototype, 'value', onElementChange),
-    instrumentSetter(HTMLInputElement.prototype, 'checked', onElementChange),
-    instrumentSetter(HTMLSelectElement.prototype, 'value', onElementChange),
-    instrumentSetter(HTMLTextAreaElement.prototype, 'value', onElementChange),
-    instrumentSetter(
-      HTMLSelectElement.prototype,
-      'selectedIndex',
-      onElementChange
-    )
-  ]
-
-  return function () {
-    instrumentationStoppers.forEach(function (stopper) {
-      stopper.stop()
-    })
-    _addEventListeners.stop()
   }
 }
 
@@ -542,16 +552,16 @@ export function initFrustrationObserver(lifeCycle, frustrationCb) {
         data.domainContext.events &&
         data.domainContext.events.length
       ) {
-        // frustrationCb({
-        //   timestamp: data.rawRumEvent.date,
-        //   type: RecordType.FrustrationRecord,
-        //   data: {
-        //     frustrationTypes: data.rawRumEvent.action.frustration.type,
-        //     recordIds: data.domainContext.events.map(function (e) {
-        //       return getRecordIdForEvent(e)
-        //     })
-        //   }
-        // })
+        frustrationCb({
+          timestamp: data.rawRumEvent.date,
+          type: RecordType.FrustrationRecord,
+          data: {
+            frustrationTypes: data.rawRumEvent.action.frustration.type,
+            recordIds: data.domainContext.events.map(function (e) {
+              return getRecordIdForEvent(e)
+            })
+          }
+        })
       }
     }
   ).unsubscribe

@@ -58,7 +58,6 @@ export function computeTransportConfiguration(initConfiguration) {
   }
 }
 export function isIntakeRequest(url, configuration) {
-  // return haveSameOrigin(url, configuration.datakitUrl)
   var notTakeRequest = [configuration.datakitUrl]
   if (configuration.logsEndpoint) {
     notTakeRequest.push(configuration.logsEndpoint)

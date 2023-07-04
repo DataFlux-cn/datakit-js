@@ -12,9 +12,9 @@ export function isValidUrl(url) {
   }
 }
 
-export function haveSameOrigin(url1, url2) {
-  return getOrigin(url1) === getOrigin(url2)
-}
+// export function haveSameOrigin(url1, url2) {
+//   return getOrigin(url1) === getOrigin(url2)
+// }
 
 export function getOrigin(url) {
   return getLinkElementOrigin(buildUrl(url))

@@ -22,10 +22,7 @@ export var initShadowRootsController = function (configuration, data) {
       var stopInputObserver = initInputObserver(
         inputCb,
         configuration.defaultPrivacyLevel,
-        {
-          target: shadowRoot,
-          domEvents: [DOM_EVENT.CHANGE]
-        }
+        shadowRoot
       )
       controllerByShadowRoot.set(shadowRoot, {
         flush: flush,

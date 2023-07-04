@@ -1603,7 +1603,7 @@ export function isChromium() {
  * https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/origin
  */
 export function getLinkElementOrigin(element) {
-  if (element.origin) {
+  if (element.origin && element.origin !== 'null') {
     return element.origin
   }
   var sanitizedHost = element.host.replace(/(:80|:443)$/, '')
