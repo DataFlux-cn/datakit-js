@@ -66,7 +66,7 @@ function processAction(action, foregroundContexts) {
             count: action.counts.resourceCount
           }
         },
-        _dd: {
+        _gc: {
           action: {
             target: action.target,
             position: action.position

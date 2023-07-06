@@ -1,7 +1,7 @@
 import { RumEventType } from './helper/enums'
 export var commonTags = {
-  sdk_name: '_dd.sdk_name',
-  sdk_version: '_dd.sdk_version',
+  sdk_name: '_gc.sdk_name',
+  sdk_version: '_gc.sdk_version',
   app_id: 'application.id',
   env: 'env',
   service: 'service',
@@ -46,7 +46,7 @@ export var dataMap = {
     },
     fields: {
       is_active: 'view.is_active',
-      session_replay_stats: '_dd.replay_stats',
+      session_replay_stats: '_gc.replay_stats',
       session_is_active: 'session.is_active',
       view_error_count: 'view.error.count',
       view_resource_count: 'view.resource.count',
@@ -75,8 +75,8 @@ export var dataMap = {
   resource: {
     type: RumEventType.RESOURCE,
     tags: {
-      trace_id: '_dd.trace_id',
-      span_id: '_dd.span_id',
+      trace_id: '_gc.trace_id',
+      span_id: '_gc.span_id',
       resource_url: 'resource.url',
       resource_url_host: 'resource.url_host',
       resource_url_path: 'resource.url_path',
@@ -109,8 +109,8 @@ export var dataMap = {
     type: RumEventType.ERROR,
     tags: {
       error_id: 'error.id',
-      trace_id: '_dd.trace_id',
-      span_id: '_dd.span_id',
+      trace_id: '_gc.trace_id',
+      span_id: '_gc.span_id',
       error_source: 'error.source',
       error_type: 'error.type',
       error_handling: 'error.handling'
@@ -149,8 +149,8 @@ export var dataMap = {
       action_resource_count: 'action.resource.count',
       action_frustration_types: 'action.frustration.type',
       action_long_task_count: 'action.long_task.count',
-      action_target: '_dd.action.target',
-      action_position: '_dd.action.position'
+      action_target: '_gc.action.target',
+      action_position: '_gc.action.position'
     }
   },
   browser_log: {

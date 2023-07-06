@@ -9,29 +9,26 @@ import {
   currentDrift,
   createEventRateLimiter,
   limitModification,
-  display
+  display,
+  assign
 } from '@cloudcare/browser-core'
 var SessionType = {
   SYNTHETICS: 'synthetics',
   USER: 'user'
 }
 
-var VIEW_EVENTS_MODIFIABLE_FIELD_PATHS = [
-  // Fields with sensitive data
-  'view.url',
-  'view.referrer',
-  'action.target.name',
-  'error.message',
-  'error.stack',
-  'error.resource.url',
-  'resource.url'
-]
+var VIEW_MODIFIABLE_FIELD_PATHS = {
+  'view.url': 'string',
+  'view.referrer': 'string'
+}
 
-var OTHER_EVENTS_MODIFIABLE_FIELD_PATHS =
-  VIEW_EVENTS_MODIFIABLE_FIELD_PATHS.concat([
-    // User-customizable field
-    'tags'
-  ])
+var USER_CUSTOMIZABLE_FIELD_PATHS = {
+  tags: 'object',
+  '_gc.trace_id': 'string',
+  '_gc.span_id': 'string'
+}
+
+var modifiableFieldPathsByEvent = {}
 export function startRumAssembly(
   configuration,
   lifeCycle,
@@ -43,6 +40,35 @@ export function startRumAssembly(
   buildCommonContext,
   reportError
 ) {
+  modifiableFieldPathsByEvent[RumEventType.VIEW] = VIEW_MODIFIABLE_FIELD_PATHS
+  modifiableFieldPathsByEvent[RumEventType.ERROR] = assign(
+    {
+      'error.message': 'string',
+      'error.stack': 'string',
+      'error.resource.url': 'string'
+    },
+    USER_CUSTOMIZABLE_FIELD_PATHS,
+    VIEW_MODIFIABLE_FIELD_PATHS
+  )
+  modifiableFieldPathsByEvent[RumEventType.RESOURCE] = assign(
+    {
+      'resource.url': 'string'
+    },
+    USER_CUSTOMIZABLE_FIELD_PATHS,
+    VIEW_MODIFIABLE_FIELD_PATHS
+  )
+  modifiableFieldPathsByEvent[RumEventType.ACTION] = assign(
+    {
+      'action.target.name': 'string'
+    },
+    USER_CUSTOMIZABLE_FIELD_PATHS,
+    VIEW_MODIFIABLE_FIELD_PATHS
+  )
+  modifiableFieldPathsByEvent[RumEventType.LONG_TASK] = assign(
+    {},
+    USER_CUSTOMIZABLE_FIELD_PATHS,
+    VIEW_MODIFIABLE_FIELD_PATHS
+  )
   var eventRateLimiters = {}
   eventRateLimiters[RumEventType.ERROR] = createEventRateLimiter(
     RumEventType.ERROR,
@@ -72,7 +98,7 @@ export function startRumAssembly(
         var actionId = actionContexts.findActionId(startTime)
         var commonContext = savedCommonContext || buildCommonContext()
         var rumContext = {
-          _dd: {
+          _gc: {
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,
             drift: currentDrift()
@@ -139,8 +165,8 @@ export function startRumAssembly(
           shouldSend(
             serverRumEvent,
             configuration.beforeSend,
-            eventRateLimiters,
-            domainContext
+            domainContext,
+            eventRateLimiters
           )
         ) {
           if (isEmptyObject(serverRumEvent.tags)) {
@@ -156,13 +182,11 @@ export function startRumAssembly(
   )
 }
 
-function shouldSend(event, beforeSend, eventRateLimiters, domainContext) {
+function shouldSend(event, beforeSend, domainContext, eventRateLimiters) {
   if (beforeSend) {
     var result = limitModification(
       event,
-      event.type === RumEventType.VIEW
-        ? VIEW_EVENTS_MODIFIABLE_FIELD_PATHS
-        : OTHER_EVENTS_MODIFIABLE_FIELD_PATHS,
+      modifiableFieldPathsByEvent[event.type],
       function (event) {
         return beforeSend(event, domainContext)
       }

@@ -1,18 +1,25 @@
-import { extend2Lev, each } from './tools'
+import { extend2Lev, each, objectEntries, getType, deepClone } from './tools'
+import { sanitize } from './sanitize'
 
 /**
- * Current limitations:
+ * Current limitation:
  * - field path do not support array, 'a.b.c' only
- * - modifiable fields type must be string
  */
 export function limitModification(object, modifiableFieldPaths, modifier) {
-  var clone = extend2Lev({}, object)
+  var clone = deepClone(object)
   var result = modifier(clone)
-  each(modifiableFieldPaths, function (path) {
-    var originalValue = get(object, path)
-    var newValue = get(clone, path)
-    if (typeof originalValue === 'string' && typeof newValue === 'string') {
-      set(object, path, newValue)
+  each(objectEntries(modifiableFieldPaths), function (filedPaths) {
+    var fieldPath = filedPaths[0]
+    var fieldType = filedPaths[1]
+    var newValue = get(clone, fieldPath)
+    var newType = getType(newValue)
+    if (newType === fieldType) {
+      set(object, fieldPath, sanitize(newValue))
+    } else if (
+      fieldType === 'object' &&
+      (newType === 'undefined' || newType === 'null')
+    ) {
+      set(object, fieldPath, {})
     }
   })
 
@@ -21,15 +28,12 @@ export function limitModification(object, modifiableFieldPaths, modifier) {
 
 function get(object, path) {
   var current = object
-  var fields = path.split('.')
-  for (var i = 0; i < fields.length; i++) {
-    var field = fields[i]
+  for (var field of path.split('.')) {
     if (!isValidObjectContaining(current, field)) {
       return
     }
     current = current[field]
   }
-
   return current
 }
 
@@ -38,7 +42,7 @@ function set(object, path, value) {
   var fields = path.split('.')
   for (var i = 0; i < fields.length; i += 1) {
     var field = fields[i]
-    if (!isValidObjectContaining(current, field)) {
+    if (!isValidObject(current)) {
       return
     }
     if (i !== fields.length - 1) {
@@ -49,6 +53,12 @@ function set(object, path, value) {
   }
 }
 
+function isValidObject(object) {
+  return getType(object) === 'object'
+}
+
 function isValidObjectContaining(object, field) {
-  return typeof object === 'object' && object !== null && field in object
+  return (
+    isValidObject(object) && Object.prototype.hasOwnProperty.call(object, field)
+  )
 }

@@ -78,7 +78,7 @@ function computePerformanceViewDetails(entry) {
 function processViewUpdate(view, foregroundContexts, recorderApi) {
   var replayStats = recorderApi.getReplayStats(view.id)
   var viewEvent = {
-    _dd: {
+    _gc: {
       document_version: view.documentVersion,
       replay_stats: replayStats
     },

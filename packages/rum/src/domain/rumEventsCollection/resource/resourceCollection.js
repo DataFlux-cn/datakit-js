@@ -166,7 +166,7 @@ function computeRequestTracingInfo(request) {
     return undefined
   }
   return {
-    _dd: {
+    _gc: {
       spanId: request.spanId,
       traceId: request.traceId
     },
@@ -175,5 +175,5 @@ function computeRequestTracingInfo(request) {
 }
 
 function computeEntryTracingInfo(entry) {
-  return entry.traceId ? { _dd: { traceId: entry.traceId } } : undefined
+  return entry.traceId ? { _gc: { traceId: entry.traceId } } : undefined
 }
