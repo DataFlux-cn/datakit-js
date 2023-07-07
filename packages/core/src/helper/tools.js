@@ -1542,7 +1542,12 @@ export function safeTruncate(candidate, length) {
   }
   return candidate.slice(0, length)
 }
-
+export function isMatchOption(item) {
+  const itemType = getType(item)
+  return (
+    itemType === 'string' || itemType === 'function' || item instanceof RegExp
+  )
+}
 export function includes(candidate, search) {
   // tslint:disable-next-line: no-unsafe-any
   return candidate.indexOf(search) !== -1

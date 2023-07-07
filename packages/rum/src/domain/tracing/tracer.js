@@ -4,9 +4,13 @@ import {
   shallowClone,
   isArray,
   TraceType,
-  getOrigin,
   performDraw,
-  isNumber
+  isNumber,
+  getType,
+  find,
+  isMatchOption,
+  matchList,
+  isString
 } from '@cloudcare/browser-core'
 import { DDtraceTracer } from './ddtraceTracer'
 import { SkyWalkingTracer } from './skywalkingTracer'
@@ -15,11 +19,19 @@ import { ZipkinSingleTracer } from './zipkinSingleTracer'
 import { ZipkinMultiTracer } from './zipkinMultiTracer'
 import { W3cTraceParentTracer } from './w3cTraceParentTracer'
 
+export function isTracingOption(item) {
+  var expectedItem = item
+  return (
+    getType(expectedItem) === 'object' &&
+    isMatchOption(expectedItem.match) &&
+    isString(expectedItem.traceType)
+  )
+}
 export function clearTracingIfNeeded(context) {
   if (context.status === 0 && !context.isAborted) {
-    context.traceId = undefined
-    context.spanId = undefined
-    context.traceSampled = undefined
+    // context.traceId = undefined
+    // context.spanId = undefined
+    // context.traceSampled = undefined
   }
 }
 
@@ -84,20 +96,6 @@ export function startTracer(configuration, sessionManager) {
     }
   }
 }
-function isAllowedUrl(configuration, requestUrl) {
-  var requestOrigin = getOrigin(requestUrl)
-  var flag = false
-  each(configuration.allowedTracingOrigins, function (allowedOrigin) {
-    if (
-      requestOrigin === allowedOrigin ||
-      (allowedOrigin instanceof RegExp && allowedOrigin.test(requestOrigin))
-    ) {
-      flag = true
-      return false
-    }
-  })
-  return flag
-}
 
 export function injectHeadersIfTracingAllowed(
   configuration,
@@ -105,18 +103,24 @@ export function injectHeadersIfTracingAllowed(
   sessionManager,
   inject
 ) {
-  if (
-    !isAllowedUrl(configuration, context.url) ||
-    !configuration.traceType ||
-    !sessionManager.findTrackedSession()
-  ) {
+  if (!sessionManager.findTrackedSession()) {
+    return
+  }
+  var tracingOption = find(
+    configuration.allowedTracingUrls,
+    function (tracingOption) {
+      return matchList([tracingOption.match], context.url, true)
+    }
+  )
+  if (!tracingOption) {
     return
   }
   var traceSampled =
     !isNumber(configuration.tracingSampleRate) ||
     performDraw(configuration.tracingSampleRate)
-  var tracer
-  switch (configuration.traceType) {
+  var tracer,
+    traceType = tracingOption.traceType
+  switch (traceType) {
     case TraceType.DDTRACE:
       tracer = new DDtraceTracer(traceSampled)
       break
@@ -130,7 +134,10 @@ export function injectHeadersIfTracingAllowed(
       tracer = new JaegerTracer(configuration, traceSampled)
       break
     case TraceType.W3C_TRACEPARENT:
-      tracer = new W3cTraceParentTracer(configuration, traceSampled)
+      tracer = new W3cTraceParentTracer(traceSampled)
+      break
+    case TraceType.W3C_TRACEPARENT_64:
+      tracer = new W3cTraceParentTracer(traceSampled, true)
       break
     case TraceType.ZIPKIN_SINGLE_HEADER:
       tracer = new ZipkinSingleTracer(configuration, traceSampled)

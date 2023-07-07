@@ -1,41 +1,37 @@
-// === Generate a random 64-bit number in fixed-length hex format
-function randomTraceId() {
-  var digits = '0123456789abcdef'
-  var n = ''
-  for (var i = 0; i < 16; i += 1) {
-    var rand = Math.floor(Math.random() * 16)
-    n += digits[rand]
-  }
-  return n
-}
+import { TraceIdentifier, getCrypto } from './traceIdentifier'
 
 /**
  *
- * @param {*} configuration  配置信息
+ * @param {*} traceSampled
+ * @param {*} isHexTraceId 是否需要转换成10进制上报数据
  */
-export function W3cTraceParentTracer(configuration, traceSampled) {
-  var rootSpanId = randomTraceId()
-  this._traceId = randomTraceId() + rootSpanId
-  this._spanId = rootSpanId
+export function W3cTraceParentTracer(traceSampled, isHexTraceId) {
+  this._traceId = new TraceIdentifier()
+  this._spanId = new TraceIdentifier()
   this._traceSampled = traceSampled
+  this.isHexTraceId = isHexTraceId
 }
 W3cTraceParentTracer.prototype = {
   isTracingSupported: function () {
-    return true
+    return getCrypto() !== undefined
   },
   getSpanId: function () {
-    return this._spanId
+    return this.isHexTraceId
+      ? this._spanId.toDecimalString()
+      : this._spanId.toPaddedHexadecimalString()
   },
   getTraceId: function () {
-    return this._traceId
+    return this.isHexTraceId
+      ? this._traceId.toDecimalString()
+      : '0000000000000000' + this._traceId.toPaddedHexadecimalString()
   },
   getTraceParent: function () {
     // '{version}-{traceId}-{spanId}-{sampleDecision}'
     return (
-      '00-' +
-      this._traceId +
+      '00-0000000000000000' +
+      this._traceId.toPaddedHexadecimalString() +
       '-' +
-      this._spanId +
+      this._spanId.toPaddedHexadecimalString() +
       '-' +
       (this._traceSampled ? '01' : '00')
     )
