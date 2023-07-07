@@ -29,9 +29,9 @@ export function isTracingOption(item) {
 }
 export function clearTracingIfNeeded(context) {
   if (context.status === 0 && !context.isAborted) {
-    // context.traceId = undefined
-    // context.spanId = undefined
-    // context.traceSampled = undefined
+    context.traceId = undefined
+    context.spanId = undefined
+    context.traceSampled = undefined
   }
 }
 

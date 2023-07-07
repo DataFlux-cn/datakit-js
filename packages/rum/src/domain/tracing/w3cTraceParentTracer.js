@@ -1,5 +1,5 @@
 import { TraceIdentifier, getCrypto } from './traceIdentifier'
-
+import { assign } from '@cloudcare/browser-core'
 /**
  *
  * @param {*} traceSampled
@@ -37,8 +37,15 @@ W3cTraceParentTracer.prototype = {
     )
   },
   makeTracingHeaders: function () {
-    return {
+    var baseHeaders = {
       traceparent: this.getTraceParent()
     }
+    if (this.isHexTraceId) {
+      return assign(baseHeaders, {
+        'x-gc-trace-id': this.getTraceId(),
+        'x-gc-span-id': this.getSpanId()
+      })
+    }
+    return baseHeaders
   }
 }
