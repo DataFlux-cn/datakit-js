@@ -1,10 +1,10 @@
 import { instrumentMethodAndCallOriginal } from '../helper/instrumentMethod'
+import { isNullUndefinedDefaultValue } from '../helper/tools'
 import { computeStackTrace } from './computeStackTrace'
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Error_types
 var ERROR_TYPES_RE =
-  /^(?:[Uu]ncaught (?:exception: )?)?(?:((?:Eval|Internal|Range|Reference|Syntax|Type|URI|)Error): )?(.*)$/
-
+  /^(?:[Uu]ncaught (?:exception: )?)?(?:((?:Eval|Internal|Range|Reference|Syntax|Type|URI|)Error): )?([\s\S]*)$/
 /**
  * Cross-browser collection of unhandled errors
  *
@@ -41,10 +41,10 @@ export function startUnhandledErrorCollection(callback) {
   var _instrumentOnError = instrumentOnError(callback)
   var _instrumentUnhandledRejection = instrumentUnhandledRejection(callback)
   return {
-    stop: function() {
+    stop: function () {
       _instrumentOnError.stop()
       _instrumentUnhandledRejection.stop()
-    },
+    }
   }
 }
 
@@ -53,48 +53,49 @@ export function startUnhandledErrorCollection(callback) {
  */
 function instrumentOnError(callback) {
   return instrumentMethodAndCallOriginal(window, 'onerror', {
-    before: function(message, url, lineNo, columnNo, errorObj) {
-      var stack
-      if (errorObj) {
-        stack = computeStackTrace(errorObj)
-        callback(stack, errorObj)
+    before: function (messageObj, url, line, column, errorObj) {
+      var stackTrace
+      if (errorObj instanceof Error) {
+        stackTrace = computeStackTrace(errorObj)
       } else {
         var location = {
           url: url,
-          column: columnNo,
-          line: lineNo,
+          column: column,
+          line: line
         }
-        var name
-        var msg = message
-        if ({}.toString.call(message) === '[object String]') {
-          var groups = ERROR_TYPES_RE.exec(msg)
-          if (groups) {
-            name = groups[1]
-            msg = groups[2]
-          }
-        }
+        var parse = tryToParseMessage(messageObj)
 
-        stack = {
-          name: name,
-          message: typeof msg === 'string' ? msg : undefined,
-          stack: [location],
+        stackTrace = {
+          name: parse.name,
+          message: parse.message,
+          stack: [location]
         }
-
-        callback(stack, message)
       }
-    },
+      callback(stackTrace, isNullUndefinedDefaultValue(errorObj, messageObj))
+    }
   })
 }
-
+function tryToParseMessage(messageObj) {
+  let name
+  let message
+  if ({}.toString.call(messageObj) === '[object String]') {
+    var groups = ERROR_TYPES_RE.exec(messageObj)
+    if (groups) {
+      name = groups[1]
+      message = groups[2]
+    }
+  }
+  return { name: name, message: message }
+}
 /**
  * Install a global onunhandledrejection handler
  */
 function instrumentUnhandledRejection(callback) {
   return instrumentMethodAndCallOriginal(window, 'onunhandledrejection', {
-    before: function(e) {
+    before: function (e) {
       var reason = e.reason || 'Empty reason'
       var stack = computeStackTrace(reason)
       callback(stack, reason)
-    },
+    }
   })
 }
