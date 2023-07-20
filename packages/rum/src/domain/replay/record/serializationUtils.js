@@ -124,7 +124,16 @@ export function makeUrlAbsolute(url, baseUrl) {
     return url
   }
 }
+export function validateStringifiedCssRule(cssStringified) {
+  // Safari does not escape selectors with : properly
+  if (cssStringified.includes(':')) {
+    // Replace e.g. [aa:bb] with [aa\\:bb]
+    const regex = /(\[(?:[\w-]+)[^\\])(:(?:[\w-]+)\])/gm
+    return cssStringified.replace(regex, '$1\\$2')
+  }
 
+  return cssStringified
+}
 export function serializeStyleSheets(cssStyleSheets) {
   if (cssStyleSheets === undefined || cssStyleSheets.length === 0) {
     return undefined
@@ -132,7 +141,7 @@ export function serializeStyleSheets(cssStyleSheets) {
   return cssStyleSheets.map(function (cssStyleSheet) {
     var rules = cssStyleSheet.cssRules || cssStyleSheet.rules
     var cssRules = Array.from(rules, function (cssRule) {
-      return cssRule.cssText
+      return cssRule.cssText ? validateStringifiedCssRule(rule.cssText) : ''
     })
 
     var styleSheet = {

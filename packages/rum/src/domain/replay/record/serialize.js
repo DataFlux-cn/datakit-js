@@ -28,7 +28,8 @@ import {
   switchToAbsoluteUrl,
   serializeStyleSheets,
   absoluteToDoc,
-  getAbsoluteSrcsetString
+  getAbsoluteSrcsetString,
+  validateStringifiedCssRule
 } from './serializationUtils'
 
 // Those values are the only one that can be used when inheriting privacy levels from parent to
@@ -337,6 +338,29 @@ function getValidTagName(tagName) {
 
   return processedTagName
 }
+/**
+ * Browsers sometimes destructively modify the css rules they receive.
+ * This function tries to rectify the modifications the browser made to make it more cross platform compatible.
+ * @param cssText - output of `CSSStyleRule.cssText`
+ * @returns `cssText` with browser inconsistencies fixed.
+ */
+function fixBrowserCompatibilityIssuesInCSS(cssText) {
+  /**
+   * Chrome outputs `-webkit-background-clip` as `background-clip` in `CSSStyleRule.cssText`.
+   * But then Chrome ignores `background-clip` as css input.
+   * Re-introduce `-webkit-background-clip` to fix this issue.
+   */
+  if (
+    cssText.includes(' background-clip: text;') &&
+    !cssText.includes(' -webkit-background-clip: text;')
+  ) {
+    cssText = cssText.replace(
+      ' background-clip: text;',
+      ' -webkit-background-clip: text; background-clip: text;'
+    )
+  }
+  return cssText
+}
 
 function getCssRulesString(cssStyleSheet) {
   if (!cssStyleSheet) {
@@ -351,14 +375,22 @@ function getCssRulesString(cssStyleSheet) {
   if (!rules) {
     return null
   }
-  var styleSheetCssText = Array.from(rules, getCssRuleString).join('')
+  var styleSheetCssText = fixBrowserCompatibilityIssuesInCSS(
+    Array.from(rules, getCssRuleString).join('')
+  )
   return switchToAbsoluteUrl(styleSheetCssText, cssStyleSheet.href)
 }
 
 function getCssRuleString(rule) {
-  return isCSSImportRule(rule)
-    ? getCssRulesString(rule.styleSheet) || ''
-    : rule.cssText
+  var cssStringified = rule.cssText
+  if (isCSSImportRule(rule)) {
+    try {
+      cssStringified = getCssRulesString(rule.styleSheet) || cssStringified
+    } catch {
+      // ignore
+    }
+  }
+  return validateStringifiedCssRule(cssStringified)
 }
 
 function isCSSImportRule(rule) {
