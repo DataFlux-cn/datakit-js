@@ -1,4 +1,5 @@
 export { createHttpRequest } from './httpRequest'
-export { Batch } from './batch'
+export { Batch, processedMessageByDataMap } from './batch'
 export { startBatchWithReplica } from './startBatchWithReplica'
 export { createFlushController } from './flushController'
+export { getEventBridge, canUseEventBridge } from './eventBridge'

@@ -1,7 +1,8 @@
 import {
   noop,
   runOnReadyState,
-  LifeCycleEventType
+  LifeCycleEventType,
+  canUseEventBridge
 } from '@cloudcare/browser-core'
 
 import { getReplayStats } from '../domain/replay/replayStats'
@@ -23,7 +24,7 @@ export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
   if (typeof startDeflateWorkerImpl === 'undefined') {
     startDeflateWorkerImpl = startDeflateWorker
   }
-  if (!isBrowserSupported()) {
+  if (canUseEventBridge() || !isBrowserSupported()) {
     return {
       start: noop,
       stop: noop,

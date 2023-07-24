@@ -1,7 +1,9 @@
 import {
   performDraw,
   startSessionManager,
-  LifeCycleEventType
+  LifeCycleEventType,
+  noop,
+  Observable
 } from '@cloudcare/browser-core'
 
 export var RUM_SESSION_KEY = 'rum'
@@ -64,12 +66,16 @@ export function startRumSessionManager(configuration, lifeCycle) {
  */
 export function startRumSessionManagerStub() {
   var session = {
-    id: '00000000-aaaa-0000-aaaa-000000000000'
+    id: '00000000-aaaa-0000-aaaa-000000000000',
+    plan: RumSessionPlan.WITHOUT_SESSION_REPLAY, // plan value should not be taken into account for mobile
+    sessionReplayAllowed: false
   }
   return {
     findTrackedSession: function () {
       return session
-    }
+    },
+    expire: noop,
+    expireObservable: new Observable()
   }
 }
 

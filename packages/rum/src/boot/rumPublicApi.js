@@ -13,7 +13,9 @@ import {
   createHandlingStack,
   sanitizeUser,
   checkUser,
-  noop
+  noop,
+  assign,
+  canUseEventBridge
 } from '@cloudcare/browser-core'
 import { validateAndBuildRumConfiguration } from '../domain/configuration'
 import { buildCommonContext } from '../domain/contexts/commonContext'
@@ -77,6 +79,13 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   }
 
   function initRum(initConfiguration) {
+    getInitConfigurationStrategy = function () {
+      return deepClone(initConfiguration)
+    }
+    var eventBridgeAvailable = canUseEventBridge()
+    if (eventBridgeAvailable) {
+      initConfiguration = overrideInitConfigurationForBridge(initConfiguration)
+    }
     if (!canHandleSession(initConfiguration)) {
       return
     }
@@ -103,9 +112,6 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
         doStartRum(configuration, options)
       }
       beforeInitCalls.drain()
-    }
-    getInitConfigurationStrategy = function () {
-      return deepClone(initConfiguration)
     }
 
     isAlreadyInitialized = true
@@ -234,5 +240,11 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   }
   function isLocalFile() {
     return window.location.protocol === 'file:'
+  }
+  function overrideInitConfigurationForBridge(initConfiguration) {
+    return assign({}, initConfiguration, {
+      applicationId: '00000000-aaaa-0000-aaaa-000000000000',
+      sessionSampleRate: 100
+    })
   }
 }

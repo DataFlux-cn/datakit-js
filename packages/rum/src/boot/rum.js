@@ -1,9 +1,13 @@
-import { startRumSessionManager } from '../domain/rumSessionManager'
+import {
+  startRumSessionManager,
+  startRumSessionManagerStub
+} from '../domain/rumSessionManager'
 import { startCacheUsrCache } from '../domain/usr'
 import {
   LifeCycle,
   LifeCycleEventType,
-  createPageExitObservable
+  createPageExitObservable,
+  canUseEventBridge
 } from '@cloudcare/browser-core'
 import { startPerformanceCollection } from '../domain/performanceCollection'
 import { createDOMMutationObservable } from '../domain/domMutationCollection'
@@ -11,6 +15,7 @@ import { createLocationChangeObservable } from '../domain/locationChangeObservab
 import { startLongTaskCollection } from '../domain/rumEventsCollection/longTask/longTaskCollection'
 import { startActionCollection } from '../domain/rumEventsCollection/actions/actionCollection'
 import { startRumBatch } from '../transport/startRumBatch'
+import { startRumEventBridge } from '../transport/startRumEventBridge'
 import { startRumAssembly } from '../domain/assembly'
 import { startInternalContext } from '../domain/contexts/internalContext'
 import { startForegroundContexts } from '../domain/contexts/foregroundContexts'
@@ -37,15 +42,22 @@ export function startRum(
   pageExitObservable.subscribe(function (event) {
     lifeCycle.notify(LifeCycleEventType.PAGE_EXITED, event)
   })
-  var session = startRumSessionManager(configuration, lifeCycle)
 
-  var batch = startRumBatch(
-    configuration,
-    lifeCycle,
-    reportError,
-    pageExitObservable,
-    session.expireObservable
-  )
+  var session = !canUseEventBridge()
+    ? startRumSessionManager(configuration, lifeCycle)
+    : startRumSessionManagerStub()
+  if (!canUseEventBridge()) {
+    var batch = startRumBatch(
+      configuration,
+      lifeCycle,
+      reportError,
+      pageExitObservable,
+      session.expireObservable
+    )
+  } else {
+    startRumEventBridge(lifeCycle)
+  }
+
   var userSession = startCacheUsrCache(configuration)
   var domMutationObservable = createDOMMutationObservable()
   var locationChangeObservable = createLocationChangeObservable(location)
