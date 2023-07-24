@@ -39,18 +39,18 @@ export function getGlobalObject() {
   if (typeof globalThis === 'object') {
     return globalThis
   }
-  Object.defineProperty(Object.prototype, '_dd_temp_', {
+  Object.defineProperty(Object.prototype, '_gc_temp_', {
     get: function () {
       return this
     },
     configurable: true
   })
   // @ts-ignore
-  var globalObject = _dd_temp_
+  var globalObject = _gc_temp_
   // @ts-ignore
-  delete Object.prototype._dd_temp_
+  delete Object.prototype._gc_temp_
   if (typeof globalObject !== 'object') {
-    // on safari _dd_temp_ is available on window but not globally
+    // on safari _gc_temp_ is available on window but not globally
     // fallback on other browser globals check
     if (typeof self === 'object') {
       globalObject = self
