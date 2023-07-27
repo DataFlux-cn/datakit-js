@@ -4,7 +4,7 @@
     "module": "esm/index.js",
     "version": "3.0.21",
     "dependencies": {
-        "@cloudcare/browser-core": "3.0.21"
+        "@cloudcare/browser-core": "^3.0.21"
     },
     "scripts": {
         "dev": "webpack serve --open --mode=development",

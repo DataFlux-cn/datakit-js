@@ -4,7 +4,7 @@
     "main": "cjs/index.js",
     "module": "esm/index.js",
     "dependencies": {
-        "@cloudcare/browser-core": "3.0.21",
+        "@cloudcare/browser-core": "^3.0.21",
         "@cloudcare/browser-worker": "3.0.21"
     },
     "scripts": {
