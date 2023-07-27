@@ -4,8 +4,8 @@
     "main": "cjs/index.js",
     "module": "esm/index.js",
     "dependencies": {
-        "@cloudcare/browser-core": "3.0.20",
-        "@cloudcare/browser-worker": "3.0.20"
+        "@cloudcare/browser-core": "3.0.21",
+        "@cloudcare/browser-worker": "3.0.21"
     },
     "scripts": {
         "dev": "webpack serve --open --mode=development",
@@ -29,6 +29,5 @@
     "author": "dataflux",
     "license": "MIT",
     "homepage": "https://github.com/CloudCare/dataflux-rum-sdk-javascript/blob/master/packages/rum/README.md",
-    "description": "DataFlux RUM Web 端数据指标监控",
-    "gitHead": "3b02c2cb5c52f6d19f132931e76f75f418f8971a"
+    "description": "DataFlux RUM Web 端数据指标监控"
 }

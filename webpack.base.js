@@ -1,4 +1,5 @@
 const TerserPlugin = require('terser-webpack-plugin')
+const webpack = require('webpack')
 const getEnv = require('./scripts/build-env')
 module.exports = ({
   entry,

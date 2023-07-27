@@ -19,6 +19,5 @@
     },
     "author": "dataflux",
     "license": "MIT",
-    "description": "DataFlux RUM Web 端数据指标监控",
-    "gitHead": "3b02c2cb5c52f6d19f132931e76f75f418f8971a"
+    "description": "DataFlux RUM Web 端数据指标监控"
 }
