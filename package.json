@@ -1,42 +1,43 @@
 {
-  "name": "browser-sdk",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "devDependencies": {
-    "@babel/core": "^7.12.10",
-    "@babel/preset-env": "^7.12.10",
-    "ali-cdn-sdk": "^1.2.0",
-    "ali-oss": "^6.12.0",
-    "co": "^4.6.0",
-    "lerna": "^4.0.0",
-    "npm-run-all": "^4.1.5",
-    "replace-in-file": "^6.1.0",
-    "webpack": "^5.37.0",
-    "webpack-cli": "^4.7.0",
-    "webpack-dev-server": "^3.11.2"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "lerna run build --stream",
-    "build:bundle": "lerna run build:bundle --stream",
-    "publish:npm": "npm run build && lerna publish from-package",
-    "publish:oss": "lerna run publish:oss --stream",
-    "publish:oss:test": "lerna run publish:oss:test --stream",
-    "dev": "node scripts/dev-server.js",
-    "release": "lerna version --exact"
-  },
-  "keywords": [
-    "dataflux",
-    "rum",
-    "sdk"
-  ],
-  "repository": {
-    "url": "https://github.com/DataFlux-cn/datakit-js",
-    "type": "git"
-  },
-  "author": "dataflux",
-  "license": "MIT",
-  "description": "DataFlux RUM Web 端数据指标监控"
+    "name": "browser-sdk",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "devDependencies": {
+        "@babel/core": "^7.12.10",
+        "@babel/preset-env": "^7.12.10",
+        "ali-cdn-sdk": "^1.2.0",
+        "ali-oss": "^6.12.0",
+        "co": "^4.6.0",
+        "lerna": "^4.0.0",
+        "glob": "10.3.3",
+        "npm-run-all": "^4.1.5",
+        "replace-in-file": "^6.1.0",
+        "webpack": "^5.37.0",
+        "webpack-cli": "^4.7.0",
+        "webpack-dev-server": "^3.11.2"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "lerna run build --stream",
+        "build:bundle": "lerna run build:bundle --stream",
+        "publish:npm": "npm run build && lerna publish from-package",
+        "publish:oss": "lerna run publish:oss --stream",
+        "publish:oss:test": "lerna run publish:oss:test --stream",
+        "dev": "node scripts/dev-server.js",
+        "release": "lerna version --exact"
+    },
+    "keywords": [
+        "dataflux",
+        "rum",
+        "sdk"
+    ],
+    "repository": {
+        "url": "https://github.com/DataFlux-cn/datakit-js",
+        "type": "git"
+    },
+    "author": "dataflux",
+    "license": "MIT",
+    "description": "DataFlux RUM Web 端数据指标监控"
 }

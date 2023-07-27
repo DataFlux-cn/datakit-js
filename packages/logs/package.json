@@ -11,10 +11,10 @@
         "build": "run-p build:cjs build:esm build:bundle",
         "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src && npm run replace-build-env cjs",
         "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src && npm run replace-build-env esm",
-        "build:bundle": "rm -rf bundle && webpack --config webpack.config.js --mode=production && npm run replace-build-env bundle ",
-        "publish:oss": "npm run build && node ./scripts/publish-oss.js",
-        "publish:oss:test": "npm run build && node ./scripts/publish-oss.js test",
-        "replace-build-env": "node scripts/replace-build-env.js"
+        "build:bundle": "rm -rf bundle && webpack --mode=production",
+        "publish:oss": "npm run build:bundle && node ./scripts/publish-oss.js",
+        "publish:oss:test": "npm run build:bundle && node ./scripts/publish-oss.js test",
+        "replace-build-env": "node ../../scripts/replace-build-env.js"
     },
     "keywords": [
         "dataflux",

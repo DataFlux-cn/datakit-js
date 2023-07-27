@@ -4,5 +4,5 @@ bundle
 esm
 node_modules
 .vscode
-scripts/publish-oss.js
+scripts/publish-oss-base.js
 lerna-debug.log

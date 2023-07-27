@@ -1,0 +1,25 @@
+{
+    "name": "@cloudcare/browser-worker",
+    "version": "2.0.18",
+    "main": "cjs/string.js",
+    "module": "esm/string.js",
+    "private": true,
+    "scripts": {
+        "build": "rm -rf bundle && webpack --mode=production && ./scripts/build-worker-string.js"
+    },
+    "dependencies": {
+        "@cloudcare/browser-core": "2.0.18"
+    },
+    "keywords": [
+        "dataflux",
+        "logs",
+        "sdk"
+    ],
+    "repository": {
+        "url": "https://github.com/DataFlux-cn/datakit-js",
+        "type": "git"
+    },
+    "author": "dataflux",
+    "license": "MIT",
+    "description": "DataFlux RUM Web 端数据指标监控"
+}

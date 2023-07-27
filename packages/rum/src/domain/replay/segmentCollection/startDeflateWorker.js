@@ -4,8 +4,16 @@ import {
   each,
   addEventListener
 } from '@cloudcare/browser-core'
-import { createDeflateWorker } from './deflateWorker'
+import { workerString } from '@cloudcare/browser-worker/string'
+var workerURL
 
+export function createDeflateWorker() {
+  // Lazily compute the worker URL to allow importing the SDK in NodeJS
+  if (!workerURL) {
+    workerURL = URL.createObjectURL(new Blob([workerString]))
+  }
+  return new Worker(workerURL)
+}
 /**
  * In order to be sure that the worker is correctly working, we need a round trip of
  * initialization messages, making the creation asynchronous.
@@ -64,9 +72,9 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
     addEventListener(worker, 'message', function (event) {
       var data = event.data
       if (data.type === 'errored') {
-        onError(data.error)
+        onError(data.error, data.streamId)
       } else if (data.type === 'initialized') {
-        onInitialized(worker)
+        onInitialized(worker, data.version)
       }
     })
     worker.postMessage({ action: 'init' })
@@ -76,16 +84,20 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
   }
 }
 
-function onInitialized(worker) {
+function onInitialized(worker, version) {
   if (state.status === DeflateWorkerStatus.Loading) {
     each(state.callbacks, function (callback) {
       callback(worker)
     })
-    state = { status: DeflateWorkerStatus.Initialized, worker: worker }
+    state = {
+      status: DeflateWorkerStatus.Initialized,
+      worker: worker,
+      version: version
+    }
   }
 }
 
-function onError(error) {
+function onError(error, streamId) {
   if (state.status === DeflateWorkerStatus.Loading) {
     display.error(
       'Session Replay recording failed to start: an error occurred while creating the Worker:',
@@ -93,8 +105,7 @@ function onError(error) {
     )
     if (
       error instanceof Event ||
-      (error instanceof Error &&
-        includes(error.message, 'Content Security Policy'))
+      (error instanceof Error && isMessageCspRelated(error.message))
     ) {
       display.error('Please make sure CSP is correctly configured !!!')
     }
@@ -103,4 +114,11 @@ function onError(error) {
     })
     state = { status: DeflateWorkerStatus.Error }
   }
+}
+function isMessageCspRelated(message) {
+  return (
+    includes(message, 'Content Security Policy') ||
+    // Related to `require-trusted-types-for` CSP: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/require-trusted-types-for
+    includes(message, "requires 'TrustedScriptURL'")
+  )
 }

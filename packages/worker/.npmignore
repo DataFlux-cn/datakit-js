@@ -1,0 +1,6 @@
+*
+!/bundle/worker.js
+!/string/**/*
+!/cjs/**/*
+!/esm/**/*
+!/src/**/*

@@ -15,3 +15,15 @@ export function computeBytesCount(candidate) {
 
   return new Blob([candidate]).size
 }
+export function concatBuffers(buffers) {
+  var length = buffers.reduce(function (total, buffer) {
+    return total + buffer.length
+  }, 0)
+  var result = new Uint8Array(length)
+  var offset = 0
+  for (var buffer of buffers) {
+    result.set(buffer, offset)
+    offset += buffer.length
+  }
+  return result
+}

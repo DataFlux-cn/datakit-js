@@ -1,9 +1,11 @@
 {
-  "npmClient": "npm",
-  "packages": ["packages/*"],
-  "version": "0.0.1",
-  "useWorkspaces": true,
-  "publishConfig": {
-    "access": "public"
-  }
+    "npmClient": "npm",
+    "packages": [
+        "packages/*"
+    ],
+    "version": "3.0.20",
+    "useWorkspaces": true,
+    "publishConfig": {
+        "access": "public"
+    }
 }

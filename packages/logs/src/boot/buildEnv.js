@@ -1,4 +1,4 @@
 export var buildEnv = {
-  sdkVersion: '<<< SDK_VERSION >>>',
+  sdkVersion: __BUILD_ENV__SDK_VERSION__,
   sdkName: 'df_web_logs_sdk'
 }
