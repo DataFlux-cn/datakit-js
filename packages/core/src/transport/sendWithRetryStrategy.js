@@ -23,6 +23,7 @@ export function sendWithRetryStrategy(
   payload,
   state,
   sendStrategy,
+  endpointUrl,
   reportError
 ) {
   if (
@@ -36,12 +37,13 @@ export function sendWithRetryStrategy(
           RetryReason.AFTER_SUCCESS,
           state,
           sendStrategy,
+          endpointUrl,
           reportError
         )
       },
       onFailure: function () {
         state.queuedPayloads.enqueue(payload)
-        scheduleRetry(state, sendStrategy, reportError)
+        scheduleRetry(state, sendStrategy, endpointUrl, reportError)
       }
     })
   } else {
@@ -49,7 +51,7 @@ export function sendWithRetryStrategy(
   }
 }
 
-function scheduleRetry(state, sendStrategy, reportError) {
+function scheduleRetry(state, sendStrategy, endpointUrl, reportError) {
   if (state.transportStatus !== TransportStatus.DOWN) {
     return
   }
@@ -68,6 +70,7 @@ function scheduleRetry(state, sendStrategy, reportError) {
           RetryReason.AFTER_RESUME,
           state,
           sendStrategy,
+          endpointUrl,
           reportError
         )
       },
@@ -76,7 +79,7 @@ function scheduleRetry(state, sendStrategy, reportError) {
           MAX_BACKOFF_TIME,
           state.currentBackoffTime * 2
         )
-        scheduleRetry(state, sendStrategy, reportError)
+        scheduleRetry(state, sendStrategy, endpointUrl, reportError)
       }
     })
   }, state.currentBackoffTime)
@@ -103,7 +106,13 @@ function send(payload, state, sendStrategy, responseData) {
   })
 }
 
-function retryQueuedPayloads(reason, state, sendStrategy, reportError) {
+function retryQueuedPayloads(
+  reason,
+  state,
+  sendStrategy,
+  endpointUrl,
+  reportError
+) {
   if (
     reason === RetryReason.AFTER_SUCCESS &&
     state.queuedPayloads.isFull() &&
@@ -111,7 +120,9 @@ function retryQueuedPayloads(reason, state, sendStrategy, reportError) {
   ) {
     reportError({
       message:
-        'Reached max events size queued for upload: ' +
+        'Reached max ' +
+        endpointUrl +
+        ' events size queued for upload: ' +
         MAX_QUEUE_BYTES_COUNT / ONE_MEBI_BYTE +
         'MiB',
       source: ErrorSource.AGENT,
@@ -126,6 +137,7 @@ function retryQueuedPayloads(reason, state, sendStrategy, reportError) {
       previousQueue.dequeue(),
       state,
       sendStrategy,
+      endpointUrl,
       reportError
     )
   }

@@ -111,7 +111,6 @@ export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
               }
               return
             }
-
             var recordingImpl = startRecordingImpl(
               lifeCycle,
               configuration,

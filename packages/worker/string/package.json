@@ -1,0 +1,5 @@
+{
+    "private": true,
+    "main": "../cjs/string.js",
+    "module": "../esm/string.js"
+}

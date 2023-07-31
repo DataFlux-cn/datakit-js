@@ -1,13 +1,14 @@
 {
-  "presets": [
-    [
-      "@babel/env",
-      {
-        "targets": {
-          "esmodules": false
-        },
-        "modules": "cjs"
-      }
+    "sourceMaps": true,
+    "include": [
+        "./src/**/*.js"
+    ],
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "modules": "cjs"
+            }
+        ]
     ]
-  ]
 }

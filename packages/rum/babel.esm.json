@@ -1,13 +1,14 @@
 {
-  "presets": [
-    [
-      "@babel/env",
-      {
-        "targets": {
-          "esmodules": true
-        },
-        "modules": false
-      }
+    "sourceMaps": true,
+    "include": [
+        "./src/**/*.js"
+    ],
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "modules": false
+            }
+        ]
     ]
-  ]
 }

@@ -1,9 +1,7 @@
 {
     "name": "@cloudcare/browser-worker",
     "version": "3.0.22",
-    "main": "cjs/string.js",
-    "module": "esm/string.js",
-    "private": true,
+    "main": "bundle/worker.js",
     "scripts": {
         "build": "rm -rf bundle && webpack --mode=production && ./scripts/build-worker-string.js"
     },

@@ -24,6 +24,7 @@ export function createHttpRequest(endpointUrl, bytesLimit, reportError) {
         payload,
         retryState,
         sendStrategyForRetry,
+        endpointUrl,
         reportError
       )
     },

@@ -1,5 +1,5 @@
-import { concatBuffers } from '@cloudcare/browser-core'
-import { Deflate, constants, string2buf } from '..domain/deflate'
+import { concatBuffers } from '@cloudcare/browser-core/worker'
+import { Deflate, constants, string2buf } from '../domain/deflate'
 
 export function startWorker(workerScope) {
   if (workerScope === undefined) {
@@ -101,7 +101,7 @@ function handleAction(streams, message) {
  */
 function makeTrailer(deflate) {
   /* eslint-disable no-bitwise */
-  const adler = deflate.strm.adler
+  var adler = deflate.strm.adler
   return new Uint8Array([
     // Empty deflate block
     3,

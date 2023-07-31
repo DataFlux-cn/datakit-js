@@ -38,16 +38,12 @@ export function Segment(
   var compressedBytesCount = 0
   var compressedData = []
   var _this = this
-  var wokerListener = addEventListener(worker, 'message', listener)
-  var removeMessageListener = wokerListener.stop
-  var listener = function (params) {
+  var wokerListener = addEventListener(worker, 'message', function (params) {
     var data = params.data
     if (data.type !== 'wrote') {
       return
     }
-    // if (data.type === 'errored' || data.type === 'initialized') {
-    //   return
-    // }
+
     if (data.id === _this.id) {
       _this.pendingWriteCount -= 1
       replayStats.addWroteData(viewId, data.additionalBytesCount)
@@ -72,7 +68,8 @@ export function Segment(
       // help investigate the issue.
       removeMessageListener()
     }
-  }
+  })
+  var removeMessageListener = wokerListener.stop
   //   worker.addEventListener('message', listener)
 
   this.write('{"records":[' + JSON.stringify(initialRecord))

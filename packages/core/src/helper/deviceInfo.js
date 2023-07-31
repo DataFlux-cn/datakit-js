@@ -1,6 +1,9 @@
 import { display } from '../helper/display'
 var VariableLibrary = {
-  navigator: typeof window.navigator != 'undefined' ? window.navigator : {},
+  navigator:
+    typeof window !== 'undefined' && typeof window.navigator != 'undefined'
+      ? window.navigator
+      : {},
   // 信息map
   infoMap: {
     engine: ['WebKit', 'Trident', 'Gecko', 'Presto'],
@@ -154,7 +157,7 @@ var MethodLibrary = {
   },
   // 在信息map和匹配库中进行匹配
   matchInfoMap: function (_this) {
-    var u = VariableLibrary.navigator.userAgent || {}
+    var u = VariableLibrary.navigator.userAgent || ''
     var match = MethodLibrary.getMatchMap(u)
     for (var s in VariableLibrary.infoMap) {
       for (var i = 0; i < VariableLibrary.infoMap[s].length; i++) {
@@ -174,7 +177,7 @@ var MethodLibrary = {
   // 获取操作系统版本
   getOSVersion: function () {
     var _this = this
-    var u = VariableLibrary.navigator.userAgent || {}
+    var u = VariableLibrary.navigator.userAgent || ''
     _this.osVersion = ''
     _this.osMajor = ''
     // 系统版本信息
@@ -293,7 +296,8 @@ var MethodLibrary = {
     _this.language = (function () {
       var language =
         VariableLibrary.navigator.browserLanguage ||
-        VariableLibrary.navigator.language
+        VariableLibrary.navigator.language ||
+        ''
       var arr = language.split('-')
       if (arr[1]) {
         arr[1] = arr[1].toUpperCase()
@@ -307,7 +311,7 @@ var MethodLibrary = {
     var _this = this
     MethodLibrary.matchInfoMap(_this)
 
-    var u = VariableLibrary.navigator.userAgent || {}
+    var u = VariableLibrary.navigator.userAgent || ''
 
     var _mime = function (option, value) {
       var mimeTypes = VariableLibrary.navigator.mimeTypes
@@ -322,7 +326,7 @@ var MethodLibrary = {
     var match = MethodLibrary.getMatchMap(u)
 
     var is360 = false
-    if (window.chrome) {
+    if (typeof window !== 'undefined' && window.chrome) {
       var chrome_version = u.replace(/^.*Chrome\/([\d]+).*$/, '$1')
       if (chrome_version > 36 && window.showModalDialog) {
         is360 = true
@@ -602,15 +606,18 @@ var MethodLibrary = {
       )
   }
 }
-
-export var deviceInfo = {
-  os: MethodLibrary.getOS(),
-  osVersion: MethodLibrary.getOSVersion().version,
-  osVersionMajor: MethodLibrary.getOSVersion().osMajor,
-  browser: MethodLibrary.getBrowserInfo().browser,
-  browserVersion: MethodLibrary.getBrowserInfo().browserVersion,
-  browserVersionMajor: MethodLibrary.getBrowserInfo().browserMajor,
-  screenSize: window.screen.width + '*' + window.screen.height,
-  networkType: MethodLibrary.getNetwork(),
-  divice: MethodLibrary.getDeviceType()
+var _deviceInfo = {}
+if (typeof window !== 'undefined') {
+  _deviceInfo = {
+    os: MethodLibrary.getOS(),
+    osVersion: MethodLibrary.getOSVersion().version,
+    osVersionMajor: MethodLibrary.getOSVersion().osMajor,
+    browser: MethodLibrary.getBrowserInfo().browser,
+    browserVersion: MethodLibrary.getBrowserInfo().browserVersion,
+    browserVersionMajor: MethodLibrary.getBrowserInfo().browserMajor,
+    screenSize: window.screen.width + '*' + window.screen.height,
+    networkType: MethodLibrary.getNetwork(),
+    divice: MethodLibrary.getDeviceType()
+  }
 }
+export var deviceInfo = _deviceInfo
