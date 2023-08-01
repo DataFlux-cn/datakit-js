@@ -68,6 +68,7 @@ export var dataMap = {
       dom: 'view.dom',
       dom_ready: 'view.dom_ready',
       time_spent: 'view.time_spent',
+      first_byte: 'view.first_byte',
       in_foreground_periods: 'view.in_foreground_periods',
       frustration_count: 'view.frustration.count'
     }
