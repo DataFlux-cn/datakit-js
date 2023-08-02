@@ -277,6 +277,10 @@ export function computePerformanceResourceDetails(entry) {
     details.redirect = msToNs(redirectEnd - redirectStart)
     details.redirectTime = formatTiming(startTime, redirectStart, redirectEnd)
   }
+  // renderBlockstatus
+  if (entry.renderBlockingStatus) {
+    details.renderBlockingStatus = entry.renderBlockingStatus
+  }
   return details
 }
 
@@ -361,7 +365,10 @@ function formatTiming(origin, start, end) {
 export function computeSize(entry) {
   // Make sure a request actually occurred
   if (entry.startTime < entry.responseStart) {
-    return entry.decodedBodySize
+    return {
+      size: entry.decodedBodySize,
+      encodeSize: entry.encodedBodySize
+    }
   }
   return undefined
 }

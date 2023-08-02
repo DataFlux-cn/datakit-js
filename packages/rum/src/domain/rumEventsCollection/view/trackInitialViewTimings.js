@@ -11,6 +11,7 @@ import {
   relativeNow
 } from '@cloudcare/browser-core'
 import { trackFirstHidden } from './trackFirstHidden'
+import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
 // Discard LCP and FCP timings above a certain delay to avoid incorrect data
 // It happens in some cases like sleep mode or some browser implementations
 export var TIMING_MAXIMUM_DELAY = 10 * ONE_MINUTE
@@ -27,8 +28,12 @@ export function trackInitialViewTimings(
   scheduleViewUpdate
 ) {
   var timings = {}
-  function setTimings(newTimings) {
+  var timingsElementSelector = {}
+  function setTimings(newTimings, timingSelectors) {
     timings = extend(timings, newTimings)
+    if (timingSelectors) {
+      timingsElementSelector = extend(timingsElementSelector, timingSelectors)
+    }
     scheduleViewUpdate()
   }
   var _trackNavigationTimings = trackNavigationTimings(
@@ -50,8 +55,17 @@ export function trackInitialViewTimings(
   var _trackLargestContentfulPaintTiming = trackLargestContentfulPaintTiming(
     lifeCycle,
     window,
-    function (largestContentfulPaint) {
-      setTimings({ largestContentfulPaint: largestContentfulPaint })
+    function (largestContentfulPaint, largestContentfulPaintElement) {
+      setTimings(
+        { largestContentfulPaint: largestContentfulPaint },
+        largestContentfulPaintElement
+          ? {
+              largestContentfulPaint: getSelectorFromElement(
+                largestContentfulPaintElement
+              )
+            }
+          : undefined
+      )
     }
   )
   var stopLCPTracking = _trackLargestContentfulPaintTiming.stop
@@ -74,6 +88,7 @@ export function trackInitialViewTimings(
   return {
     stop: stop,
     timings: timings,
+    timingsElementSelector: timingsElementSelector,
     scheduleStop: function () {
       setTimeout(stop, KEEP_TRACKING_TIMINGS_AFTER_VIEW_DELAY)
     }
@@ -174,7 +189,7 @@ export function trackLargestContentfulPaintTiming(
         )
       })
       if (lcpEntry) {
-        callback(lcpEntry.startTime)
+        callback(lcpEntry.startTime, lcpEntry.element)
       }
     }
   )

@@ -187,7 +187,7 @@ function newView(
   var scheduleStopInitialViewTimingsTracking =
     _trackInitialViewTimings.scheduleStop
   var timings = _trackInitialViewTimings.timings
-
+  var timingsElementSelector = _trackInitialViewTimings.timingsElementSelector
   var _trackViewEventCounts = trackViewEventCounts(
     lifeCycle,
     id,
@@ -224,6 +224,7 @@ function newView(
           location: location,
           startClocks: startClocks,
           timings: timings,
+          timingsElementSelector: timingsElementSelector,
           duration: elapsed(startClocks.timeStamp, currentEnd),
           isActive: endClocks === undefined,
           sessionIsActive: sessionIsActive,

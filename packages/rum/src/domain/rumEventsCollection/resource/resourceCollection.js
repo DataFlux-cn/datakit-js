@@ -147,9 +147,9 @@ function computePerformanceEntryMetrics(timing) {
     resource: extend2Lev(
       {},
       {
-        duration: computePerformanceResourceDuration(timing),
-        size: computeSize(timing)
+        duration: computePerformanceResourceDuration(timing)
       },
+      computeSize(timing),
       computePerformanceResourceDetails(timing)
     )
   }

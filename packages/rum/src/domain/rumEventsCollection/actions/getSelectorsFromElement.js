@@ -1,9 +1,4 @@
-import {
-  arrayFrom,
-  cssEscape,
-  elementMatches,
-  map
-} from '@cloudcare/browser-core'
+import { cssEscape } from '@cloudcare/browser-core'
 import { DEFAULT_PROGRAMMATIC_ACTION_NAME_ATTRIBUTE } from './getActionNameFromElement'
 /**
  * Stable attributes are attributes that are commonly used to identify parts of a UI (ex:

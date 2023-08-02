@@ -54,6 +54,8 @@ export var dataMap = {
       view_action_count: 'view.action.count',
       first_contentful_paint: 'view.first_contentful_paint',
       largest_contentful_paint: 'view.largest_contentful_paint',
+      largest_contentful_paint_element_selector:
+        'view.largest_contentful_paint_element_selector',
       cumulative_layout_shift: 'view.cumulative_layout_shift',
       first_input_delay: 'view.first_input_delay',
       loading_time: 'view.loading_time',
@@ -70,7 +72,8 @@ export var dataMap = {
       time_spent: 'view.time_spent',
       first_byte: 'view.first_byte',
       in_foreground_periods: 'view.in_foreground_periods',
-      frustration_count: 'view.frustration.count'
+      frustration_count: 'view.frustration.count',
+      custom_timings: 'view.custom_timings'
     }
   },
   resource: {
@@ -91,6 +94,8 @@ export var dataMap = {
     fields: {
       duration: 'resource.duration',
       resource_size: 'resource.size',
+      resource_encode_size: 'resource.encode_size',
+      resource_render_blocking_status: 'resource.render_blocking_status',
       resource_dns: 'resource.dns',
       resource_tcp: 'resource.tcp',
       resource_ssl: 'resource.ssl',

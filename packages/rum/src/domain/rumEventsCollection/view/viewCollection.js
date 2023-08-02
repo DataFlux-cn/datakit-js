@@ -109,6 +109,8 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
       largest_contentful_paint: toServerDuration(
         view.timings.largestContentfulPaint
       ),
+      largest_contentful_paint_element_selector:
+        view.timingsElementSelector.largestContentfulPaint,
       load_event: toServerDuration(view.timings.loadEvent),
       loading_time: discardNegativeDuration(toServerDuration(view.loadingTime)),
       loading_type: view.loadingType,
