@@ -29,7 +29,7 @@
         "publish:oss": "lerna run publish:oss --stream",
         "publish:oss:test": "lerna run publish:oss:test --stream",
         "dev": "node scripts/dev-server.js",
-        "version": "learn version",
+        "version": "lerna version",
         "release": "lerna version --exact"
     },
     "keywords": [
