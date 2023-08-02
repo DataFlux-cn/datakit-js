@@ -17,8 +17,11 @@
         "url": "https://github.com/DataFlux-cn/datakit-js",
         "type": "git"
     },
+    "publishConfig": {
+        "access": "public"
+    },
     "author": "dataflux",
     "license": "MIT",
     "description": "DataFlux RUM Web 端数据指标监控",
-    "gitHead": "40cd6cbcd9e35bcf30e6c285776631e85d7293f6"
+    "gitHead": "46ce29f4eeb2701df52c6906ba814aa7223f60d8"
 }

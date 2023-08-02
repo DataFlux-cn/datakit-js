@@ -1,8 +1,4 @@
 {
     "npmClient": "npm",
-    "version": "3.0.22",
-    "publishConfig": {
-        "access": "public",
-        "registry": "https://registry.npmjs.org/"
-    }
+    "version": "3.0.22"
 }
