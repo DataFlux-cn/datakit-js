@@ -141,7 +141,7 @@ export function serializeStyleSheets(cssStyleSheets) {
   return cssStyleSheets.map(function (cssStyleSheet) {
     var rules = cssStyleSheet.cssRules || cssStyleSheet.rules
     var cssRules = Array.from(rules, function (cssRule) {
-      return cssRule.cssText ? validateStringifiedCssRule(rule.cssText) : ''
+      return cssRule.cssText ? validateStringifiedCssRule(cssRule.cssText) : ''
     })
 
     var styleSheet = {
