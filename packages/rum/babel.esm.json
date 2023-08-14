@@ -7,7 +7,7 @@
         [
             "@babel/preset-env",
             {
-                "modules": false
+                "modules": "auto"
             }
         ]
     ]

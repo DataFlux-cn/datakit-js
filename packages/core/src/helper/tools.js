@@ -232,6 +232,7 @@ export var matchList = function (list, value, useStartsWith) {
 }
 // https://github.com/jquery/jquery/blob/a684e6ba836f7c553968d7d026ed7941e1a612d8/src/selector/escapeSelector.js
 export var cssEscape = function (str) {
+  str = str + ''
   if (window.CSS && window.CSS.escape) {
     return window.CSS.escape(str)
   }
