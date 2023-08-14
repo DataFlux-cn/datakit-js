@@ -20,10 +20,14 @@ export function startViewCollection(
   initialViewOptions
 ) {
   lifeCycle.subscribe(LifeCycleEventType.VIEW_UPDATED, function (view) {
-    lifeCycle.notify(
-      LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processViewUpdate(view, foregroundContexts, recorderApi)
-    )
+    try {
+      lifeCycle.notify(
+        LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
+        processViewUpdate(view, foregroundContexts, recorderApi)
+      )
+    } catch {
+      // catch error to handler
+    }
   })
 
   return trackViews(

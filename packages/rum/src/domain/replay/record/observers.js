@@ -10,7 +10,8 @@ import {
   LifeCycleEventType,
   RumEventType,
   ActionType,
-  isNodeShadowHost
+  isNodeShadowHost,
+  cssEscape
 } from '@cloudcare/browser-core'
 import { initViewportObservable } from '../../initViewportObservable'
 import { NodePrivacyLevel } from '../../../constants'
@@ -368,7 +369,9 @@ export function initInputObserver(cb, defaultPrivacyLevel, target) {
     var name = target.name
     if (type === 'radio' && name && target.checked) {
       forEach(
-        document.querySelectorAll(`input[type="radio"][name="${name}"]`),
+        document.querySelectorAll(
+          'input[type="radio"][name="' + cssEscape(name) + '"]'
+        ),
         function (el) {
           if (el !== target) {
             // TODO: Consider the privacy implications for various differing input privacy levels

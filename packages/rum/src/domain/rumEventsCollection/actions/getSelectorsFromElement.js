@@ -97,12 +97,12 @@ function getClassSelector(element) {
         continue
       }
 
-      return element.tagName + '.' + cssEscape(className)
+      return cssEscape(element.tagName) + '.' + cssEscape(className)
     }
   }
 }
 function getTagNameSelector(element) {
-  return element.tagName
+  return cssEscape(element.tagName)
 }
 function getStableAttributeSelector(element, actionNameAttribute) {
   if (actionNameAttribute) {
@@ -123,7 +123,7 @@ function getStableAttributeSelector(element, actionNameAttribute) {
   function getAttributeSelector(attributeName) {
     if (element.hasAttribute(attributeName)) {
       return (
-        element.tagName +
+        cssEscape(element.tagName) +
         '[' +
         attributeName +
         '="' +
@@ -144,7 +144,7 @@ function getPositionSelector(element) {
     }
     sibling = sibling.nextElementSibling
   }
-  var tagName = element.tagName
+  var tagName = cssEscape(element.tagName)
   // 伪元素需要做特殊处理，没有nth-of-type选择器
   if (/^::/.test(tagName)) {
     return tagName
