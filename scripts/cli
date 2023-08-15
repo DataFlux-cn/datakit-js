@@ -22,8 +22,8 @@ cmd_help () {
 }
 
 cmd_release () {
-  [[ `git branch --show-current` != "master" ]] || fail 'please do not release from `master` branch'
-  npm run lerna version --exact
+  [[ `git branch` != "master" ]] || fail 'please do not release from `master` branch'
+  lerna version --exact
 }
 
 cmd_version () {
