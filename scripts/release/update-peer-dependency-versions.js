@@ -21,7 +21,7 @@ runMain(async () => {
     await modifyFile(jsonFile, updateJsonPeerDependencies)
   }
   // update yarn.lock to match the updated JSON files
-  command`npm`.run()
+  command`npm install`.run()
 })
 
 function updateJsonPeerDependencies(content) {

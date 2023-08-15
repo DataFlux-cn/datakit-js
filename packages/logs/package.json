@@ -1,32 +1,40 @@
 {
-    "name": "@cloudcare/browser-logs",
-    "main": "cjs/index.js",
-    "module": "esm/index.js",
-    "version": "3.0.23",
-    "dependencies": {
-        "@cloudcare/browser-core": "^3.0.23"
-    },
-    "scripts": {
-        "dev": "webpack serve --open --mode=development",
-        "build": "run-p build:cjs build:esm build:bundle",
-        "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src && npm run replace-build-env cjs",
-        "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src && npm run replace-build-env esm",
-        "build:bundle": "rm -rf bundle && webpack --mode=production",
-        "publish:oss": "npm run build:bundle && node ./scripts/publish-oss.js",
-        "publish:oss:test": "npm run build:bundle && node ./scripts/publish-oss.js test",
-        "replace-build-env": "node ../../scripts/replace-build-env.js"
-    },
-    "keywords": [
-        "dataflux",
-        "logs",
-        "sdk"
-    ],
-    "repository": {
-        "url": "https://github.com/DataFlux-cn/datakit-js",
-        "type": "git"
-    },
-    "author": "dataflux",
-    "license": "MIT",
-    "description": "DataFlux RUM Web 端数据指标监控",
-    "gitHead": "c42f3cdce8c9f1af6ac6bec06c7a7e83a9638467"
+  "name": "@cloudcare/browser-logs",
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "version": "3.0.23",
+  "dependencies": {
+    "@cloudcare/browser-core": "^3.0.23"
+  },
+  "peerDependencies": {
+    "@cloudcare/browser-rum": "3.0.27"
+  },
+  "peerDependenciesMeta": {
+    "@cloudcare/browser-rum": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "dev": "webpack serve --open --mode=development",
+    "build": "run-p build:cjs build:esm build:bundle",
+    "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src && npm run replace-build-env cjs",
+    "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src && npm run replace-build-env esm",
+    "build:bundle": "rm -rf bundle && webpack --mode=production",
+    "publish:oss": "npm run build:bundle && node ./scripts/publish-oss.js",
+    "publish:oss:test": "npm run build:bundle && node ./scripts/publish-oss.js test",
+    "replace-build-env": "node ../../scripts/replace-build-env.js"
+  },
+  "keywords": [
+    "dataflux",
+    "logs",
+    "sdk"
+  ],
+  "repository": {
+    "url": "https://github.com/DataFlux-cn/datakit-js",
+    "type": "git"
+  },
+  "author": "dataflux",
+  "license": "MIT",
+  "description": "DataFlux RUM Web 端数据指标监控",
+  "gitHead": "c42f3cdce8c9f1af6ac6bec06c7a7e83a9638467"
 }

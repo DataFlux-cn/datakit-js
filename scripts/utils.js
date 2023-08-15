@@ -2,16 +2,16 @@ const spawn = require('child_process').spawn
 
 const resetColor = '\x1b[0m'
 
-exports.printError = (...params) => {
+function printError(...params) {
   const redColor = '\x1b[31;1m'
   console.log(redColor, ...params, resetColor)
 }
-exports.printLog = (...params) => {
+function printLog(...params) {
   const greenColor = '\x1b[32;1m'
   console.log(greenColor, ...params, resetColor)
 }
 
-exports.spawnCommand = function (command, args) {
+function spawnCommand(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: 'inherit', shell: true })
     child.on('error', reject)
@@ -19,7 +19,7 @@ exports.spawnCommand = function (command, args) {
     child.on('exit', resolve)
   })
 }
-exports.runMain = (mainFunction) => {
+function runMain(mainFunction) {
   Promise.resolve()
     // The main function can be either synchronous or asynchronous, so let's wrap it in an async
     // callback that will catch both thrown errors and rejected promises
@@ -29,4 +29,11 @@ exports.runMain = (mainFunction) => {
       printError(error)
       process.exit(1)
     })
+}
+
+module.exports = {
+  runMain,
+  spawnCommand,
+  printError,
+  printLog
 }
