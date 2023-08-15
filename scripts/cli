@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -euo pipefail
+
+PATH="$PATH:node_modules/.bin"
+
+main () {
+  if [[ $# -lt 1 ]]; then
+    cmd_help
+  fi
+
+  local command="cmd_$1"
+  shift
+
+  "$command" "$@"
+}
+
+cmd_release () {
+  [[ `git branch --show-current` != "master" ]] || fail 'please do not release from `master` branch'
+  npm run lerna version --exact
+}
+
+cmd_version () {
+  node ./scripts/release/generate-changelog.js
+  node ./scripts/release/update-peer-dependency-versions.js
+
+}
+
+main "$@"

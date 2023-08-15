@@ -7,10 +7,11 @@
     "devDependencies": {
         "@babel/core": "^7.22.9",
         "@babel/preset-env": "^7.22.9",
-        "babel-loader": "^9.1.3",
         "ali-cdn-sdk": "^1.2.0",
         "ali-oss": "^6.12.0",
+        "babel-loader": "^9.1.3",
         "co": "^4.6.0",
+        "emoji-name-map": "1.2.9",
         "glob": "10.3.3",
         "lerna": "^7.1.4",
         "npm-run-all": "^4.1.5",
@@ -29,8 +30,8 @@
         "publish:oss": "lerna run publish:oss --stream",
         "publish:oss:test": "lerna run publish:oss:test --stream",
         "dev": "node scripts/dev-server.js",
-        "version": "lerna version",
-        "release": "lerna version --exact"
+        "release": "scripts/cli release",
+        "version": "scripts/cli version"
     },
     "keywords": [
         "dataflux",

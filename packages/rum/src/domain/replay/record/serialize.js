@@ -327,7 +327,7 @@ function generateNextId() {
 
 var TAG_NAME_REGEX = /[^a-z1-6-_]/
 function getValidTagName(tagName) {
-  var processedTagName = tagName.toLowerCase().trim()
+  var processedTagName = (tagName + '').toLowerCase().trim()
 
   if (TAG_NAME_REGEX.test(processedTagName)) {
     // if the tag name is odd and we cannot extract
