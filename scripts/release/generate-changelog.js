@@ -38,9 +38,12 @@ function getChangesList() {
 
   const commits =
     command`git log ${lastTagName.trimEnd()}..HEAD --pretty=format:%s`.run()
-
+  const allowedChanges = commits
+    .split('\n')
+    .map((entry) => `- ${entry}`)
+    .join('\n')
   // changes with pull request links
-  return commits.replace(
+  return allowedChanges.replace(
     /\(#(\d+)\)/gm,
     (_, id) =>
       `([#${id}](https://gitlab.jiagouyun.com/cloudcare/dataflux-rum-sdk-javscript/pull/${id}))`
