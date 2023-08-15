@@ -15,6 +15,12 @@ main () {
   "$command" "$@"
 }
 
+cmd_help () {
+  local available_commands=$(set | perl -nle'print $& while m{^cmd_\K\w+}g')
+  echo -e "Available commands:\n$available_commands"
+  exit 1
+}
+
 cmd_release () {
   [[ `git branch --show-current` != "master" ]] || fail 'please do not release from `master` branch'
   npm run lerna version --exact
