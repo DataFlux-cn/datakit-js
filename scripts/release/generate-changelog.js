@@ -41,8 +41,6 @@ ${content.slice(content.indexOf('\n##'))}`
 
   await spawnCommand(process.env.EDITOR, [CHANGELOG_FILE])
 
-  command`yarn run prettier --write ${CHANGELOG_FILE}`.run()
-
   command`git add ${CHANGELOG_FILE}`.run()
 })
 
@@ -76,7 +74,6 @@ function getChangesList() {
     command`git log ${lastTagName.trimEnd()}..HEAD --pretty=format:%s`.run()
 
   const changesWithEmojis = emojiNameToUnicode(commits)
-
   const allowedChanges = changesWithEmojis
     .split('\n')
     .filter(isNotVersionEntry)
@@ -88,7 +85,8 @@ function getChangesList() {
   // changes with pull request links
   return allowedChanges.replace(
     /\(#(\d+)\)/gm,
-    (_, id) => `([#${id}](https://github.com/DataDog/browser-sdk/pull/${id}))`
+    (_, id) =>
+      `([#${id}](https://gitlab.jiagouyun.com/cloudcare/dataflux-rum-sdk-javscript/pull/${id}))`
   )
 }
 
