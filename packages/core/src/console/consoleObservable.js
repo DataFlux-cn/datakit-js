@@ -8,7 +8,7 @@ import { mergeObservables, Observable } from '../helper/observable'
 import { find, map } from '../helper/tools'
 import { jsonStringify } from '../helper/serialisation/jsonStringify'
 import { ConsoleApiName } from '../helper/display'
-
+import { callMonitored } from '../helper/monitor'
 var consoleObservablesByApi = {}
 
 export function initConsoleObservable(apis) {
@@ -30,7 +30,9 @@ function createConsoleObservable(api) {
       var params = [].slice.call(arguments)
       originalConsoleApi.apply(console, arguments)
       var handlingStack = createHandlingStack()
-      observable.notify(buildConsoleLog(params, api, handlingStack))
+      callMonitored(function () {
+        observable.notify(buildConsoleLog(params, api, handlingStack))
+      })
     }
     return function () {
       console[api] = originalConsoleApi

@@ -1,5 +1,6 @@
 import { each } from '../helper/tools'
 import { getZoneJsOriginalValue } from '../helper/getZoneJsOriginalValue'
+import { monitor } from '../helper/monitor'
 export function addEventListener(eventTarget, event, listener, options) {
   return addEventListeners(eventTarget, [event], listener, options)
 }
@@ -20,28 +21,28 @@ export function addEventListener(eventTarget, event, listener, options) {
  *   listened
  */
 
-export function addEventListeners(eventTarget, events, listener, options) {
-  var wrappedListener =
+export function addEventListeners(eventTarget, eventNames, listener, options) {
+  var wrappedListener = monitor(
     options && options.once
       ? function (event) {
           stop()
           listener(event)
         }
       : listener
-
+  )
   options =
     options && options.passive
       ? { capture: options.capture, passive: options.passive }
       : options && options.capture
   var add = getZoneJsOriginalValue(eventTarget, 'addEventListener')
 
-  each(events, function (event) {
-    add.call(eventTarget, event, wrappedListener, options)
+  each(eventNames, function (eventName) {
+    add.call(eventTarget, eventName, wrappedListener, options)
   })
   var stop = function () {
     var remove = getZoneJsOriginalValue(eventTarget, 'removeEventListener')
-    each(events, function (event) {
-      remove.call(eventTarget, event, wrappedListener, options)
+    each(eventNames, function (eventName) {
+      remove.call(eventTarget, eventName, wrappedListener, options)
     })
   }
   return {

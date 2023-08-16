@@ -12,14 +12,14 @@ _Observable.prototype = {
     this.observers.push(f)
     var _this = this
     return {
-      unsubscribe: function() {
-        _this.observers = filter(_this.observers, function(other) {
+      unsubscribe: function () {
+        _this.observers = filter(_this.observers, function (other) {
           return f !== other
         })
         if (!_this.observers.length && _this.onLastUnsubscribe) {
           _this.onLastUnsubscribe()
         }
-      },
+      }
     }
   },
   notify: function (data) {
@@ -32,12 +32,14 @@ export var Observable = _Observable
 
 export function mergeObservables() {
   var observables = [].slice.call(arguments)
-  var globalObservable = new Observable(function(){
-    var subscriptions = map(observables, function(observable) {
-     return observable.subscribe(function(data) { return globalObservable.notify(data) })
+  var globalObservable = new Observable(function () {
+    var subscriptions = map(observables, function (observable) {
+      return observable.subscribe(function (data) {
+        return globalObservable.notify(data)
+      })
     })
-    return function() {
-      return each(subscriptions, function(subscription) {
+    return function () {
+      return each(subscriptions, function (subscription) {
         return subscription.unsubscribe()
       })
     }

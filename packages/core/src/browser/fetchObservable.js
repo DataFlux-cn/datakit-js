@@ -1,6 +1,7 @@
 import { instrumentMethod } from '../helper/instrumentMethod'
 import { Observable } from '../helper/observable'
 import { clocksNow } from '../helper/tools'
+import { monitor, callMonitored } from '../helper/monitor'
 import { normalizeUrl } from '../helper/urlPolyfill'
 
 var fetchObservable
@@ -24,14 +25,22 @@ function createFetchObservable() {
       function (originalFetch) {
         return function (input, init) {
           var responsePromise
-          var context = beforeSend(observable, input, init)
+          var context = callMonitored(beforeSend, null, [
+            observable,
+            input,
+            init
+          ])
           if (context) {
             responsePromise = originalFetch.call(
               this,
               context.input,
               context.init
             )
-            afterSend(observable, responsePromise, context)
+            callMonitored(afterSend, null, [
+              observable,
+              responsePromise,
+              context
+            ])
           } else {
             responsePromise = originalFetch.call(this, input, init)
           }
@@ -91,5 +100,5 @@ function afterSend(observable, responsePromise, startContext) {
     }
     observable.notify(context)
   }
-  responsePromise.then(reportFetch, reportFetch)
+  responsePromise.then(monitor(reportFetch), monitor(reportFetch))
 }

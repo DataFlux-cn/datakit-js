@@ -1,5 +1,6 @@
 import { newRetryState, sendWithRetryStrategy } from './sendWithRetryStrategy'
 import { addEventListener } from '../browser/addEventListener'
+import { monitor } from '../helper/monitor'
 /**
  * Use POST request without content type to:
  * - avoid CORS preflight requests
@@ -74,15 +75,15 @@ export function fetchKeepAliveStrategy(
       keepalive: true,
       mode: 'cors'
     }).then(
-      function (response) {
+      monitor(function (response) {
         if (typeof onResponse === 'function') {
           onResponse({ status: response.status, type: response.type })
         }
-      },
-      function () {
+      }),
+      monitor(function () {
         // failed to queue the request
         sendXHR(url, data, onResponse)
-      }
+      })
     )
   } else {
     sendXHR(url, data, onResponse)

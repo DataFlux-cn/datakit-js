@@ -12,7 +12,8 @@ import {
   LifeCycleEventType,
   runOnReadyState,
   setTimeout,
-  addEventListener
+  addEventListener,
+  monitor
 } from '@cloudcare/browser-core'
 import {
   FAKE_INITIAL_DOCUMENT,
@@ -43,13 +44,13 @@ export function startPerformanceCollection(lifeCycle, configuration) {
     })
   }
   if (window.PerformanceObserver) {
-    var handlePerformanceEntryList = function (entries) {
+    var handlePerformanceEntryList = monitor(function (entries) {
       handleRumPerformanceEntries(
         lifeCycle,
         configuration,
         entries.getEntries()
       )
-    }
+    })
     var mainEntries = ['resource', 'navigation', 'longtask', 'paint']
     var experimentalEntries = [
       'largest-contentful-paint',

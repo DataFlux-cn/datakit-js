@@ -3,6 +3,7 @@ import { mergeObservables, Observable } from '../helper/observable'
 import { includes, safeTruncate, filter, each } from '../helper/tools'
 import { addEventListener } from '../browser/addEventListener'
 import { DOM_EVENT } from '../helper/enums'
+import { monitor } from '../helper/monitor'
 export var RawReportType = {
   intervention: 'intervention',
   deprecation: 'deprecation',
@@ -30,11 +31,11 @@ function createReportObservable(reportTypes) {
       return
     }
 
-    var handleReports = function (reports) {
+    var handleReports = monitor(function (reports) {
       each(reports, function (report) {
         observable.notify(buildRawReportFromReport(report))
       })
-    }
+    })
 
     var observer = new window.ReportingObserver(handleReports, {
       types: reportTypes,

@@ -1,5 +1,6 @@
 import { noop } from './tools'
 import { setTimeout } from './timer'
+import { callMonitored } from './monitor'
 export function instrumentMethod(object, method, instrumentationFactory) {
   var original = object[method]
 
@@ -29,14 +30,16 @@ export function instrumentMethodAndCallOriginal(object, method, aliasOption) {
     return function () {
       var result
       if (aliasOption && aliasOption.before) {
-        aliasOption.before.apply(this, arguments)
+        callMonitored(aliasOption.before, this, arguments)
+        // aliasOption.before.apply(this, arguments)
       }
       if (typeof original === 'function') {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         result = original.apply(this, arguments)
       }
       if (aliasOption && aliasOption.after) {
-        aliasOption.after.apply(this, arguments)
+        callMonitored(aliasOption.after, this, arguments)
+        // aliasOption.after.apply(this, arguments)
       }
       return result
     }

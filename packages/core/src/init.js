@@ -1,27 +1,25 @@
-import { extend, each } from './helper/tools'
-export function makeGlobal(stub) {
-  var global = extend({}, stub, {
-    onReady: function (callback) {
-      callback()
-    }
-  })
-  return global
-}
+import { each, assign } from './helper/tools'
+import { setDebugMode } from './helper/monitor'
+import { catchUserErrors } from './helper/catchUserErrors'
+
 export function makePublicApi(stub) {
-  var publicApi = extend({}, stub, {
-    onReady: function (callback) {
-      callback()
-    }
-  })
+  var publicApi = assign(
+    {
+      onReady: function (callback) {
+        callback()
+      }
+    },
+    stub
+  )
 
   // Add an "hidden" property to set debug mode. We define it that way to hide it
   // as much as possible but of course it's not a real protection.
-  //   Object.defineProperty(publicApi, '_setDebug', {
-  //     get: function () {
-  //       return setDebugMode
-  //     },
-  //     enumerable: false
-  //   })
+  Object.defineProperty(publicApi, '_setDebug', {
+    get: function () {
+      return setDebugMode
+    },
+    enumerable: false
+  })
 
   return publicApi
 }
@@ -30,7 +28,7 @@ export function defineGlobal(global, name, api) {
   global[name] = api
   if (existingGlobalVariable && existingGlobalVariable.q) {
     each(existingGlobalVariable.q, function (fn) {
-      fn()
+      catchUserErrors(fn, 'onReady callback threw an error:')()
     })
   }
 }

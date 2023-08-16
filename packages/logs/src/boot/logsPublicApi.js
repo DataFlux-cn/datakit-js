@@ -7,7 +7,8 @@ import {
   deepClone,
   timeStampNow,
   checkUser,
-  sanitizeUser
+  sanitizeUser,
+  monitor
 } from '@cloudcare/browser-core'
 import { validateAndBuildLogsConfiguration } from '../domain/configuration'
 import { Logger } from '../domain/logger'
@@ -65,7 +66,7 @@ export function makeLogsPublicApi(startLogsImpl) {
   return makePublicApi({
     logger: mainLogger,
 
-    init: function (initConfiguration) {
+    init: monitor(function (initConfiguration) {
       if (!canInitLogs(initConfiguration)) {
         return
       }
@@ -87,23 +88,25 @@ export function makeLogsPublicApi(startLogsImpl) {
       beforeInitLoggerLog.drain()
 
       isAlreadyInitialized = true
-    },
+    }),
 
     /** @deprecated: use getGlobalContext instead */
-    getGlobalContext: globalContextManager.getContext,
+    getGlobalContext: monitor(globalContextManager.getContext),
 
     /** @deprecated: use setGlobalContext instead */
-    setGlobalContext: globalContextManager.setContext,
+    setGlobalContext: monitor(globalContextManager.setContext),
 
     /** @deprecated: use setGlobalContextProperty instead */
-    setGlobalContextProperty: globalContextManager.setContextProperty,
+    setGlobalContextProperty: monitor(globalContextManager.setContextProperty),
 
     /** @deprecated: use removeGlobalContextProperty instead */
-    removeGlobalContextProperty: globalContextManager.removeContextProperty,
+    removeGlobalContextProperty: monitor(
+      globalContextManager.removeContextProperty
+    ),
 
-    clearGlobalContext: globalContextManager.clearContext,
+    clearGlobalContext: monitor(globalContextManager.clearContext),
 
-    createLogger: function (name, conf) {
+    createLogger: monitor(function (name, conf) {
       if (typeof conf == 'undefined') {
         conf = {}
       }
@@ -117,27 +120,27 @@ export function makeLogsPublicApi(startLogsImpl) {
         conf.context
       )
       return customLoggers[name]
-    },
+    }),
 
-    getLogger: function (name) {
+    getLogger: monitor(function (name) {
       return customLoggers[name]
-    },
+    }),
 
-    getInitConfiguration: function () {
+    getInitConfiguration: monitor(function () {
       return getInitConfigurationStrategy()
-    },
+    }),
 
-    getInternalContext: function (startTime) {
+    getInternalContext: monitor(function (startTime) {
       return getInternalContextStrategy(startTime)
-    },
-    setUser: function (newUser) {
+    }),
+    setUser: monitor(function (newUser) {
       if (checkUser(newUser)) {
         userContextManager.setContext(sanitizeUser(newUser))
       }
-    },
-    getUser: userContextManager.getContext,
-    removeUserProperty: userContextManager.removeContextProperty,
-    clearUser: userContextManager.clearContext
+    }),
+    getUser: monitor(userContextManager.getContext),
+    removeUserProperty: monitor(userContextManager.removeContextProperty),
+    clearUser: monitor(userContextManager.clearContext)
   })
 
   function canInitLogs(initConfiguration) {

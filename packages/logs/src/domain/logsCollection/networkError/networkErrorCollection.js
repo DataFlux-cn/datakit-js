@@ -12,7 +12,8 @@ import {
   urlParse,
   replaceNumberCharByPath,
   tryToClone,
-  readBytesFromStream
+  readBytesFromStream,
+  monitor
 } from '@cloudcare/browser-core'
 import { StatusType } from '../../logger'
 
@@ -151,12 +152,12 @@ export function computeFetchResponseText(response, configuration, callback) {
     //   response.body.getReader().cancel()
     // })
     clonedResponse.text().then(
-      function (text) {
+      monitor(function (text) {
         return callback(truncateResponseText(text, configuration))
-      },
-      function (error) {
+      }),
+      monitor(function (error) {
         return callback('Unable to retrieve response: ' + error)
-      }
+      })
     )
   } else {
     truncateResponseStream(

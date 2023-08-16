@@ -1,11 +1,16 @@
 import {
-  deepClone,
   assign,
   extend2Lev,
   createContextManager,
   ErrorSource,
   keys,
-  CustomerDataType
+  CustomerDataType,
+  sanitize,
+  computeStackTrace,
+  computeRawError,
+  clocksNow,
+  ErrorHandling,
+  monitor
 } from '@cloudcare/browser-core'
 
 export var StatusType = {
@@ -49,37 +54,73 @@ export function Logger(
   )
 }
 Logger.prototype = {
-  log: function (message, messageContext, status) {
+  log: monitor(function (message, messageContext, status, error) {
     if (typeof status === 'undefined') {
       status = StatusType.info
     }
+    var errorContext
+    if (status === StatusType.error) {
+      // Always add origin if status is error (backward compatibility - Remove in next major)
+      errorContext = { origin: ErrorSource.LOGGER }
+    }
+    if (error !== undefined && error !== null) {
+      var stackTrace =
+        error instanceof Error ? computeStackTrace(error) : undefined
+      var rawError = computeRawError({
+        stackTrace: stackTrace,
+        originalError: error,
+        nonErrorPrefix: 'Provided',
+        source: ErrorSource.LOGGER,
+        handling: ErrorHandling.HANDLED,
+        startClocks: clocksNow()
+      })
+
+      errorContext = {
+        origin: ErrorSource.LOGGER, // Remove in next major
+        stack: rawError.stack,
+        kind: rawError.type,
+        message: rawError.message
+      }
+    }
+
+    var sanitizedMessageContext = sanitize(messageContext)
+
+    var context = errorContext
+      ? extend2Lev({ error: errorContext }, sanitizedMessageContext)
+      : sanitizedMessageContext
+
     this.handleLogStrategy(
-      { message: message, context: deepClone(messageContext), status: status },
+      { message: message, context: context, status: status },
       this
     )
+  }),
+
+  debug: function (message, messageContext, error) {
+    this.log(message, messageContext, StatusType.debug, error)
   },
 
-  debug: function (message, messageContext) {
-    this.log(message, messageContext, StatusType.debug)
+  info: function (message, messageContext, error) {
+    this.log(message, messageContext, StatusType.info, error)
   },
 
-  info: function (message, messageContext) {
-    this.log(message, messageContext, StatusType.info)
+  warn: function (message, messageContext, error) {
+    this.log(message, messageContext, StatusType.warn, error)
   },
-
-  warn: function (message, messageContext) {
-    this.log(message, messageContext, StatusType.warn)
+  critical: function (message, messageContext, error) {
+    this.log(message, messageContext, StatusType.critical, error)
   },
-  critical: function (message, messageContext) {
-    this.log(message, messageContext, StatusType.critical)
-  },
-  error: function (message, messageContext) {
+  error: function (message, messageContext, error) {
     var errorOrigin = {
       error: {
         origin: ErrorSource.LOGGER
       }
     }
-    this.log(message, extend2Lev(errorOrigin, messageContext), StatusType.error)
+    this.log(
+      message,
+      extend2Lev(errorOrigin, messageContext),
+      StatusType.error,
+      error
+    )
   },
 
   setContext: function (context) {

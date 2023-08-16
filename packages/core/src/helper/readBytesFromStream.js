@@ -1,5 +1,5 @@
 import { noop, each } from './tools'
-
+import { monitor } from './monitor'
 /**
  * Read bytes from a ReadableStream until at least `limit` bytes have been read (or until the end of
  * the stream). The callback is invoked with the at most `limit` bytes, and indicates that the limit
@@ -14,7 +14,7 @@ export function readBytesFromStream(stream, callback, options) {
 
   function readMore() {
     reader.read().then(
-      function (result) {
+      monitor(function (result) {
         if (result.done) {
           onDone()
           return
@@ -30,10 +30,10 @@ export function readBytesFromStream(stream, callback, options) {
         } else {
           readMore()
         }
-      },
-      function (error) {
+      }),
+      monitor(function (error) {
         callback(error)
-      }
+      })
     )
   }
 

@@ -3,7 +3,8 @@ import {
   getChildNodes,
   isNodeShadowHost,
   getParentNode,
-  isNullUndefinedDefaultValue
+  isNullUndefinedDefaultValue,
+  monitor
 } from '@cloudcare/browser-core'
 import { getMutationObserverConstructor } from '../../domMutationCollection'
 import { NodePrivacyLevel } from '../../../constants'
@@ -45,7 +46,7 @@ export function startMutationObserver(
     )
   })
 
-  var observer = new MutationObserver(mutationBatch.addMutations)
+  var observer = new MutationObserver(monitor(mutationBatch.addMutations))
 
   observer.observe(target, {
     attributeOldValue: true,

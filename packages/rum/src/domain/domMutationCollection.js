@@ -1,29 +1,32 @@
 import {
   noop,
   Observable,
-  getZoneJsOriginalValue
+  getZoneJsOriginalValue,
+  monitor
 } from '@cloudcare/browser-core'
 
 export function createDOMMutationObservable() {
   var MutationObserver = getMutationObserverConstructor()
 
-  var observable = new Observable(function () {
-    if (!MutationObserver) {
-      return
-    }
-    var observer = new MutationObserver(function () {
-      return observable.notify()
+  var observable = new Observable(
+    monitor(function () {
+      if (!MutationObserver) {
+        return
+      }
+      var observer = new MutationObserver(function () {
+        return observable.notify()
+      })
+      observer.observe(document, {
+        attributes: true,
+        characterData: true,
+        childList: true,
+        subtree: true
+      })
+      return function () {
+        return observer.disconnect()
+      }
     })
-    observer.observe(document, {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true
-    })
-    return function () {
-      return observer.disconnect()
-    }
-  })
+  )
   return observable
 }
 

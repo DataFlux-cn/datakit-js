@@ -98,7 +98,3 @@ export function getRUMInternalContext(startTime) {
     }
   }
 }
-
-export function resetRUMInternalContext() {
-  logsSentBeforeRumInjectionTelemetryAdded = false
-}

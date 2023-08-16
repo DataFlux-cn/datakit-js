@@ -1,7 +1,7 @@
 import { each, noop } from './tools'
 import { jsonStringify } from '../helper/serialisation/jsonStringify'
 import { computeStackTrace } from '../tracekit'
-
+import { callMonitored } from '../helper/monitor'
 export var ErrorSource = {
   AGENT: 'agent',
   CONSOLE: 'console',
@@ -97,10 +97,11 @@ export function createHandlingStack() {
       noop()
     }
   }
-
-  var stackTrace = computeStackTrace(error)
-  stackTrace.stack = stackTrace.stack.slice(internalFramesToSkip)
-  formattedStack = toStackTraceString(stackTrace)
+  callMonitored(function () {
+    var stackTrace = computeStackTrace(error)
+    stackTrace.stack = stackTrace.stack.slice(internalFramesToSkip)
+    formattedStack = toStackTraceString(stackTrace)
+  })
 
   return formattedStack
 }
