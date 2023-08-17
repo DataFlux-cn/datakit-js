@@ -85,7 +85,34 @@ function extractOrigin(url) {
 export var URL_IN_CSS_REF = /url\((?:(')([^']*)'|(")([^"]*)"|([^)]*))\)/gm
 export var ABSOLUTE_URL = /^[A-Za-z]+:|^\/\//
 export var DATA_URI = /^data:.*,/i
-
+/**
+ * Browsers sometimes destructively modify the css rules they receive.
+ * This function tries to rectify the modifications the browser made to make it more cross platform compatible.
+ * @param cssText - output of `CSSStyleRule.cssText`
+ * @returns `cssText` with browser inconsistencies fixed.
+ */
+export function fixBrowserCompatibilityIssuesInCSS(cssText) {
+  /**
+   * Chrome outputs `-webkit-background-clip` as `background-clip` in `CSSStyleRule.cssText`.
+   * But then Chrome ignores `background-clip` as css input.
+   * Re-introduce `-webkit-background-clip` to fix this issue.
+   */
+  if (
+    cssText.includes(' background-clip: text;') &&
+    !cssText.includes(' -webkit-background-clip: text;')
+  ) {
+    cssText = cssText.replace(
+      ' background-clip: text;',
+      ' -webkit-background-clip: text; background-clip: text;'
+    )
+  }
+  return cssText
+}
+export function getHref() {
+  var a = document.createElement('a')
+  a.href = ''
+  return a.href
+}
 export function switchToAbsoluteUrl(cssText, cssHref) {
   return cssText.replace(
     URL_IN_CSS_REF,
@@ -116,7 +143,42 @@ export function switchToAbsoluteUrl(cssText, cssHref) {
     }
   )
 }
+export function getCssRulesString(cssStyleSheet) {
+  if (!cssStyleSheet) {
+    return null
+  }
+  var rules
+  try {
+    rules = cssStyleSheet.rules || cssStyleSheet.cssRules
+  } catch {
+    // if css is protected by CORS we cannot access cssRules see: https://www.w3.org/TR/cssom-1/#the-cssstylesheet-interface
+  }
+  if (!rules) {
+    return null
+  }
+  var styleSheetCssText = fixBrowserCompatibilityIssuesInCSS(
+    Array.from(rules, getCssRuleString).join('')
+  )
+  return switchToAbsoluteUrl(styleSheetCssText, cssStyleSheet.href)
+}
+export function isCSSImportRule(rule) {
+  return 'styleSheet' in rule
+}
 
+export function isSVGElement(el) {
+  return el.tagName === 'svg' || el instanceof SVGElement
+}
+export function getCssRuleString(rule) {
+  var cssStringified = rule.cssText
+  if (isCSSImportRule(rule)) {
+    try {
+      cssStringified = getCssRulesString(rule.styleSheet) || cssStringified
+    } catch {
+      // ignore
+    }
+  }
+  return validateStringifiedCssRule(cssStringified)
+}
 export function makeUrlAbsolute(url, baseUrl) {
   try {
     return buildUrl(url, baseUrl).href

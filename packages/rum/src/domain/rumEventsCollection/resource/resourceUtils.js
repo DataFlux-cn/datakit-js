@@ -367,7 +367,10 @@ export function computeSize(entry) {
   if (entry.startTime < entry.responseStart) {
     return {
       size: entry.decodedBodySize,
-      encodeSize: entry.encodedBodySize
+      encodeSize:
+        Number.MAX_SAFE_INTEGER < entry.encodedBodySize
+          ? 0
+          : entry.encodedBodySize // max safe interger
     }
   }
   return undefined

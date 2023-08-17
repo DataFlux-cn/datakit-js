@@ -23,9 +23,7 @@ var VIEW_MODIFIABLE_FIELD_PATHS = {
 }
 
 var USER_CUSTOMIZABLE_FIELD_PATHS = {
-  tags: 'object',
-  '_gc.trace_id': 'string',
-  '_gc.span_id': 'string'
+  context: 'object'
 }
 
 var modifiableFieldPathsByEvent = {}
@@ -145,7 +143,7 @@ export function startRumAssembly(
         var serverRumEvent = withSnakeCaseKeys(rumEvent)
         var context = extend2Lev({}, commonContext.context, customerContext)
         if (!isEmptyObject(context)) {
-          serverRumEvent.tags = context
+          serverRumEvent.context = context
         }
         if (!('has_replay' in serverRumEvent.session)) {
           serverRumEvent.session.has_replay = commonContext.hasReplay
@@ -169,8 +167,8 @@ export function startRumAssembly(
             eventRateLimiters
           )
         ) {
-          if (isEmptyObject(serverRumEvent.tags)) {
-            delete serverRumEvent.tags
+          if (isEmptyObject(serverRumEvent.context)) {
+            delete serverRumEvent.context
           }
           lifeCycle.notify(
             LifeCycleEventType.RUM_EVENT_COLLECTED,

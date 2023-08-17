@@ -29,7 +29,9 @@ import {
   serializeStyleSheets,
   absoluteToDoc,
   getAbsoluteSrcsetString,
-  validateStringifiedCssRule
+  isSVGElement,
+  getHref,
+  getCssRulesString
 } from './serializationUtils'
 
 // Those values are the only one that can be used when inheriting privacy levels from parent to
@@ -338,68 +340,7 @@ function getValidTagName(tagName) {
 
   return processedTagName
 }
-/**
- * Browsers sometimes destructively modify the css rules they receive.
- * This function tries to rectify the modifications the browser made to make it more cross platform compatible.
- * @param cssText - output of `CSSStyleRule.cssText`
- * @returns `cssText` with browser inconsistencies fixed.
- */
-function fixBrowserCompatibilityIssuesInCSS(cssText) {
-  /**
-   * Chrome outputs `-webkit-background-clip` as `background-clip` in `CSSStyleRule.cssText`.
-   * But then Chrome ignores `background-clip` as css input.
-   * Re-introduce `-webkit-background-clip` to fix this issue.
-   */
-  if (
-    cssText.includes(' background-clip: text;') &&
-    !cssText.includes(' -webkit-background-clip: text;')
-  ) {
-    cssText = cssText.replace(
-      ' background-clip: text;',
-      ' -webkit-background-clip: text; background-clip: text;'
-    )
-  }
-  return cssText
-}
 
-function getCssRulesString(cssStyleSheet) {
-  if (!cssStyleSheet) {
-    return null
-  }
-  var rules
-  try {
-    rules = cssStyleSheet.rules || cssStyleSheet.cssRules
-  } catch {
-    // if css is protected by CORS we cannot access cssRules see: https://www.w3.org/TR/cssom-1/#the-cssstylesheet-interface
-  }
-  if (!rules) {
-    return null
-  }
-  var styleSheetCssText = fixBrowserCompatibilityIssuesInCSS(
-    Array.from(rules, getCssRuleString).join('')
-  )
-  return switchToAbsoluteUrl(styleSheetCssText, cssStyleSheet.href)
-}
-
-function getCssRuleString(rule) {
-  var cssStringified = rule.cssText
-  if (isCSSImportRule(rule)) {
-    try {
-      cssStringified = getCssRulesString(rule.styleSheet) || cssStringified
-    } catch {
-      // ignore
-    }
-  }
-  return validateStringifiedCssRule(cssStringified)
-}
-
-function isCSSImportRule(rule) {
-  return 'styleSheet' in rule
-}
-
-function isSVGElement(el) {
-  return el.tagName === 'svg' || el instanceof SVGElement
-}
 function transformAttribute(doc, tagName, name, value) {
   if (!value) return value
   if (
@@ -425,11 +366,7 @@ function transformAttribute(doc, tagName, name, value) {
     return value
   }
 }
-function getHref() {
-  var a = document.createElement('a')
-  a.href = ''
-  return a.href
-}
+
 function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
   if (nodePrivacyLevel === NodePrivacyLevel.HIDDEN) {
     return {}

@@ -4,6 +4,11 @@ import {
   isTextNode
 } from '@cloudcare/browser-core'
 import {
+  switchToAbsoluteUrl,
+  getCssRulesString,
+  getHref
+} from './serializationUtils'
+import {
   NodePrivacyLevel,
   PRIVACY_ATTR_NAME,
   PRIVACY_ATTR_VALUE_ALLOW,
@@ -225,6 +230,23 @@ export function getTextContent(
     } else {
       textContent = censorText(textContent)
     }
+  } else if (isStyle && textContent) {
+    try {
+      // try to read style sheet
+      if (textNode.nextSibling || textNode.previousSibling) {
+        // This is not the only child of the stylesheet.
+        // We can't read all of the sheet's .cssRules and expect them
+        // to _only_ include the current rule(s) added by the text node.
+        // So we'll be conservative and keep textContent as-is.
+      } else if (
+        textNode.parentNode &&
+        textNode.parentNode.sheet &&
+        textNode.parentNode.sheet.cssRules
+      ) {
+        textContent = getCssRulesString(textNode.parentNode.sheet)
+      }
+    } catch (err) {}
+    textContent = switchToAbsoluteUrl(textContent, getHref())
   }
   return textContent
 }

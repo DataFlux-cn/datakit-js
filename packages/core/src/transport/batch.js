@@ -76,13 +76,13 @@ export var processedMessageByDataMap = function (message) {
         }
       })
       if (
-        message.tags &&
-        isObject(message.tags) &&
-        !isEmptyObject(message.tags)
+        message.context &&
+        isObject(message.context) &&
+        !isEmptyObject(message.context)
       ) {
         // 自定义tag， 存储成field
         var _tagKeys = []
-        each(message.tags, function (_value, _key) {
+        each(message.context, function (_value, _key) {
           // 如果和之前tag重名，则舍弃
           if (filterFileds.indexOf(_key) > -1) return
           filterFileds.push(_key)
