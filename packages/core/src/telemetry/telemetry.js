@@ -3,7 +3,6 @@ import {
   toStackTraceString,
   NO_ERROR_STACK_PRESENT_MESSAGE
 } from '../helper/errorTools'
-import { INTAKE_SITE_STAGING, INTAKE_SITE_US1_FED } from '../configuration'
 import { computeStackTrace } from '../tracekit'
 import { Observable } from '../helper/observable'
 import {
@@ -12,8 +11,6 @@ import {
 } from '..//helper/monitor'
 import {
   startsWith,
-  arrayFrom,
-  includes,
   assign,
   performDraw,
   timeStampNow,
@@ -45,7 +42,6 @@ var onRawTelemetryEventCollected
 export function startTelemetry(telemetryService, configuration) {
   let contextProvider
   var observable = new Observable()
-
   telemetryConfiguration.telemetryEnabled =
     configuration.telemetryEnabled &&
     performDraw(configuration.telemetrySampleRate)
@@ -63,7 +59,7 @@ export function startTelemetry(telemetryService, configuration) {
     sentEventCount: 0
   })
 
-  function toTelemetryEvent(telemetryService, event): TelemetryEvent & Context {
+  function toTelemetryEvent(telemetryService, event) {
     return extend2Lev(
       {
         type: 'telemetry',

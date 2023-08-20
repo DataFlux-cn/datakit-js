@@ -159,6 +159,16 @@ export var dataMap = {
       action_position: '_gc.action.position'
     }
   },
+  telemetry: {
+    type: 'telemetry',
+    fields: {
+      status: 'telemetry.status',
+      message: ['string', 'telemetry.message'],
+      type: 'telemetry.type',
+      error_stack: ['string', 'telemetry.error.stack'],
+      error_kind: ['string', 'telemetry.error.kind']
+    }
+  },
   browser_log: {
     type: RumEventType.LOGGER,
     tags: {

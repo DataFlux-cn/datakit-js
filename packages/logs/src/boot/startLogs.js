@@ -6,7 +6,8 @@ import {
   areCookiesAuthorized,
   startTelemetry,
   startBatchWithReplica,
-  canUseEventBridge
+  canUseEventBridge,
+  TelemetryService
 } from '@cloudcare/browser-core'
 import {
   startLogsSessionManager,
@@ -19,7 +20,6 @@ import { startNetworkErrorCollection } from '../domain/logsCollection/networkErr
 import { startRuntimeErrorCollection } from '../domain/logsCollection/rumtimeError/runtimeErrorCollection'
 import { startLoggerCollection } from '../domain/logsCollection/logger/loggerCollection'
 import { startLogsBatch } from '../transport/startLogsBatch'
-import { startLogsBatch } from '../transport/startLogsBridge'
 import { StatusType } from '../domain/logger'
 import { startInternalContext } from '../domain/internalContext'
 
@@ -63,7 +63,9 @@ export function startLogs(configuration, buildCommonContext, mainLogger) {
       },
       view: {
         id:
-          RUMInternalContext && RUMInternalContext.view && RUMInternalContext.id
+          RUMInternalContext &&
+          RUMInternalContext.view &&
+          RUMInternalContext.view.id
       },
       action: {
         id:

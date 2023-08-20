@@ -54,7 +54,7 @@ export function validateAndBuildConfiguration(initConfiguration) {
       env: initConfiguration.env,
       telemetrySampleRate: isNullUndefinedDefaultValue(
         initConfiguration.telemetrySampleRate,
-        50
+        100
       ),
       telemetryEnabled: isNullUndefinedDefaultValue(
         initConfiguration.telemetryEnabled,
@@ -69,6 +69,7 @@ export function validateAndBuildConfiguration(initConfiguration) {
       batchBytesLimit: 16 * ONE_KIBI_BYTE,
 
       eventRateLimiterThreshold: 3000,
+      maxTelemetryEventsPerPage: 15,
 
       /**
        * flush automatically, aim to be lower than ALB connection timeout
