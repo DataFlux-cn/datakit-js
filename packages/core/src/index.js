@@ -47,3 +47,5 @@ export * from './helper/serialisation/heavyCustomerDataWarning'
 export * from './helper/serialisation/jsonStringify'
 export * from './helper/serialisation/rowData'
 export * from './user'
+
+export * from './telemetry/telemetry'

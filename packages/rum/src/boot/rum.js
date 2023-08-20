@@ -7,7 +7,10 @@ import {
   LifeCycle,
   LifeCycleEventType,
   createPageExitObservable,
-  canUseEventBridge
+  canUseEventBridge,
+  startTelemetry,
+  getEventBridge,
+  TelemetryService
 } from '@cloudcare/browser-core'
 import { startPerformanceCollection } from '../domain/performanceCollection'
 import { createDOMMutationObservable } from '../domain/domMutationCollection'
@@ -34,7 +37,23 @@ export function startRum(
   initialViewOptions
 ) {
   var lifeCycle = new LifeCycle()
-
+  var telemetry = startRumTelemetry(configuration)
+  telemetry.setContextProvider(function () {
+    return {
+      application: {
+        id: configuration.applicationId
+      },
+      session: {
+        id: session.findTrackedSession() && session.findTrackedSession().id
+      },
+      view: {
+        id: viewContexts.findView() && viewContexts.findView().id
+      },
+      action: {
+        id: actionContexts.findActionId()
+      }
+    }
+  })
   var reportError = function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
   }
@@ -50,6 +69,7 @@ export function startRum(
     var batch = startRumBatch(
       configuration,
       lifeCycle,
+      telemetry.observable,
       reportError,
       pageExitObservable,
       session.expireObservable
@@ -126,6 +146,16 @@ export function startRum(
     },
     getInternalContext: internalContext.get
   }
+}
+function startRumTelemetry(configuration) {
+  const telemetry = startTelemetry(TelemetryService.RUM, configuration)
+  //   if (canUseEventBridge()) {
+  //     const bridge = getEventBridge()
+  //     telemetry.observable.subscribe((event) =>
+  //       bridge.send('internal_telemetry', event)
+  //     )
+  //   }
+  return telemetry
 }
 
 export function startRumEventCollection(

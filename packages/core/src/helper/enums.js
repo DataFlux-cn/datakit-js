@@ -86,3 +86,7 @@ export var ErrorHandling = {
   HANDLED: 'handled',
   UNHANDLED: 'unhandled'
 }
+export var NonErrorPrefix = {
+  UNCAUGHT: 'Uncaught',
+  PROVIDED: 'Provided'
+}

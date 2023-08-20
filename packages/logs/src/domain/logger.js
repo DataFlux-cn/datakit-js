@@ -10,7 +10,8 @@ import {
   computeRawError,
   clocksNow,
   ErrorHandling,
-  monitor
+  monitor,
+  NonErrorPrefix
 } from '@cloudcare/browser-core'
 
 export var StatusType = {
@@ -69,7 +70,7 @@ Logger.prototype = {
       var rawError = computeRawError({
         stackTrace: stackTrace,
         originalError: error,
-        nonErrorPrefix: 'Provided',
+        nonErrorPrefix: NonErrorPrefix.PROVIDED,
         source: ErrorSource.LOGGER,
         handling: ErrorHandling.HANDLED,
         startClocks: clocksNow()

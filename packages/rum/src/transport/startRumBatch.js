@@ -9,6 +9,7 @@ import {
 export function startRumBatch(
   configuration,
   lifeCycle,
+  telemetryEventObservable,
   reportError,
   pageExitObservable,
   sessionExpireObservable
@@ -30,6 +31,9 @@ export function startRumBatch(
       }
     }
   )
+  telemetryEventObservable.subscribe(function (event) {
+    batch.add(event)
+  })
 }
 
 function makeRumBatch(
@@ -38,7 +42,7 @@ function makeRumBatch(
   pageExitObservable,
   sessionExpireObservable
 ) {
-  var rumBatch = createRumBatch(configuration.datakitUrl)
+  var rumBatch = createRumBatch(configuration.rumEndpoint)
   var primaryBatch = rumBatch.batch
   var primaryFlushController = rumBatch.flushController
   function createRumBatch(endpointUrl) {

@@ -44,7 +44,7 @@ export function computeTransportConfiguration(initConfiguration) {
     isServerError = initConfiguration.isServerError
   }
   return {
-    datakitUrl: getEndPointUrl(
+    rumEndpoint: getEndPointUrl(
       initConfiguration.datakitUrl || initConfiguration.datakitOrigin,
       'rum'
     ),
@@ -58,7 +58,7 @@ export function computeTransportConfiguration(initConfiguration) {
   }
 }
 export function isIntakeRequest(url, configuration) {
-  var notTakeRequest = [configuration.datakitUrl]
+  var notTakeRequest = [configuration.rumEndpoint]
   if (configuration.logsEndpoint) {
     notTakeRequest.push(configuration.logsEndpoint)
   }

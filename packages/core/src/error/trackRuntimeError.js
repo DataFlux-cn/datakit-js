@@ -1,6 +1,6 @@
 import { ErrorSource, computeRawError } from '../helper/errorTools'
 import { clocksNow } from '../helper/tools'
-import { ErrorHandling } from '../helper/enums'
+import { ErrorHandling, NonErrorPrefix } from '../helper/enums'
 import { startUnhandledErrorCollection } from '../tracekit'
 
 export function trackRuntimeError(errorObservable) {
@@ -10,7 +10,7 @@ export function trackRuntimeError(errorObservable) {
         stackTrace: stackTrace,
         originalError: originalError,
         startClocks: clocksNow(),
-        nonErrorPrefix: 'Uncaught',
+        nonErrorPrefix: NonErrorPrefix.UNCAUGHT,
         source: ErrorSource.SOURCE,
         handling: ErrorHandling.UNHANDLED
       })

@@ -8,7 +8,8 @@ import {
   Observable,
   trackRuntimeError,
   RumEventType,
-  LifeCycleEventType
+  LifeCycleEventType,
+  NonErrorPrefix
 } from '@cloudcare/browser-core'
 import { trackConsoleError } from './trackConsoleError'
 import { trackReportError } from './trackReportError'
@@ -51,7 +52,7 @@ export function doStartErrorCollection(lifeCycle, foregroundContexts) {
         originalError: error,
         handlingStack: providedError.handlingStack,
         startClocks: providedError.startClocks,
-        nonErrorPrefix: 'Provided',
+        nonErrorPrefix: NonErrorPrefix.PROVIDED,
         source: ErrorSource.CUSTOM,
         handling: ErrorHandling.HANDLED
       })
