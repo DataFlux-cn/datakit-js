@@ -12,8 +12,9 @@
         "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src && npm run replace-build-env cjs",
         "build:esm": "rm -rf esm && babel --config-file ./babel.esm.json --out-dir esm ./src && npm run replace-build-env esm",
         "build:bundle": "rm -rf bundle && webpack --mode=production",
-        "publish:oss": "npm run build:bundle && node ./scripts/publish-oss.js",
+        "publish:oss:current": "npm run build:bundle && node ./scripts/publish-oss.js current",
         "publish:oss:test": "npm run build:bundle && node ./scripts/publish-oss.js test",
+        "publish:oss:lts": "npm run build:bundle && node ./scripts/publish-oss.js lts",
         "replace-build-env": "node ../../scripts/replace-build-env.js"
     },
     "keywords": [
