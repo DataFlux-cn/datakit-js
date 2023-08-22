@@ -4,7 +4,8 @@ import {
   isNodeShadowHost,
   getParentNode,
   isNullUndefinedDefaultValue,
-  monitor
+  monitor,
+  isNodeShadowRoot
 } from '@cloudcare/browser-core'
 import { getMutationObserverConstructor } from '../../domMutationCollection'
 import { NodePrivacyLevel } from '../../../constants'
@@ -237,7 +238,8 @@ function processChildListMutations(
     if (hasSerializedNode(node)) {
       removedNodeMutations.push({
         parentId: getSerializedNodeId(parent),
-        id: getSerializedNodeId(node)
+        id: getSerializedNodeId(node),
+        isShadow: isNodeShadowRoot(node)
       })
     }
   })

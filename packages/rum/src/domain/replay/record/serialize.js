@@ -118,11 +118,11 @@ function serializeDocumentFragmentNode(element, options) {
   if (isShadowRoot) {
     options.serializationContext.shadowRootsController.addShadowRoot(element)
   }
-
   return {
     type: NodeType.DocumentFragment,
     childNodes: childNodes,
     isShadowRoot: isShadowRoot,
+    isShadow: true,
     adoptedStyleSheets: isShadowRoot
       ? serializeStyleSheets(element.adoptedStyleSheets)
       : undefined
@@ -207,14 +207,20 @@ export function serializeElementNode(element, options) {
 
   if (isNodeShadowHost(element)) {
     var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
+    // 获取shadowRoot作为它的子元素
     if (shadowRoot !== null) {
-      childNodes.push(shadowRoot)
+      // 不需要rootshadowDom
+      shadowRoot.childNodes.forEach(function (childNode) {
+        childNode.isShadow = true
+        childNodes.push(childNode)
+      })
     }
   }
 
   return {
     type: NodeType.Element,
     tagName: tagName,
+    isShadowHost: isNodeShadowHost(element),
     attributes: attributes,
     childNodes: childNodes,
     isSVG: isSVG
