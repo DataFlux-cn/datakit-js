@@ -5,6 +5,7 @@
         "packages/*"
     ],
     "devDependencies": {
+        "@babel/cli": "^7.22.10",
         "@babel/core": "^7.22.9",
         "@babel/preset-env": "^7.22.9",
         "ali-cdn-sdk": "^1.2.0",

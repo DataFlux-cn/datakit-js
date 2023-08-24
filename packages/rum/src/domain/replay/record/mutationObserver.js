@@ -238,8 +238,7 @@ function processChildListMutations(
     if (hasSerializedNode(node)) {
       removedNodeMutations.push({
         parentId: getSerializedNodeId(parent),
-        id: getSerializedNodeId(node),
-        isShadow: isNodeShadowRoot(node)
+        id: getSerializedNodeId(node)
       })
     }
   })

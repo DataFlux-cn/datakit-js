@@ -122,7 +122,6 @@ function serializeDocumentFragmentNode(element, options) {
     type: NodeType.DocumentFragment,
     childNodes: childNodes,
     isShadowRoot: isShadowRoot,
-    isShadow: true,
     adoptedStyleSheets: isShadowRoot
       ? serializeStyleSheets(element.adoptedStyleSheets)
       : undefined
@@ -207,20 +206,14 @@ export function serializeElementNode(element, options) {
 
   if (isNodeShadowHost(element)) {
     var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
-    // 获取shadowRoot作为它的子元素
     if (shadowRoot !== null) {
-      // 不需要rootshadowDom
-      shadowRoot.childNodes.forEach(function (childNode) {
-        childNode.isShadow = true
-        childNodes.push(childNode)
-      })
+      childNodes.push(shadowRoot)
     }
   }
 
   return {
     type: NodeType.Element,
     tagName: tagName,
-    isShadowHost: isNodeShadowHost(element),
     attributes: attributes,
     childNodes: childNodes,
     isSVG: isSVG
@@ -496,8 +489,9 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
       break
     case SerializationContextStatus.SUBSEQUENT_FULL_SNAPSHOT:
       if (serializationContext.elementsScrollPositions.has(element)) {
-        ;({ scrollTop, scrollLeft } =
-          serializationContext.elementsScrollPositions.get(element))
+        const scroll = serializationContext.elementsScrollPositions.get(element)
+        scrollTop = scroll.scrollTop
+        scrollLeft = scroll.scrollLeft
       }
       break
   }

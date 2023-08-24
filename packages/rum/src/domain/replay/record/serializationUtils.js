@@ -45,12 +45,14 @@ export function getElementInputValue(element, nodePrivacyLevel) {
    */
   var tagName = element.tagName
   var value = element.value
-
   if (shouldMaskNode(element, nodePrivacyLevel)) {
     var type = element.type
     if (
       tagName === 'INPUT' &&
-      (type === 'button' || type === 'submit' || type === 'reset')
+      (type === 'button' ||
+        type === 'submit' ||
+        type === 'reset' ||
+        type === 'range')
     ) {
       // Overrule `MASK` privacy level for button-like element values, as they are used during replay
       // to display their label. They can still be hidden via the "hidden" privacy attribute or class name.

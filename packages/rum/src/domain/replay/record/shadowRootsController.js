@@ -1,4 +1,3 @@
-import { DOM_EVENT } from '@cloudcare/browser-core'
 import { startMutationObserver } from './mutationObserver'
 import { initInputObserver } from './observers'
 
