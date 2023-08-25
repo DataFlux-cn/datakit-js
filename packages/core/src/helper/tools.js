@@ -1673,6 +1673,7 @@ export function tryToClone(response) {
 }
 export function isHashAnAnchor(hash) {
   var correspondingId = hash.substr(1)
+  if (!correspondingId) return false
   return !!document.getElementById(correspondingId)
 }
 export function getPathFromHash(hash) {
