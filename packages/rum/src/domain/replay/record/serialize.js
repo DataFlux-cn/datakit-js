@@ -185,7 +185,7 @@ export function serializeElementNode(element, options) {
   )
 
   var childNodes = []
-  if (element.childNodes.length) {
+  if (element.childNodes.length && tagName !== 'style') {
     // OBJECT POOLING OPTIMIZATION:
     // We should not create a new object systematically as it could impact performances. Try to reuse
     // the same object as much as possible, and clone it only if we need to.
@@ -228,19 +228,19 @@ export function serializeElementNode(element, options) {
 function serializeTextNode(textNode, options) {
   // The parent node may not be a html element which has a tagName attribute.
   // So just let it be undefined which is ok in this use case.
-  var parentTagName = textNode.parentElement && textNode.parentElement.tagName
+  //   var parentTagName = textNode.parentElement && textNode.parentElement.tagName
   var textContent = getTextContent(
     textNode,
     options.ignoreWhiteSpace || false,
     options.parentNodePrivacyLevel
   )
-  if (!textContent) {
+  if (textContent === undefined) {
     return
   }
   return {
     type: NodeType.Text,
-    textContent: textContent,
-    isStyle: parentTagName === 'STYLE' ? true : undefined
+    textContent: textContent
+    // isStyle: parentTagName === 'STYLE' ? true : undefined
   }
 }
 
@@ -430,12 +430,7 @@ function getAttributesForPrivacyLevel(element, nodePrivacyLevel, options) {
   }
 
   // dynamic stylesheet
-  if (
-    tagName === 'style' &&
-    element.sheet &&
-    // TODO: Currently we only try to get dynamic stylesheet when it is an empty style element
-    !(element.innerText || element.textContent || '').trim().length
-  ) {
+  if (tagName === 'style' && element.sheet) {
     var cssText = getCssRulesString(element.sheet)
     if (cssText) {
       safeAttrs._cssText = cssText

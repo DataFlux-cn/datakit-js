@@ -201,7 +201,7 @@ export function getTextContent(
 
   var nodePrivacyLevel = parentNodePrivacyLevel
 
-  var isStyle = parentTagName === 'STYLE' ? true : undefined
+  //   var isStyle = parentTagName === 'STYLE' ? true : undefined
   var isScript = parentTagName === 'SCRIPT'
 
   if (isScript) {
@@ -210,11 +210,7 @@ export function getTextContent(
   } else if (nodePrivacyLevel === NodePrivacyLevel.HIDDEN) {
     // Should never occur, but just in case, we set to CENSORED_MARK.
     textContent = CENSORED_STRING_MARK
-  } else if (
-    shouldMaskNode(textNode, nodePrivacyLevel) &&
-    // Style tags are `overruled` (Use `hide` to enforce privacy)
-    !isStyle
-  ) {
+  } else if (shouldMaskNode(textNode, nodePrivacyLevel)) {
     if (
       // Scrambling the child list breaks text nodes for DATALIST/SELECT/OPTGROUP
       parentTagName === 'DATALIST' ||
@@ -230,24 +226,25 @@ export function getTextContent(
     } else {
       textContent = censorText(textContent)
     }
-  } else if (isStyle && textContent) {
-    try {
-      // try to read style sheet
-      if (textNode.nextSibling || textNode.previousSibling) {
-        // This is not the only child of the stylesheet.
-        // We can't read all of the sheet's .cssRules and expect them
-        // to _only_ include the current rule(s) added by the text node.
-        // So we'll be conservative and keep textContent as-is.
-      } else if (
-        textNode.parentNode &&
-        textNode.parentNode.sheet &&
-        textNode.parentNode.sheet.cssRules
-      ) {
-        textContent = getCssRulesString(textNode.parentNode.sheet)
-      }
-    } catch (err) {}
-    textContent = switchToAbsoluteUrl(textContent, getHref())
   }
+  //   else if (isStyle && textContent) {
+  //     try {
+  //       // try to read style sheet
+  //       if (textNode.nextSibling || textNode.previousSibling) {
+  //         // This is not the only child of the stylesheet.
+  //         // We can't read all of the sheet's .cssRules and expect them
+  //         // to _only_ include the current rule(s) added by the text node.
+  //         // So we'll be conservative and keep textContent as-is.
+  //       } else if (
+  //         textNode.parentNode &&
+  //         textNode.parentNode.sheet &&
+  //         textNode.parentNode.sheet.cssRules
+  //       ) {
+  //         textContent = getCssRulesString(textNode.parentNode.sheet)
+  //       }
+  //     } catch (err) {}
+  //     textContent = switchToAbsoluteUrl(textContent, getHref())
+  //   }
   return textContent
 }
 
