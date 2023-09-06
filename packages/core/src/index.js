@@ -32,6 +32,7 @@ export * from './browser/pageExitObservable'
 export * from './browser/htmlDomUtils'
 export * from './browser/addEventListener'
 export * from './browser/runOnReadyState'
+export * from './browser/scroll'
 
 export * from './dataMap'
 export * from './init'

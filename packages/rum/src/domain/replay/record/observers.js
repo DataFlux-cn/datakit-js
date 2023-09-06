@@ -11,7 +11,9 @@ import {
   RumEventType,
   ActionType,
   isNodeShadowHost,
-  cssEscape
+  cssEscape,
+  getScrollX,
+  getScrollY
 } from '@cloudcare/browser-core'
 import { initViewportObservable } from '../../initViewportObservable'
 import { NodePrivacyLevel } from '../../../constants'
@@ -37,8 +39,6 @@ import {
 import { startMutationObserver } from './mutationObserver'
 import {
   getVisualViewport,
-  getScrollX,
-  getScrollY,
   convertMouseEventToLayoutCoordinates
 } from './viewports'
 

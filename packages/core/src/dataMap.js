@@ -34,7 +34,8 @@ export var commonTags = {
 }
 export var commonFields = {
   action_id: 'action.id',
-  view_in_foreground: 'view.in_foreground'
+  view_in_foreground: 'view.in_foreground',
+  display: 'display'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -42,7 +43,8 @@ export var dataMap = {
     type: RumEventType.VIEW,
     tags: {
       view_loading_type: 'view.loading_type',
-      view_apdex_level: 'view.apdex_level'
+      view_apdex_level: 'view.apdex_level',
+      view_privacy_replay_level: 'privacy.replay_level'
     },
     fields: {
       is_active: 'view.is_active',
@@ -65,13 +67,14 @@ export var dataMap = {
       load_event: 'view.load_event',
       first_input_time: 'view.first_input_time',
       first_paint_time: 'view.fpt',
+      interaction_to_next_paint: 'view.interaction_to_next_paint',
       resource_load_time: 'view.resource_load_time',
       time_to_interactive: 'view.tti',
       dom: 'view.dom',
       dom_ready: 'view.dom_ready',
       time_spent: 'view.time_spent',
       first_byte: 'view.first_byte',
-      in_foreground_periods: 'view.in_foreground_periods',
+      page_states: '_gc.page_states',
       frustration_count: 'view.frustration.count',
       custom_timings: 'view.custom_timings'
     }

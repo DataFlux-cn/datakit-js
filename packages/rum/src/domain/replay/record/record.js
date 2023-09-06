@@ -1,11 +1,11 @@
-import { timeStampNow } from '@cloudcare/browser-core'
+import { timeStampNow, getScrollX, getScrollY } from '@cloudcare/browser-core'
 import { getViewportDimension } from '../../initViewportObservable'
 
 import { RecordType, IncrementalSource } from '../../../types'
 import { serializeDocument, SerializationContextStatus } from './serialize'
 import { initObservers } from './observers'
 
-import { getVisualViewport, getScrollX, getScrollY } from './viewports'
+import { getVisualViewport } from './viewports'
 import { assembleIncrementalSnapshot } from './utils'
 import { createElementsScrollPositions } from './elementsScrollPositions'
 import { initShadowRootsController } from './shadowRootsController'

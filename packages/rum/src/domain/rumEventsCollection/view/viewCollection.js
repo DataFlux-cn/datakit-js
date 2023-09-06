@@ -15,14 +15,14 @@ export function startViewCollection(
   location,
   domMutationObservable,
   locationChangeObservable,
-  foregroundContexts,
+  pageStateHistory,
   recorderApi,
   initialViewOptions
 ) {
   lifeCycle.subscribe(LifeCycleEventType.VIEW_UPDATED, function (view) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processViewUpdate(view, foregroundContexts, recorderApi)
+      processViewUpdate(view, configuration, recorderApi, pageStateHistory)
     )
   })
 
@@ -75,12 +75,17 @@ function computePerformanceViewDetails(entry) {
   }
   return details
 }
-function processViewUpdate(view, foregroundContexts, recorderApi) {
+function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
   var replayStats = recorderApi.getReplayStats(view.id)
+  var pageStates = pageStateHistory.findAll(
+    view.startClocks.relative,
+    view.duration
+  )
   var viewEvent = {
     _gc: {
       document_version: view.documentVersion,
-      replay_stats: replayStats
+      replay_stats: replayStats,
+      page_states: pageStates
     },
     date: view.startClocks.timeStamp,
     type: RumEventType.VIEW,
@@ -91,28 +96,39 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
       frustration: {
         count: view.eventCounts.frustrationCount
       },
-      cumulative_layout_shift: view.cumulativeLayoutShift,
-      first_byte: toServerDuration(view.timings.firstByte),
-      dom_complete: toServerDuration(view.timings.domComplete),
-      dom_content_loaded: toServerDuration(view.timings.domContentLoaded),
-      dom_interactive: toServerDuration(view.timings.domInteractive),
+      cumulative_layout_shift: view.commonViewMetrics.cumulativeLayoutShift,
+      first_byte: toServerDuration(view.initialViewMetrics.firstByte),
+      dom_complete: toServerDuration(view.initialViewMetrics.domComplete),
+      dom_content_loaded: toServerDuration(
+        view.initialViewMetrics.domContentLoaded
+      ),
+      dom_interactive: toServerDuration(view.initialViewMetrics.domInteractive),
       error: {
         count: view.eventCounts.errorCount
       },
       first_contentful_paint: toServerDuration(
-        view.timings.firstContentfulPaint
+        view.initialViewMetrics.firstContentfulPaint
       ),
-      first_input_delay: toServerDuration(view.timings.firstInputDelay),
-      first_input_time: toServerDuration(view.timings.firstInputTime),
+      first_input_delay: toServerDuration(
+        view.initialViewMetrics.firstInputDelay
+      ),
+      first_input_time: toServerDuration(
+        view.initialViewMetrics.firstInputTime
+      ),
+      interaction_to_next_paint: toServerDuration(
+        view.commonViewMetrics.interactionToNextPaint
+      ),
       is_active: view.isActive,
       name: view.name,
       largest_contentful_paint: toServerDuration(
-        view.timings.largestContentfulPaint
+        view.initialViewMetrics.largestContentfulPaint
       ),
       largest_contentful_paint_element_selector:
-        view.timingsElementSelector.largestContentfulPaint,
-      load_event: toServerDuration(view.timings.loadEvent),
-      loading_time: discardNegativeDuration(toServerDuration(view.loadingTime)),
+        view.initialViewMetrics.largestContentfulPaintElement,
+      load_event: toServerDuration(view.initialViewMetrics.loadEvent),
+      loading_time: discardNegativeDuration(
+        toServerDuration(view.commonViewMetrics.loadingTime)
+      ),
       loading_type: view.loadingType,
       long_task: {
         count: view.eventCounts.longTaskCount
@@ -120,15 +136,28 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
       resource: {
         count: view.eventCounts.resourceCount
       },
-      time_spent: toServerDuration(view.duration),
-      in_foreground_periods: foregroundContexts.selectInForegroundPeriodsFor(
-        view.startClocks.relative,
-        view.duration
-      )
+      time_spent: toServerDuration(view.duration)
     },
+    display: view.commonViewMetrics.scroll
+      ? {
+          scroll: {
+            max_depth: view.commonViewMetrics.scroll.maxDepth,
+            max_depth_scroll_height:
+              view.commonViewMetrics.scroll.maxDepthScrollHeight,
+            max_depth_scroll_top:
+              view.commonViewMetrics.scroll.maxDepthScrollTop,
+            max_depth_time: toServerDuration(
+              view.commonViewMetrics.scroll.maxDepthTime
+            )
+          }
+        }
+      : undefined,
     session: {
       has_replay: replayStats ? true : undefined,
       is_active: view.sessionIsActive ? undefined : false
+    },
+    privacy: {
+      replay_level: configuration.defaultPrivacyLevel
     }
   }
   if (!isEmptyObject(view.customTimings)) {
@@ -138,7 +167,7 @@ function processViewUpdate(view, foregroundContexts, recorderApi) {
     )
   }
   viewEvent = extend2Lev(viewEvent, {
-    view: computePerformanceViewDetails(view.timings)
+    view: computePerformanceViewDetails(view.initialViewMetrics)
   })
   return {
     rawRumEvent: viewEvent,

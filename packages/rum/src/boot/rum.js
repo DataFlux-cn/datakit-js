@@ -21,14 +21,16 @@ import { startRumBatch } from '../transport/startRumBatch'
 import { startRumEventBridge } from '../transport/startRumEventBridge'
 import { startRumAssembly } from '../domain/assembly'
 import { startInternalContext } from '../domain/contexts/internalContext'
-import { startForegroundContexts } from '../domain/contexts/foregroundContexts'
+// import { startForegroundContexts } from '../domain/contexts/foregroundContexts'
 import { startUrlContexts } from '../domain/contexts/urlContexts'
 import { startViewContexts } from '../domain/contexts/viewContexts'
 import { buildCommonContext } from '../domain/contexts/commonContext'
+import { startPageStateHistory } from '../domain/contexts/pageStateHistory'
 import { startErrorCollection } from '../domain/rumEventsCollection/error/errorCollection'
 import { startViewCollection } from '../domain/rumEventsCollection/view/viewCollection'
 import { startRequestCollection } from '../domain/requestCollection'
 import { startResourceCollection } from '../domain/rumEventsCollection/resource/resourceCollection'
+
 export function startRum(
   configuration,
   recorderApi,
@@ -101,7 +103,7 @@ export function startRum(
   var viewContexts = _startRumEventCollection.viewContexts
   var urlContexts = _startRumEventCollection.urlContexts
   var actionContexts = _startRumEventCollection.actionContexts
-  var foregroundContexts = _startRumEventCollection.foregroundContexts
+  var pageStateHistory = _startRumEventCollection.pageStateHistory
   var addAction = _startRumEventCollection.addAction
   startLongTaskCollection(lifeCycle, session)
   startResourceCollection(lifeCycle, configuration)
@@ -112,7 +114,7 @@ export function startRum(
     location,
     domMutationObservable,
     locationChangeObservable,
-    foregroundContexts,
+    pageStateHistory,
     recorderApi,
     initialViewOptions
   )
@@ -120,7 +122,8 @@ export function startRum(
   var startView = _startViewCollection.startView
   var _startErrorCollection = startErrorCollection(
     lifeCycle,
-    foregroundContexts
+    configuration,
+    pageStateHistory
   )
   var addError = _startErrorCollection.addError
   startRequestCollection(lifeCycle, configuration, session)
@@ -175,12 +178,13 @@ export function startRumEventCollection(
     locationChangeObservable,
     location
   )
-  var foregroundContexts = startForegroundContexts()
+
+  var pageStateHistory = startPageStateHistory()
   var _startActionCollection = startActionCollection(
     lifeCycle,
     domMutationObservable,
     configuration,
-    foregroundContexts
+    pageStateHistory
   )
   var actionContexts = _startActionCollection.actionContexts
   var addAction = _startActionCollection.addAction
@@ -198,12 +202,12 @@ export function startRumEventCollection(
   return {
     viewContexts: viewContexts,
     urlContexts: urlContexts,
-    foregroundContexts: foregroundContexts,
+    pageStateHistory: pageStateHistory,
     addAction: addAction,
     actionContexts: actionContexts,
     stop: function () {
       viewContexts.stop()
-      foregroundContexts.stop()
+      pageStateHistory.stop()
     }
   }
 }

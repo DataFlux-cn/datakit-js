@@ -8,15 +8,17 @@ import {
 } from '@cloudcare/browser-core'
 import { StatusType } from '../../logger'
 
-
 var LogStatusForReport = {
   [RawReportType.cspViolation]: StatusType.error,
   [RawReportType.intervention]: StatusType.error,
-  [RawReportType.deprecation]: StatusType.warn,
+  [RawReportType.deprecation]: StatusType.warn
 }
 
 export function startReportCollection(configuration, lifeCycle) {
-  var reportSubscription = initReportObservable(configuration.forwardReports).subscribe(function(report) {
+  var reportSubscription = initReportObservable(
+    configuration,
+    configuration.forwardReports
+  ).subscribe(function (report) {
     var message = report.message
     var status = LogStatusForReport[report.type]
     var error
@@ -24,10 +26,10 @@ export function startReportCollection(configuration, lifeCycle) {
       error = {
         kind: report.subtype,
         origin: ErrorSource.REPORT, // Todo: Remove in the next major release
-        stack: report.stack,
+        stack: report.stack
       }
     } else if (report.stack) {
-      message += ' Found in '+ getFileFromStackTraceString(report.stack)
+      message += ' Found in ' + getFileFromStackTraceString(report.stack)
     }
 
     lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
@@ -36,13 +38,13 @@ export function startReportCollection(configuration, lifeCycle) {
         message: message,
         origin: ErrorSource.REPORT,
         error: error,
-        status: status,
-      },
+        status: status
+      }
     })
   })
 
   return {
-    stop: function(){
+    stop: function () {
       reportSubscription.unsubscribe()
     }
   }

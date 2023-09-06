@@ -14,21 +14,25 @@ import {
 import { trackConsoleError } from './trackConsoleError'
 import { trackReportError } from './trackReportError'
 
-export function startErrorCollection(lifeCycle, foregroundContexts) {
+export function startErrorCollection(
+  lifeCycle,
+  configuration,
+  pageStateHistory
+) {
   var errorObservable = new Observable()
 
   trackConsoleError(errorObservable)
   trackRuntimeError(errorObservable)
-  trackReportError(errorObservable)
+  trackReportError(configuration, errorObservable)
 
   errorObservable.subscribe(function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
   })
 
-  return doStartErrorCollection(lifeCycle, foregroundContexts)
+  return doStartErrorCollection(lifeCycle, pageStateHistory)
 }
 
-export function doStartErrorCollection(lifeCycle, foregroundContexts) {
+export function doStartErrorCollection(lifeCycle, pageStateHistory) {
   lifeCycle.subscribe(LifeCycleEventType.RAW_ERROR_COLLECTED, function (error) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
@@ -37,7 +41,7 @@ export function doStartErrorCollection(lifeCycle, foregroundContexts) {
           customerContext: error.customerContext,
           savedCommonContext: error.savedCommonContext
         },
-        processError(error.error, foregroundContexts)
+        processError(error.error, pageStateHistory)
       )
     )
   })
@@ -65,7 +69,7 @@ export function doStartErrorCollection(lifeCycle, foregroundContexts) {
   }
 }
 
-function processError(error, foregroundContexts) {
+function processError(error, pageStateHistory) {
   var rawRumEvent = {
     date: error.startClocks.timeStamp,
     error: {
@@ -79,14 +83,14 @@ function processError(error, foregroundContexts) {
       causes: error.causes,
       source_type: 'browser'
     },
-    type: RumEventType.ERROR
+    type: RumEventType.ERROR,
+    view: {
+      in_foreground: pageStateHistory.isInActivePageStateAt(
+        error.startClocks.relative
+      )
+    }
   }
-  var inForeground = foregroundContexts.isInForegroundAt(
-    error.startClocks.relative
-  )
-  if (inForeground) {
-    rawRumEvent.view = { in_foreground: inForeground }
-  }
+
   return {
     rawRumEvent: rawRumEvent,
     startTime: error.startClocks.relative,

@@ -1,6 +1,5 @@
 import {
   shallowClone,
-  assign,
   elapsed,
   UUID,
   ONE_MINUTE,
@@ -20,8 +19,8 @@ import {
   isNullUndefinedDefaultValue
 } from '@cloudcare/browser-core'
 
-import { trackInitialViewTimings } from './trackInitialViewTimings'
-import { trackViewMetrics } from './trackViewMetrics'
+import { trackInitialViewMetrics } from './trackInitialViewTimings'
+import { trackCommonViewMetrics } from './trackCommonViewMetrics'
 import { trackViewEventCounts } from './trackViewEventCounts'
 export var THROTTLE_VIEW_UPDATE_PERIOD = 3000
 export var SESSION_KEEP_ALIVE_INTERVAL = 5 * ONE_MINUTE
@@ -168,7 +167,7 @@ function newView(
   var scheduleViewUpdate = _scheduleViewUpdate.throttled
   var cancelScheduleViewUpdate = _scheduleViewUpdate.cancel
 
-  var _trackViewMetrics = trackViewMetrics(
+  var _trackCommonViewMetrics = trackCommonViewMetrics(
     lifeCycle,
     domMutationObservable,
     configuration,
@@ -176,18 +175,20 @@ function newView(
     loadingType,
     startClocks
   )
-  var setLoadEvent = _trackViewMetrics.setLoadEvent
-  var stopViewMetricsTracking = _trackViewMetrics.stop
-  var viewMetrics = _trackViewMetrics.viewMetrics
+  var setLoadEvent = _trackCommonViewMetrics.setLoadEvent
+  var stopCommonViewMetricsTracking = _trackCommonViewMetrics.stop
+  var getCommonViewMetrics = _trackCommonViewMetrics.getCommonViewMetrics
 
   var _trackInitialViewTimings =
     loadingType === ViewLoadingType.INITIAL_LOAD
-      ? trackInitialViewTimings(lifeCycle, setLoadEvent, scheduleViewUpdate)
-      : { scheduleStop: noop, timings: {}, timingsElementSelector: {} }
-  var scheduleStopInitialViewTimingsTracking =
+      ? trackInitialViewMetrics(lifeCycle, setLoadEvent, scheduleViewUpdate)
+      : {
+          scheduleStop: noop,
+          initialViewMetrics: {}
+        }
+  var scheduleStopInitialViewMetricsTracking =
     _trackInitialViewTimings.scheduleStop
-  var timings = _trackInitialViewTimings.timings
-  var timingsElementSelector = _trackInitialViewTimings.timingsElementSelector
+  var initialViewMetrics = _trackInitialViewTimings.initialViewMetrics
   var _trackViewEventCounts = trackViewEventCounts(
     lifeCycle,
     id,
@@ -210,29 +211,23 @@ function newView(
     documentVersion += 1
     var currentEnd =
       endClocks === undefined ? timeStampNow() : endClocks.timeStamp
-    lifeCycle.notify(
-      LifeCycleEventType.VIEW_UPDATED,
-      assign(
-        {
-          customTimings: customTimings,
-          documentVersion: documentVersion,
-          id: id,
-          name: name,
-          service: service,
-          version: version,
-          loadingType: loadingType,
-          location: location,
-          startClocks: startClocks,
-          timings: timings,
-          timingsElementSelector: timingsElementSelector,
-          duration: elapsed(startClocks.timeStamp, currentEnd),
-          isActive: endClocks === undefined,
-          sessionIsActive: sessionIsActive,
-          eventCounts: eventCounts
-        },
-        viewMetrics
-      )
-    )
+    lifeCycle.notify(LifeCycleEventType.VIEW_UPDATED, {
+      customTimings: customTimings,
+      documentVersion: documentVersion,
+      id: id,
+      name: name,
+      service: service,
+      version: version,
+      loadingType: loadingType,
+      location: location,
+      startClocks: startClocks,
+      commonViewMetrics: getCommonViewMetrics(),
+      initialViewMetrics: initialViewMetrics,
+      duration: elapsed(startClocks.timeStamp, currentEnd),
+      isActive: endClocks === undefined,
+      sessionIsActive: sessionIsActive,
+      eventCounts: eventCounts
+    })
   }
 
   return {
@@ -255,8 +250,8 @@ function newView(
       )
       lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks: endClocks })
       clearInterval(keepAliveIntervalId)
-      stopViewMetricsTracking()
-      scheduleStopInitialViewTimingsTracking()
+      stopCommonViewMetricsTracking()
+      scheduleStopInitialViewMetricsTracking()
       scheduleStopEventCountsTracking()
       triggerViewUpdate()
     },

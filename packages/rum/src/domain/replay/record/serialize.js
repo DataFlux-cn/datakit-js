@@ -292,6 +292,8 @@ export function serializeAttribute(
     if (tagName === 'IMG' || tagName === 'SOURCE') {
       if (attributeName === 'src' || attributeName === 'srcset') {
         return CENSORED_IMG_MARK
+      } else if (attributeName === 'onerror') {
+        return null
       }
     }
     // mask <a> URLs

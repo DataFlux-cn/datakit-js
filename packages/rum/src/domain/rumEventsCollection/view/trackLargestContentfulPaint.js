@@ -1,0 +1,57 @@
+import {
+  addEventListeners,
+  DOM_EVENT,
+  findLast,
+  LifeCycleEventType,
+  ONE_MINUTE
+} from '@cloudcare/browser-core'
+import { trackFirstHidden } from './trackFirstHidden'
+/**
+ * Track the largest contentful paint (LCP) occurring during the initial View.  This can yield
+ * multiple values, only the most recent one should be used.
+ * Documentation: https://web.dev/lcp/
+ * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/master/src/getLCP.ts
+ */
+// It happens in some cases like sleep mode or some browser implementations
+export var LCP_MAXIMUM_DELAY = 10 * ONE_MINUTE
+export function trackLargestContentfulPaint(lifeCycle, eventTarget, callback) {
+  var firstHidden = trackFirstHidden()
+
+  // Ignore entries that come after the first user interaction.  According to the documentation, the
+  // browser should not send largest-contentful-paint entries after a user interact with the page,
+  // but the web-vitals reference implementation uses this as a safeguard.
+  var firstInteractionTimestamp = Infinity
+  var _addEventListeners = addEventListeners(
+    eventTarget,
+    [DOM_EVENT.POINTER_DOWN, DOM_EVENT.KEY_DOWN],
+    function (event) {
+      firstInteractionTimestamp = event.timeStamp
+    },
+    { capture: true, once: true }
+  )
+  var stopEventListener = _addEventListeners.stop
+  var subscribe = lifeCycle.subscribe(
+    LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
+    function (entries) {
+      var lcpEntry = findLast(entries, function (entry) {
+        return (
+          entry.entryType === 'largest-contentful-paint' &&
+          entry.startTime < firstInteractionTimestamp &&
+          entry.startTime < firstHidden.timeStamp &&
+          entry.startTime < LCP_MAXIMUM_DELAY
+        )
+      })
+      if (lcpEntry) {
+        callback(lcpEntry.startTime, lcpEntry.element)
+      }
+    }
+  )
+  var unsubscribeLifeCycle = subscribe.unsubscribe
+
+  return {
+    stop: function () {
+      stopEventListener()
+      unsubscribeLifeCycle()
+    }
+  }
+}

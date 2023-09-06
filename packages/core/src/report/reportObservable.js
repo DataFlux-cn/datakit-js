@@ -9,11 +9,11 @@ export var RawReportType = {
   deprecation: 'deprecation',
   cspViolation: 'csp_violation'
 }
-export function initReportObservable(apis) {
+export function initReportObservable(configuration, apis) {
   var observables = []
 
   if (includes(apis, RawReportType.cspViolation)) {
-    observables.push(createCspViolationReportObservable())
+    observables.push(createCspViolationReportObservable(configuration))
   }
 
   var reportTypes = filter(apis, function (api) {
@@ -51,7 +51,7 @@ function createReportObservable(reportTypes) {
   return observable
 }
 
-function createCspViolationReportObservable() {
+function createCspViolationReportObservable(configuration) {
   var observable = new Observable(function () {
     var handleCspViolation = function (event) {
       observable.notify(buildRawReportFromCspViolation(event))

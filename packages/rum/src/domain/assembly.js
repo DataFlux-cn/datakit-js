@@ -12,6 +12,7 @@ import {
   display,
   assign
 } from '@cloudcare/browser-core'
+import { getDisplayContext } from './contexts/displayContext'
 var SessionType = {
   SYNTHETICS: 'synthetics',
   USER: 'user'
@@ -136,7 +137,8 @@ export function startRumAssembly(
           action:
             needToAssembleWithAction(rawRumEvent) && actionId
               ? { id: actionId }
-              : undefined
+              : undefined,
+          display: getDisplayContext()
         }
 
         var rumEvent = extend2Lev(rumContext, viewContext, rawRumEvent)

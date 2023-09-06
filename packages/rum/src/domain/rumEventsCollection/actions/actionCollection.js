@@ -13,14 +13,14 @@ export function startActionCollection(
   lifeCycle,
   domMutationObservable,
   configuration,
-  foregroundContexts
+  pageStateHistory
 ) {
   lifeCycle.subscribe(
     LifeCycleEventType.AUTO_ACTION_COMPLETED,
     function (action) {
       lifeCycle.notify(
         LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-        processAction(action, foregroundContexts)
+        processAction(action, pageStateHistory)
       )
     }
   )
@@ -40,14 +40,14 @@ export function startActionCollection(
         LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
         extend(
           { savedCommonContext: savedCommonContext },
-          processAction(action, foregroundContexts)
+          processAction(action, pageStateHistory)
         )
       )
     }
   }
 }
 
-function processAction(action, foregroundContexts) {
+function processAction(action, pageStateHistory) {
   var autoActionProperties = isAutoAction(action)
     ? {
         action: {
@@ -89,16 +89,15 @@ function processAction(action, foregroundContexts) {
         type: action.type
       },
       date: action.startClocks.timeStamp,
-      type: RumEventType.ACTION
+      type: RumEventType.ACTION,
+      view: {
+        in_foreground: pageStateHistory.isInActivePageStateAt(
+          action.startClocks.relative
+        )
+      }
     },
     autoActionProperties
   )
-  var inForeground = foregroundContexts.isInForegroundAt(
-    action.startClocks.relative
-  )
-  if (inForeground !== undefined) {
-    actionEvent.view = { in_foreground: inForeground }
-  }
   return {
     customerContext: customerContext,
     rawRumEvent: actionEvent,
