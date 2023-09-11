@@ -75,8 +75,11 @@ export function trackClickActions(
   var actionContexts = {
     findActionId: function (startTime) {
       return history.find(startTime)
-      // ? history.findAll(startTime)
-      // : history.find(startTime)
+    },
+    findAllActionId: function (startTime) {
+      return configuration.trackFrustrations
+        ? history.findAll(startTime)
+        : history.find(startTime)
     }
   }
 
@@ -269,9 +272,9 @@ function newClick(
     isChildEvent: function (event) {
       return (
         event.action !== undefined &&
-        (isArray(event.action.id)
-          ? includes(event.action.id, id)
-          : event.action.id === id)
+        (isArray(event.action.ids)
+          ? includes(event.action.ids, id)
+          : event.action.ids === id)
       )
     }
   })
@@ -365,7 +368,6 @@ function newClick(
 export function finalizeClicks(clicks, rageClick) {
   var _computeFrustration = computeFrustration(clicks, rageClick)
   var isRage = _computeFrustration.isRage
-
   if (isRage) {
     each(clicks, function (click) {
       click.discard()

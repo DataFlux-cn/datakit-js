@@ -95,6 +95,7 @@ export function startRumAssembly(
 
       if (session && viewContext && urlContext) {
         var actionId = actionContexts.findActionId(startTime)
+        var actionIds = actionContexts.findAllActionId(startTime)
         var commonContext = savedCommonContext || buildCommonContext()
         var rumContext = {
           _gc: {
@@ -136,7 +137,7 @@ export function startRumAssembly(
           },
           action:
             needToAssembleWithAction(rawRumEvent) && actionId
-              ? { id: actionId }
+              ? { id: actionId, ids: actionIds }
               : undefined,
           display: getDisplayContext()
         }

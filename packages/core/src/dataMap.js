@@ -34,6 +34,7 @@ export var commonTags = {
 }
 export var commonFields = {
   action_id: 'action.id',
+  action_ids: 'action.ids',
   view_in_foreground: 'view.in_foreground',
   display: 'display'
 }

@@ -39,8 +39,7 @@ ContextHistory.prototype.find = function (startTime) {
   if (typeof startTime === 'undefined') {
     startTime = END_OF_TIMES
   }
-  for (var i = 0; i < this.entries.length; i++) {
-    var entry = this.entries[i]
+  for (var entry of this.entries) {
     if (entry.startTime <= startTime) {
       if (startTime <= entry.endTime) {
         return entry.context
@@ -48,6 +47,7 @@ ContextHistory.prototype.find = function (startTime) {
       break
     }
   }
+  //
 }
 /**
  * Helper function to close the currently active context, if any. This method assumes that entries
@@ -67,10 +67,10 @@ ContextHistory.prototype.findAll = function (startTime, duration) {
   if (typeof duration === 'undefined') {
     duration = 0
   }
-  var endTime = addDuration(startTime, duration)
   if (typeof startTime === 'undefined') {
     startTime = END_OF_TIMES
   }
+  var endTime = addDuration(startTime, duration)
   var result = filter(this.entries, function (entry) {
     return entry.startTime <= endTime && startTime <= entry.endTime
   })

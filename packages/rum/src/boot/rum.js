@@ -52,7 +52,8 @@ export function startRum(
         id: viewContexts.findView() && viewContexts.findView().id
       },
       action: {
-        id: actionContexts.findActionId()
+        id: actionContexts.findActionId(),
+        ids: actionContexts.findAllActionId()
       }
     }
   })

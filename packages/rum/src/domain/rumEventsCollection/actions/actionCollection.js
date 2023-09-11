@@ -25,7 +25,7 @@ export function startActionCollection(
     }
   )
 
-  var actionContexts = { findActionId: noop }
+  var actionContexts = { findActionId: noop, findAllActionId: noop }
   if (configuration.trackUserInteractions) {
     actionContexts = trackClickActions(
       lifeCycle,
@@ -98,6 +98,7 @@ function processAction(action, pageStateHistory) {
     },
     autoActionProperties
   )
+
   return {
     customerContext: customerContext,
     rawRumEvent: actionEvent,
