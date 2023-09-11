@@ -13,7 +13,6 @@
 - fix: update publish cdn handler
 - fix: update logger telemetry
 - add telemetry
-- feat: upgrade version
 
 ## v3.0.29
 
