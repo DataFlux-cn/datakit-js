@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.1.0
+
+- fix: clickCollection bug
+- feat: add view scroll metric
+- fix: remove style tag child serialize
+- feat: add csp md
+- fix: isHashAnAnchor hash handler
+- fix: serialize isShadow remove
+- fix: add shadowroot bug
+- feat: add lts version handler
+- fix: update publish cdn handler
+- fix: update logger telemetry
+- add telemetry
+- feat: upgrade version
+
 ## v3.0.29
 
 - fix: serialze bug
