@@ -1,7 +1,8 @@
 import {
   timeStampNow,
   createHttpRequest,
-  LifeCycleEventType
+  LifeCycleEventType,
+  addTelemetryDebug
 } from '@cloudcare/browser-core'
 import { record } from '../domain/replay/record'
 import {
@@ -15,11 +16,14 @@ export function startRecording(
   configuration,
   sessionManager,
   viewContexts,
-  worker,
+  encoder,
   httpRequest
 ) {
   var reportError = function (error) {
     lifeCycle.notify(LifeCycleEventType.RAW_ERROR_COLLECTED, { error: error })
+    addTelemetryDebug('Error reported to customer', {
+      'error.message': error.message
+    })
   }
 
   var replayRequest =
@@ -36,7 +40,7 @@ export function startRecording(
     sessionManager,
     viewContexts,
     replayRequest,
-    worker
+    encoder
   )
   var addRecord = segmentCollection.addRecord
   var stopSegmentCollection = segmentCollection.stop

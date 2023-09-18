@@ -13,7 +13,7 @@ export function buildReplayPayload(data, metadata, rawSegmentBytesCount) {
   toFormEntries(metadata, function (key, value) {
     formData.append(key, value)
   })
-  formData.append('raw_segment_size', rawSegmentBytesCount.toString())
+  formData.append('raw_segment_size', rawSegmentBytesCount)
 
   return { data: formData, bytesCount: data.byteLength }
 }

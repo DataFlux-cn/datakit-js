@@ -60,11 +60,7 @@ function scheduleRetry(state, sendStrategy, endpointUrl, reportError) {
     send(payload, state, sendStrategy, {
       onSuccess: function () {
         state.queuedPayloads.dequeue()
-        // if (state.lastFailureStatus !== 0) {
-        //   addTelemetryDebug('resuming after transport down', {
-        //     failureStatus: state.lastFailureStatus,
-        //   })
-        // }
+
         state.currentBackoffTime = INITIAL_BACKOFF_TIME
         retryQueuedPayloads(
           RetryReason.AFTER_RESUME,

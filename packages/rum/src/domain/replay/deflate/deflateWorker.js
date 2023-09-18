@@ -1,25 +1,25 @@
 import {
   display,
   includes,
-  each,
-  addEventListener
+  setTimeout,
+  addEventListener,
+  addTelemetryError,
+  ONE_SECOND
 } from '@cloudcare/browser-core'
-import { workerString } from '@cloudcare/browser-worker/string'
-var workerURL
+
+export var INITIALIZATION_TIME_OUT_DELAY = 10 * ONE_SECOND
 
 export function createDeflateWorker() {
-  // Lazily compute the worker URL to allow importing the SDK in NodeJS
-  if (!workerURL) {
-    workerURL = URL.createObjectURL(new Blob([workerString]))
-  }
-  return new Worker(workerURL)
+  return new Worker(
+    URL.createObjectURL(new Blob([__BUILD_ENV__WORKER_STRING__]))
+  )
 }
 /**
  * In order to be sure that the worker is correctly working, we need a round trip of
  * initialization messages, making the creation asynchronous.
  * These worker lifecycle states handle this case.
  */
-var DeflateWorkerStatus = {
+export var DeflateWorkerStatus = {
   Nil: 0,
   Loading: 1,
   Error: 2,
@@ -28,29 +28,30 @@ var DeflateWorkerStatus = {
 
 var state = { status: DeflateWorkerStatus.Nil }
 
-export function startDeflateWorker(callback, createDeflateWorkerImpl) {
+export function startDeflateWorker(
+  onInitializationFailure,
+  createDeflateWorkerImpl
+) {
   if (createDeflateWorkerImpl === undefined) {
     createDeflateWorkerImpl = createDeflateWorker
   }
+  if (state.status === DeflateWorkerStatus.Nil) {
+    doStartDeflateWorker(createDeflateWorkerImpl)
+  }
   switch (state.status) {
-    case DeflateWorkerStatus.Nil:
-      state = { status: DeflateWorkerStatus.Loading, callbacks: [callback] }
-      doStartDeflateWorker(createDeflateWorkerImpl)
-      break
     case DeflateWorkerStatus.Loading:
-      state.callbacks.push(callback)
-      break
-    case DeflateWorkerStatus.Error:
-      callback()
-      break
+      state.initializationFailureCallbacks.push(onInitializationFailure)
+      return state.worker
     case DeflateWorkerStatus.Initialized:
-      callback(state.worker)
-      break
+      return state.worker
   }
 }
 
 export function resetDeflateWorkerState() {
   state = { status: DeflateWorkerStatus.Nil }
+}
+export function getDeflateWorkerStatus() {
+  return state.status
 }
 
 /**
@@ -74,24 +75,36 @@ export function doStartDeflateWorker(createDeflateWorkerImpl) {
       if (data.type === 'errored') {
         onError(data.error, data.streamId)
       } else if (data.type === 'initialized') {
-        onInitialized(worker, data.version)
+        onInitialized(data.version)
       }
     })
     worker.postMessage({ action: 'init' })
-    return worker
+    setTimeout(onTimeout, INITIALIZATION_TIME_OUT_DELAY)
+    state = {
+      status: DeflateWorkerStatus.Loading,
+      worker: worker,
+      initializationFailureCallbacks: []
+    }
   } catch (error) {
     onError(error)
   }
 }
-
-function onInitialized(worker, version) {
+function onTimeout() {
   if (state.status === DeflateWorkerStatus.Loading) {
-    each(state.callbacks, function (callback) {
-      callback(worker)
+    display.error(
+      'Session Replay recording failed to start: a timeout occurred while initializing the Worker'
+    )
+    state.initializationFailureCallbacks.forEach(function (callback) {
+      callback()
     })
+    state = { status: DeflateWorkerStatus.Error }
+  }
+}
+function onInitialized(version) {
+  if (state.status === DeflateWorkerStatus.Loading) {
     state = {
       status: DeflateWorkerStatus.Initialized,
-      worker: worker,
+      worker: state.worker,
       version: version
     }
   }
@@ -108,11 +121,21 @@ function onError(error, streamId) {
       (error instanceof Error && isMessageCspRelated(error.message))
     ) {
       display.error('Please make sure CSP is correctly configured !!!')
+    } else {
+      addTelemetryError(error)
     }
-    each(state.callbacks, function (callback) {
-      callback()
-    })
+    if (state.status === DeflateWorkerStatus.Loading) {
+      state.initializationFailureCallbacks.forEach(function (callback) {
+        callback()
+      })
+    }
     state = { status: DeflateWorkerStatus.Error }
+  } else {
+    addTelemetryError(error, {
+      worker_version:
+        state.status === DeflateWorkerStatus.Initialized && state.version,
+      stream_id: streamId
+    })
   }
 }
 function isMessageCspRelated(message) {

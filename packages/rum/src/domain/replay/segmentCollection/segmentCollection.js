@@ -46,7 +46,7 @@ export function startSegmentCollection(
   sessionManager,
   viewContexts,
   httpRequest,
-  worker
+  encoder
 ) {
   return doStartSegmentCollection(
     lifeCycle,
@@ -54,7 +54,7 @@ export function startSegmentCollection(
       return computeSegmentContext(configuration, sessionManager, viewContexts)
     },
     httpRequest,
-    worker
+    encoder
   )
 }
 
@@ -68,7 +68,7 @@ export function doStartSegmentCollection(
   lifeCycle,
   getSegmentContext,
   httpRequest,
-  worker
+  encoder
 ) {
   var state = {
     status: SegmentCollectionStatus.WaitingForInitialRecord,
@@ -91,7 +91,19 @@ export function doStartSegmentCollection(
 
   function flushSegment(flushReason) {
     if (state.status === SegmentCollectionStatus.SegmentPending) {
-      state.segment.flush(flushReason)
+      state.segment.flush(function (metadata) {
+        var payload = buildReplayPayload(
+          encoder.getEncodedBytes(),
+          metadata,
+          encoder.getRawBytesCount()
+        )
+
+        if (isPageExitReason(flushReason)) {
+          httpRequest.sendOnExit(payload)
+        } else {
+          httpRequest.send(payload)
+        }
+      })
       clearTimeout(state.expirationTimeoutId)
     }
 
@@ -107,58 +119,43 @@ export function doStartSegmentCollection(
     }
   }
 
-  function createNewSegment(creationReason, initialRecord) {
-    var context = getSegmentContext()
-    if (!context) {
-      return
-    }
+  return {
+    addRecord: function (record) {
+      if (state.status === SegmentCollectionStatus.Stopped) {
+        return
+      }
 
-    var segment = new Segment(
-      worker,
-      context,
-      creationReason,
-      initialRecord,
-      function (compressedSegmentBytesCount) {
+      if (state.status === SegmentCollectionStatus.WaitingForInitialRecord) {
+        var context = getSegmentContext()
+        if (!context) {
+          return
+        }
+
+        state = {
+          status: SegmentCollectionStatus.SegmentPending,
+          segment: new Segment(
+            encoder,
+            context,
+            state.nextSegmentCreationReason
+          ),
+          expirationTimeoutId: setTimeout(function () {
+            flushSegment('segment_duration_limit')
+          }, SEGMENT_DURATION_LIMIT)
+        }
+      }
+
+      var segment = state.segment
+
+      segment.addRecord(record, function () {
         if (
-          !segment.flushReason &&
-          compressedSegmentBytesCount > SEGMENT_BYTES_LIMIT
+          // the written segment is still pending
+          state.status === SegmentCollectionStatus.SegmentPending &&
+          state.segment === segment &&
+          encoder.getEncodedBytesCount() > SEGMENT_BYTES_LIMIT
         ) {
           flushSegment('segment_bytes_limit')
         }
-      },
-      function (data, rawSegmentBytesCount) {
-        var payload = buildReplayPayload(
-          data,
-          segment.metadata,
-          rawSegmentBytesCount
-        )
-        if (isPageExitReason(segment.flushReason)) {
-          httpRequest.sendOnExit(payload)
-        } else {
-          httpRequest.send(payload)
-        }
-      }
-    )
-    state = {
-      status: SegmentCollectionStatus.SegmentPending,
-      segment: segment,
-      expirationTimeoutId: setTimeout(function () {
-        flushSegment('segment_duration_limit')
-      }, SEGMENT_DURATION_LIMIT)
-    }
-  }
-
-  return {
-    addRecord: function (record) {
-      switch (state.status) {
-        case SegmentCollectionStatus.WaitingForInitialRecord:
-          createNewSegment(state.nextSegmentCreationReason, record)
-          break
-
-        case SegmentCollectionStatus.SegmentPending:
-          state.segment.addRecord(record)
-          break
-      }
+      })
     },
 
     stop: function () {
@@ -199,9 +196,6 @@ export function computeSegmentContext(
   }
 }
 
-export function setSegmentBytesLimit(newSegmentBytesLimit) {
-  if (newSegmentBytesLimit === undefined) {
-    newSegmentBytesLimit = 60000
-  }
+export function setSegmentBytesLimit(newSegmentBytesLimit = 60_000) {
   SEGMENT_BYTES_LIMIT = newSegmentBytesLimit
 }

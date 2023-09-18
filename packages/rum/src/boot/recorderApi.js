@@ -2,12 +2,19 @@ import {
   noop,
   runOnReadyState,
   LifeCycleEventType,
-  canUseEventBridge
+  canUseEventBridge,
+  Observable,
+  relativeNow
 } from '@cloudcare/browser-core'
 
-import { getReplayStats } from '../domain/replay/replayStats'
-import { startDeflateWorker } from '../domain/replay/segmentCollection'
-
+import { getReplayStats as getReplayStatsImpl } from '../domain/replay/replayStats'
+import {
+  DeflateEncoderStreamId,
+  createDeflateEncoder,
+  startDeflateWorker,
+  DeflateWorkerStatus,
+  getDeflateWorkerStatus
+} from '../domain/replay/deflate'
 var RecorderStatus = {
   // The recorder is stopped.
   Stopped: 0,
@@ -20,10 +27,8 @@ var RecorderStatus = {
   Started: 3
 }
 
-export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
-  if (typeof startDeflateWorkerImpl === 'undefined') {
-    startDeflateWorkerImpl = startDeflateWorker
-  }
+export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
+  var recorderStartObservable = new Observable()
   if (canUseEventBridge() || !isBrowserSupported()) {
     return {
       start: noop,
@@ -34,7 +39,8 @@ export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
       onRumStart: noop,
       isRecording: function () {
         return false
-      }
+      },
+      recorderStartObservable: recorderStartObservable
     }
   }
 
@@ -55,7 +61,12 @@ export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
     stop: function () {
       stopStrategy()
     },
-    getReplayStats: getReplayStats,
+    recorderStartObservable: recorderStartObservable,
+    getReplayStats: function (viewId) {
+      return getDeflateWorkerStatus() === DeflateWorkerStatus.Initialized
+        ? getReplayStatsImpl(viewId)
+        : undefined
+    },
 
     onRumStart: function (
       lifeCycle,
@@ -99,30 +110,30 @@ export function makeRecorderApi(startRecordingImpl, startDeflateWorkerImpl) {
           if (state.status !== RecorderStatus.Starting) {
             return
           }
-
-          startDeflateWorkerImpl(function (worker) {
-            if (state.status !== RecorderStatus.Starting) {
-              return
-            }
-
-            if (!worker) {
-              state = {
-                status: RecorderStatus.Stopped
-              }
-              return
-            }
-            var recordingImpl = startRecordingImpl(
-              lifeCycle,
-              configuration,
-              sessionManager,
-              viewContexts,
-              worker
-            )
+          if (state.status !== RecorderStatus.Starting) {
+            return
+          }
+          var worker = startDeflateWorker(function () {
+            stopStrategy()
+          }, createDeflateWorkerImpl)
+          if (!worker) {
             state = {
-              status: RecorderStatus.Started,
-              stopRecording: recordingImpl.stop
+              status: RecorderStatus.Stopped
             }
-          })
+            return
+          }
+          var recordingImpl = startRecordingImpl(
+            lifeCycle,
+            configuration,
+            sessionManager,
+            viewContexts,
+            createDeflateEncoder(worker, DeflateEncoderStreamId.REPLAY)
+          )
+          recorderStartObservable.notify(relativeNow())
+          state = {
+            status: RecorderStatus.Started,
+            stopRecording: recordingImpl.stop
+          }
         })
       }
 

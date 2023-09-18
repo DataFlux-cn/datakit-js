@@ -1,105 +1,50 @@
-import {
-  assign,
-  addEventListener,
-  concatBuffers
-} from '@cloudcare/browser-core'
+import { assign } from '@cloudcare/browser-core'
 import { RecordType } from '../../../types'
 import * as replayStats from '../replayStats'
-var STREAM_ID = 1
-var nextId = 0
-export function Segment(
-  worker,
-  context,
-  creationReason,
-  initialRecord,
-  onWrote,
-  onFlushed
-) {
-  this.worker = worker
-  this.pendingWriteCount = 0
-  this.id = nextId++
+
+export function Segment(encoder, context, creationReason) {
+  this.encoder = encoder
   var viewId = context.view.id
 
   this.metadata = assign(
     {
-      start: initialRecord.timestamp,
-      end: initialRecord.timestamp,
+      start: Infinity,
+      end: -Infinity,
       creation_reason: creationReason,
-      records_count: 1,
-      has_full_snapshot: initialRecord.type === RecordType.FullSnapshot,
+      records_count: 0,
+      has_full_snapshot: false,
       index_in_view: replayStats.getSegmentsCount(viewId),
       source: 'browser'
     },
     context
   )
   replayStats.addSegment(viewId)
-  replayStats.addRecord(viewId)
-  var rawBytesCount = 0
-  var compressedBytesCount = 0
-  var compressedData = []
-  var _this = this
-  var wokerListener = addEventListener(worker, 'message', function (params) {
-    var data = params.data
-    if (data.type !== 'wrote') {
-      return
-    }
-
-    if (data.id === _this.id) {
-      _this.pendingWriteCount -= 1
-      replayStats.addWroteData(viewId, data.additionalBytesCount)
-      rawBytesCount += data.additionalBytesCount
-      compressedBytesCount += data.result.length
-      compressedData.push(data.result)
-      if (_this.flushReason && _this.pendingWriteCount === 0) {
-        compressedData.push(data.trailer)
-        onFlushed(concatBuffers(compressedData), rawBytesCount)
-        removeMessageListener()
-      } else {
-        onWrote(compressedBytesCount)
-      }
-    } else if (data.id > _this.id) {
-      // Messages should be received in the same order as they are sent, so if we receive a
-      // message with an id superior to this Segment instance id, we know that another, more
-      // recent Segment instance is being used.
-      //
-      // In theory, a "flush" response should have been received at this point, so the listener
-      // should already have been removed. But if something goes wrong and we didn't receive a
-      // "flush" response, remove the listener to avoid any leak, and send a monitor message to
-      // help investigate the issue.
-      removeMessageListener()
-    }
-  })
-  var removeMessageListener = wokerListener.stop
-  //   worker.addEventListener('message', listener)
-
-  this.write('{"records":[' + JSON.stringify(initialRecord))
 }
-Segment.prototype.addRecord = function (record) {
+Segment.prototype.addRecord = function (record, callback) {
   this.metadata.start = Math.min(this.metadata.start, record.timestamp)
   this.metadata.end = Math.max(this.metadata.end, record.timestamp)
   this.metadata.records_count += 1
-  replayStats.addRecord(this.metadata.view.id)
   if (!this.metadata.has_full_snapshot) {
     this.metadata.has_full_snapshot = record.type === RecordType.FullSnapshot
   }
-  this.write(',' + JSON.stringify(record))
+  replayStats.addRecord(this.metadata.view.id)
+  const prefix = this.metadata.records_count === 1 ? '{"records":[' : ','
+  this.encoder.write(prefix + JSON.stringify(record), callback)
 }
-Segment.prototype.flush = function (reason) {
-  this.write('],' + JSON.stringify(this.metadata).slice(1) + '\n')
-
-  this.worker.postMessage({
-    action: 'reset',
-    streamId: STREAM_ID
-  })
-  this.flushReason = reason
-}
-
-Segment.prototype.write = function (data) {
-  this.pendingWriteCount += 1
-  this.worker.postMessage({
-    data: data,
-    id: this.id,
-    streamId: STREAM_ID,
-    action: 'write'
-  })
+Segment.prototype.flush = function (callback) {
+  if (this.metadata.records_count === 0) {
+    throw new Error('Empty segment flushed')
+  }
+  var _this = this
+  this.encoder.write(
+    '],' + JSON.stringify(this.metadata).slice(1) + '\n',
+    function () {
+      replayStats.addWroteData(
+        _this.metadata.view.id,
+        _this.encoder.getRawBytesCount()
+      )
+      callback(_this.metadata)
+    }
+  )
+  this.encoder.reset()
 }

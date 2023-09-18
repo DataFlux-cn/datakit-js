@@ -153,12 +153,13 @@ export function formatError(e) {
 }
 
 export function scrubCustomerFrames(stackTrace) {
-  stackTrace.stack = stackTrace.stack.filter(
-    (frame) =>
+  stackTrace.stack = stackTrace.stack.filter(function (frame) {
+    return (
       !frame.url ||
       ALLOWED_FRAME_URLS.some(function (allowedFrameUrl) {
         return startsWith(frame.url, allowedFrameUrl)
       })
-  )
+    )
+  })
   return stackTrace
 }

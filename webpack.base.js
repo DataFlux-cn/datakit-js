@@ -1,6 +1,6 @@
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
-const getEnv = require('./scripts/build-env')
+const { buildEnvKeys, getBuildEnvValue } = require('./scripts/build-env')
 module.exports = ({
   entry,
   mode,
@@ -38,11 +38,16 @@ module.exports = ({
           }
     ),
     new webpack.DefinePlugin(
-      !keepBuildEnvVariables
-        ? {
-            __BUILD_ENV__SDK_VERSION__: JSON.stringify(getEnv(mode).SDK_VERSION)
-          }
-        : {}
+      Object.fromEntries(
+        buildEnvKeys
+          .filter((key) => !keepBuildEnvVariables?.includes(key))
+          .map((key) => [
+            `__BUILD_ENV__${key}__`,
+            webpack.DefinePlugin.runtimeValue(() =>
+              JSON.stringify(getBuildEnvValue(key, mode))
+            )
+          ])
+      )
     )
   ]
 })
