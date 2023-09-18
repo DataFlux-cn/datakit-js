@@ -96,7 +96,6 @@ function handleAction(streams, message) {
  * send a message to the worker to flush it, we send back a trailer in each "wrote" response so the
  * main thread can just append it to the compressed data to end the stream.
  *
- * Beside creating a valid zlib stream, those 6 bits are expected to be here so the Datadog backend
  * can merge streams together (see internal doc).
  */
 function makeTrailer(deflate) {
