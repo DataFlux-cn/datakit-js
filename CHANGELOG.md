@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.1.1
+
+- fix: remove console
+- fix: update session replay  deflate handler
+- fix: update changelog
+
 ## v3.1.0
 
 - fix: clickCollection bug
