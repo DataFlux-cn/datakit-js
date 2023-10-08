@@ -8,11 +8,13 @@ import {
   timeStampNow,
   checkUser,
   sanitizeUser,
-  monitor
+  monitor,
+  createStoredContextManager,
+  extend2Lev
 } from '@cloudcare/browser-core'
 import { validateAndBuildLogsConfiguration } from '../domain/configuration'
 import { Logger } from '../domain/logger'
-
+var LOGS_STORAGE_KEY = 'logs'
 export function makeLogsPublicApi(startLogsImpl) {
   var isAlreadyInitialized = false
 
@@ -75,6 +77,25 @@ export function makeLogsPublicApi(startLogsImpl) {
       if (!configuration) {
         return
       }
+      if (initConfiguration.storeContextsToLocal) {
+        var beforeInitGlobalContext = globalContextManager.getContext()
+        globalContextManager = createStoredContextManager(
+          LOGS_STORAGE_KEY,
+          CustomerDataType.GlobalContext
+        )
+        globalContextManager.setContext(
+          extend2Lev(globalContextManager.getContext(), beforeInitGlobalContext)
+        )
+
+        var beforeInitUserContext = userContextManager.getContext()
+        userContextManager = createStoredContextManager(
+          LOGS_STORAGE_KEY,
+          CustomerDataType.User
+        )
+        userContextManager.setContext(
+          extend2Lev(userContextManager.getContext(), beforeInitUserContext)
+        )
+      }
       var _startLogsImpl = startLogsImpl(
         configuration,
         buildCommonContext,
@@ -90,21 +111,26 @@ export function makeLogsPublicApi(startLogsImpl) {
       isAlreadyInitialized = true
     }),
 
-    /** @deprecated: use getGlobalContext instead */
-    getGlobalContext: monitor(globalContextManager.getContext),
+    getGlobalContext: monitor(function () {
+      return globalContextManager.getContext()
+    }),
 
-    /** @deprecated: use setGlobalContext instead */
-    setGlobalContext: monitor(globalContextManager.setContext),
+    setGlobalContext: monitor(function (context) {
+      return globalContextManager.setContext(context)
+    }),
 
-    /** @deprecated: use setGlobalContextProperty instead */
-    setGlobalContextProperty: monitor(globalContextManager.setContextProperty),
+    setGlobalContextProperty: monitor(function (key, value) {
+      return globalContextManager.setContextProperty(key, value)
+    }),
 
     /** @deprecated: use removeGlobalContextProperty instead */
-    removeGlobalContextProperty: monitor(
-      globalContextManager.removeContextProperty
-    ),
+    removeGlobalContextProperty: monitor(function (key) {
+      return globalContextManager.removeContextProperty(key)
+    }),
 
-    clearGlobalContext: monitor(globalContextManager.clearContext),
+    clearGlobalContext: monitor(function () {
+      return globalContextManager.clearContext()
+    }),
 
     createLogger: monitor(function (name, conf) {
       if (typeof conf == 'undefined') {
@@ -138,9 +164,15 @@ export function makeLogsPublicApi(startLogsImpl) {
         userContextManager.setContext(sanitizeUser(newUser))
       }
     }),
-    getUser: monitor(userContextManager.getContext),
-    removeUserProperty: monitor(userContextManager.removeContextProperty),
-    clearUser: monitor(userContextManager.clearContext)
+    getUser: monitor(function () {
+      return userContextManager.getContext()
+    }),
+    removeUserProperty: monitor(function (key) {
+      return userContextManager.removeContextProperty(key)
+    }),
+    clearUser: monitor(function () {
+      return userContextManager.clearContext()
+    })
   })
 
   function canInitLogs(initConfiguration) {

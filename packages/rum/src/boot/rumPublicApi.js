@@ -16,10 +16,13 @@ import {
   noop,
   assign,
   canUseEventBridge,
-  monitor
+  monitor,
+  extend2Lev,
+  createStoredContextManager
 } from '@cloudcare/browser-core'
 import { validateAndBuildRumConfiguration } from '../domain/configuration'
 import { buildCommonContext } from '../domain/contexts/commonContext'
+var RUM_STORAGE_KEY = 'rum'
 export function makeRumPublicApi(startRumImpl, recorderApi) {
   var isAlreadyInitialized = false
 
@@ -118,6 +121,26 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
     isAlreadyInitialized = true
   }
   function doStartRum(configuration, initialViewOptions) {
+    if (configuration.storeContextsToLocal) {
+      // localstorage
+      var beforeInitGlobalContext = globalContextManager.getContext()
+      globalContextManager = createStoredContextManager(
+        RUM_STORAGE_KEY,
+        CustomerDataType.GlobalContext
+      )
+      globalContextManager.setContext(
+        extend2Lev(globalContextManager.getContext(), beforeInitGlobalContext)
+      )
+
+      var beforeInitUserContext = userContextManager.getContext()
+      userContextManager = createStoredContextManager(
+        RUM_STORAGE_KEY,
+        CustomerDataType.User
+      )
+      userContextManager.setContext(
+        extend2Lev(userContextManager.getContext(), beforeInitUserContext)
+      )
+    }
     var startRumResults = startRumImpl(
       configuration,
       recorderApi,
@@ -147,24 +170,40 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
   var rumPublicApi = makePublicApi({
     init: monitor(initRum),
     /** @deprecated: use setGlobalContextProperty instead */
-    addRumGlobalContext: monitor(globalContextManager.add),
-    setGlobalContextProperty: monitor(globalContextManager.setContextProperty),
+    addRumGlobalContext: monitor(function (key, value) {
+      return globalContextManager.add(key, value)
+    }),
+    setGlobalContextProperty: monitor(function (key, value) {
+      return globalContextManager.setContextProperty(key, value)
+    }),
 
     /** @deprecated: use removeGlobalContextProperty instead */
-    removeRumGlobalContext: monitor(globalContextManager.remove),
-    removeGlobalContextProperty: monitor(
-      globalContextManager.removeContextProperty
-    ),
+    removeRumGlobalContext: monitor(function (key) {
+      return globalContextManager.remove(key)
+    }),
+    removeGlobalContextProperty: monitor(function (key) {
+      return globalContextManager.removeContextProperty(key)
+    }),
 
     /** @deprecated: use getGlobalContext instead */
-    getRumGlobalContext: monitor(globalContextManager.get),
-    getGlobalContext: monitor(globalContextManager.getContext),
+    getRumGlobalContext: monitor(function () {
+      return globalContextManager.get()
+    }),
+    getGlobalContext: monitor(function () {
+      return globalContextManager.getContext()
+    }),
 
     /** @deprecated: use setGlobalContext instead */
-    setRumGlobalContext: monitor(globalContextManager.set),
-    setGlobalContext: monitor(globalContextManager.setContext),
+    setRumGlobalContext: monitor(function (context) {
+      return globalContextManager.set(context)
+    }),
+    setGlobalContext: monitor(function (context) {
+      return globalContextManager.setContext(context)
+    }),
 
-    clearGlobalContext: monitor(globalContextManager.clearContext),
+    clearGlobalContext: monitor(function () {
+      return globalContextManager.clearContext()
+    }),
 
     getInitConfiguration: monitor(function () {
       return getInitConfigurationStrategy()
@@ -200,18 +239,26 @@ export function makeRumPublicApi(startRumImpl, recorderApi) {
         userContextManager.setContext(sanitizeUser(newUser))
       }
     }),
-    getUser: monitor(userContextManager.getContext),
+    getUser: monitor(function () {
+      return userContextManager.getContext()
+    }),
     setUserProperty: monitor(function (key, property) {
       var newUser = {}
       newUser[key] = property
       var sanitizedProperty = sanitizeUser(newUser)[key]
       userContextManager.setContextProperty(key, sanitizedProperty)
     }),
-    removeUserProperty: monitor(userContextManager.removeContextProperty),
+    removeUserProperty: monitor(function (key) {
+      return userContextManager.removeContextProperty(key)
+    }),
 
     /** @deprecated: renamed to clearUser */
-    removeUser: monitor(userContextManager.clearContext),
-    clearUser: monitor(userContextManager.clearContext),
+    removeUser: monitor(function () {
+      return userContextManager.clearContext()
+    }),
+    clearUser: monitor(function () {
+      return userContextManager.clearContext()
+    }),
     startView: startView,
     stopSession: monitor(function () {
       stopSessionStrategy()

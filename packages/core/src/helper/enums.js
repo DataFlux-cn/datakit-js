@@ -31,7 +31,8 @@ export var DOM_EVENT = {
   PLAY: 'play',
   PAUSE: 'pause',
   SECURITY_POLICY_VIOLATION: 'securitypolicyviolation',
-  SELECTION_CHANGE: 'selectionchange'
+  SELECTION_CHANGE: 'selectionchange',
+  STORAGE: 'storage'
 }
 export var ResourceType = {
   DOCUMENT: 'document',

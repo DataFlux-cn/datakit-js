@@ -1594,14 +1594,28 @@ export function getLocationOrigin() {
   return getLinkElementOrigin(window.location)
 }
 
+var browserIsIE
 export function isIE() {
-  return Boolean(document.documentMode)
+  if (browserIsIE === undefined) {
+    browserIsIE = Boolean(document.documentMode)
+  }
+  return browserIsIE
 }
-
+var browserIsChromium
 export function isChromium() {
-  return !!window.chrome || /HeadlessChrome/.test(window.navigator.userAgent)
+  if (browserIsChromium === undefined) {
+    browserIsChromium =
+      !!window.chrome || /HeadlessChrome/.test(window.navigator.userAgent)
+  }
+  return browserIsChromium
 }
-
+var browserIsSafari
+export function isSafari() {
+  if (browserIsSafari === undefined) {
+    browserIsSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  }
+  return browserIsSafari
+}
 /**
  * IE fallback
  * https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/origin

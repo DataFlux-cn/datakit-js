@@ -82,7 +82,8 @@ export function validateAndBuildConfiguration(initConfiguration) {
        */
       batchMessagesLimit: 50,
       messageBytesLimit: 256 * ONE_KIBI_BYTE,
-      resourceUrlLimit: 5 * ONE_KIBI_BYTE
+      resourceUrlLimit: 5 * ONE_KIBI_BYTE,
+      storeContextsToLocal: !!initConfiguration.storeContextsToLocal
     },
     computeTransportConfiguration(initConfiguration)
   )

@@ -1,7 +1,8 @@
 import {
   getParentNode,
   isNodeShadowRoot,
-  buildUrl
+  buildUrl,
+  isSafari
 } from '@cloudcare/browser-core'
 import { CENSORED_STRING_MARK } from '../../../constants'
 import { shouldMaskNode } from './privacy'
@@ -159,7 +160,10 @@ export function getCssRulesString(cssStyleSheet) {
     return null
   }
   var styleSheetCssText = fixBrowserCompatibilityIssuesInCSS(
-    Array.from(rules, getCssRuleString).join('')
+    Array.from(
+      rules,
+      isSafari() ? getCssRuleStringForSafari : getCssRuleString
+    ).join('')
   )
   return switchToAbsoluteUrl(styleSheetCssText, cssStyleSheet.href)
 }
@@ -171,15 +175,10 @@ export function isSVGElement(el) {
   return el.tagName === 'svg' || el instanceof SVGElement
 }
 export function getCssRuleString(rule) {
-  var cssStringified = rule.cssText
-  if (isCSSImportRule(rule)) {
-    try {
-      cssStringified = getCssRulesString(rule.styleSheet) || cssStringified
-    } catch {
-      // ignore
-    }
-  }
-  return validateStringifiedCssRule(cssStringified)
+  return (
+    (isCSSImportRule(rule) && getCssRulesString(rule.styleSheet)) ||
+    rule.cssText
+  )
 }
 export function makeUrlAbsolute(url, baseUrl) {
   try {
@@ -188,16 +187,21 @@ export function makeUrlAbsolute(url, baseUrl) {
     return url
   }
 }
-export function validateStringifiedCssRule(cssStringified) {
-  // Safari does not escape selectors with : properly
-  if (cssStringified.includes(':')) {
-    // Replace e.g. [aa:bb] with [aa\\:bb]
-    const regex = /(\[(?:[\w-]+)[^\\])(:(?:[\w-]+)\])/gm
-    return cssStringified.replace(regex, '$1\\$2')
+function isCSSStyleRule(rule) {
+  return 'selectorText' in rule
+}
+function getCssRuleStringForSafari(rule) {
+  // Safari does not escape attribute selectors containing : properly
+  // https://bugs.webkit.org/show_bug.cgi?id=184604
+  if (isCSSStyleRule(rule) && rule.selectorText.includes(':')) {
+    // This regex replaces [foo:bar] by [foo\\:bar]
+    const escapeColon = /(\[[\w-]+[^\\])(:[^\]]+\])/g
+    return rule.cssText.replace(escapeColon, '$1\\$2')
   }
 
-  return cssStringified
+  return getCssRuleString(rule)
 }
+
 export function serializeStyleSheets(cssStyleSheets) {
   if (cssStyleSheets === undefined || cssStyleSheets.length === 0) {
     return undefined
@@ -205,7 +209,7 @@ export function serializeStyleSheets(cssStyleSheets) {
   return cssStyleSheets.map(function (cssStyleSheet) {
     var rules = cssStyleSheet.cssRules || cssStyleSheet.rules
     var cssRules = Array.from(rules, function (cssRule) {
-      return cssRule.cssText ? validateStringifiedCssRule(cssRule.cssText) : ''
+      return cssRule.cssText
     })
 
     var styleSheet = {
