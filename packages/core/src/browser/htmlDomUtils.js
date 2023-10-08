@@ -23,10 +23,15 @@ export function isNodeShadowRoot(node) {
   )
 }
 
-export function getChildNodes(node) {
-  return isNodeShadowHost(node) ? node.shadowRoot.childNodes : node.childNodes
+// export function getChildNodes(node) {
+//   return isNodeShadowHost(node) ? node.shadowRoot.childNodes : node.childNodes
+// }
+export function forEachChildNodes(node, callback) {
+  node.childNodes.forEach(callback)
+  if (isNodeShadowHost(node)) {
+    callback(node.shadowRoot)
+  }
 }
-
 /**
  * Return `host` in case if the current node is a shadow root otherwise will return the `parentNode`
  */

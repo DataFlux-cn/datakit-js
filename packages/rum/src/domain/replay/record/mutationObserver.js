@@ -1,11 +1,10 @@
 import {
   noop,
-  getChildNodes,
+  forEachChildNodes,
   isNodeShadowHost,
   getParentNode,
   isNullUndefinedDefaultValue,
-  monitor,
-  isNodeShadowRoot
+  monitor
 } from '@cloudcare/browser-core'
 import { getMutationObserverConstructor } from '../../domMutationCollection'
 import { NodePrivacyLevel } from '../../../constants'
@@ -42,8 +41,7 @@ export function startMutationObserver(
       mutations.concat(observer.takeRecords()),
       mutationCallback,
       configuration,
-      shadowRootsController,
-      target
+      shadowRootsController
     )
   })
 
@@ -73,8 +71,7 @@ function processMutations(
   mutations,
   mutationCallback,
   configuration,
-  shadowRootsController,
-  target
+  shadowRootsController
 ) {
   mutations
     .filter(function (mutation) {
@@ -95,7 +92,7 @@ function processMutations(
   // * should be hidden or ignored
   var filteredMutations = mutations.filter(function (mutation) {
     return (
-      target.contains(mutation.target) &&
+      mutation.target.isConnected &&
       nodeAndAncestorsHaveSerializedNode(mutation.target) &&
       getNodePrivacyLevel(
         mutation.target,
@@ -399,7 +396,7 @@ function traverseRemovedShadowDom(removedNode, shadowDomRemovedCallback) {
   if (isNodeShadowHost(removedNode)) {
     shadowDomRemovedCallback(removedNode.shadowRoot)
   }
-  getChildNodes(removedNode).forEach(function (child) {
-    traverseRemovedShadowDom(child, shadowDomRemovedCallback)
+  forEachChildNodes(removedNode, function (childNode) {
+    return traverseRemovedShadowDom(childNode, shadowDomRemovedCallback)
   })
 }
