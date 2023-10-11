@@ -2,6 +2,12 @@
 
 ## v3.1.1
 
+- fix: bug
+- feat: add storeContextsToLocal configuration to localstorage global context
+- fix: fix memory leak when using shadow dom
+
+## v3.1.1
+
 - fix: remove console
 - fix: update session replay  deflate handler
 - fix: update changelog
