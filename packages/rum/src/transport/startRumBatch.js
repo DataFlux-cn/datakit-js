@@ -57,10 +57,12 @@ function makeRumBatch(
       createHttpRequest(
         endpointUrl,
         configuration.batchBytesLimit,
+        configuration.sendContentTypeByJson,
         reportError
       ),
       flushController,
-      configuration.messageBytesLimit
+      configuration.messageBytesLimit,
+      configuration.sendContentTypeByJson
     )
     return {
       batch: batch,

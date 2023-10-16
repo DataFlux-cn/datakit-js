@@ -21,6 +21,7 @@ import { commonTags, dataMap, commonFields } from '../dataMap'
 import { RumEventType } from '../helper/enums'
 import { computeBytesCount } from '../helper/byteUtils'
 import { isPageExitReason } from '../browser/pageExitObservable'
+import { jsonStringify } from '../helper/serialisation/jsonStringify'
 // https://en.wikipedia.org/wiki/UTF-8
 // eslint-disable-next-line no-control-regex
 var HAS_MULTI_BYTES_CHARACTERS = /[^\u0000-\u007F]/
@@ -59,7 +60,7 @@ export var processedMessageByDataMap = function (message) {
           var _valueData = findByPath(message, value_path)
           filterFileds.push(_key)
           if (_valueData !== undefined && _valueData !== null) {
-            rowData.fields[_key] = _valueData // 这里不需要转译
+            rowData.fields[_key] = escapeJsonValue(_valueData) // 这里不需要转译
             fieldsStr.push(
               escapeRowData(_key) + '=' + escapeRowField(_valueData)
             )
@@ -68,7 +69,7 @@ export var processedMessageByDataMap = function (message) {
           var _valueData = findByPath(message, _value)
           filterFileds.push(_key)
           if (_valueData !== undefined && _valueData !== null) {
-            rowData.fields[_key] = _valueData // 这里不需要转译
+            rowData.fields[_key] = escapeJsonValue(_valueData) // 这里不需要转译
             fieldsStr.push(
               escapeRowData(_key) + '=' + escapeRowField(_valueData)
             )
@@ -88,12 +89,12 @@ export var processedMessageByDataMap = function (message) {
           filterFileds.push(_key)
           if (_value !== undefined && _value !== null) {
             _tagKeys.push(_key)
-            rowData.fields[_key] = _value // 这里不需要转译
+            rowData.fields[_key] = escapeJsonValue(_value) // 这里不需要转译
             fieldsStr.push(escapeRowData(_key) + '=' + escapeRowField(_value))
           }
         })
         if (_tagKeys.length) {
-          rowData.fields[CUSTOM_KEYS] = escapeRowField(_tagKeys)
+          rowData.fields[CUSTOM_KEYS] = escapeJsonValue(_tagKeys)
           fieldsStr.push(
             escapeRowData(CUSTOM_KEYS) + '=' + escapeRowField(_tagKeys)
           )
@@ -107,7 +108,7 @@ export var processedMessageByDataMap = function (message) {
             value !== undefined &&
             value !== null
           ) {
-            rowData.fields[key] = value // 这里不需要转译
+            rowData.fields[key] = escapeJsonValue(value) // 这里不需要转译
             fieldsStr.push(escapeRowData(key) + '=' + escapeRowField(value))
           }
         })
@@ -121,7 +122,7 @@ export var processedMessageByDataMap = function (message) {
         hasFileds = true
       }
       rowStr = rowStr + ' ' + message.date
-      rowData.time = toServerDuration(message.date) // 这里不需要转译
+      rowData.time = message.date // 这里不需要转译
     }
   })
   return {
@@ -129,12 +130,18 @@ export var processedMessageByDataMap = function (message) {
     rowData: hasFileds ? rowData : undefined
   }
 }
-var batch = function (request, flushController, messageBytesLimit) {
+var batch = function (
+  request,
+  flushController,
+  messageBytesLimit,
+  sendContentTypeByJson
+) {
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
   this.request = request
   this.flushController = flushController
   this.messageBytesLimit = messageBytesLimit
+  this.sendContentTypeByJson = sendContentTypeByJson
   var _this = this
   this.flushController.flushObservable.subscribe(function (event) {
     _this.flush(event)
@@ -151,8 +158,14 @@ batch.prototype.flush = function (event) {
   this.pushOnlyBuffer = []
   this.upsertBuffer = {}
   if (messages.length > 0) {
+    var payloadData = ''
+    if (this.sendContentTypeByJson) {
+      payloadData = '[' + messages.join(',') + ']'
+    } else {
+      payloadData = messages.join('\n')
+    }
     var payload = {
-      data: messages.join('\n'),
+      data: payloadData,
       bytesCount: event.bytesCount,
       flushReason: event.reason
     }
@@ -182,7 +195,12 @@ batch.prototype.addOrUpdate = function (message, key) {
   this.push(processedMessage, messageBytesCount, key)
 }
 batch.prototype.process = function (message) {
-  var processedMessage = processedMessageByDataMap(message).rowStr
+  var processedMessage = ''
+  if (this.sendContentTypeByJson) {
+    processedMessage = jsonStringify(processedMessageByDataMap(message).rowData)
+  } else {
+    processedMessage = processedMessageByDataMap(message).rowStr
+  }
   var messageBytesCount = computeBytesCount(processedMessage)
   return {
     processedMessage: processedMessage,

@@ -31,6 +31,7 @@ export function startRecording(
     createHttpRequest(
       configuration.sessionReplayEndPoint,
       SEGMENT_BYTES_LIMIT,
+      false,
       reportError
     )
 
