@@ -22,7 +22,9 @@ export function isNodeShadowRoot(node) {
     isElementNode(shadowRoot.host)
   )
 }
-
+export function hasChildNodes(node) {
+  return node.childNodes.length > 0 || isNodeShadowHost(node)
+}
 // export function getChildNodes(node) {
 //   return isNodeShadowHost(node) ? node.shadowRoot.childNodes : node.childNodes
 // }

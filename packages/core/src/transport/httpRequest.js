@@ -13,10 +13,24 @@ function addBatchPrecision(url) {
   if (!url) return url
   return url + (url.indexOf('?') === -1 ? '?' : '&') + 'precision=ms'
 }
-export function createHttpRequest(endpointUrl, bytesLimit, reportError) {
+export function createHttpRequest(
+  endpointUrl,
+  bytesLimit,
+  sendContentTypeByJson,
+  reportError
+) {
+  var contentType = sendContentTypeByJson
+    ? 'application/json; charset=UTF-8'
+    : undefined
   var retryState = newRetryState()
   var sendStrategyForRetry = function (payload, onResponse) {
-    return fetchKeepAliveStrategy(endpointUrl, bytesLimit, payload, onResponse)
+    return fetchKeepAliveStrategy(
+      endpointUrl,
+      bytesLimit,
+      contentType,
+      payload,
+      onResponse
+    )
   }
 
   return {
@@ -34,19 +48,28 @@ export function createHttpRequest(endpointUrl, bytesLimit, reportError) {
      * keep using sendBeaconStrategy on exit
      */
     sendOnExit: function (payload) {
-      sendBeaconStrategy(endpointUrl, bytesLimit, payload)
+      sendBeaconStrategy(endpointUrl, bytesLimit, contentType, payload)
     }
   }
 }
 
-function sendBeaconStrategy(endpointUrl, bytesLimit, payload) {
+function sendBeaconStrategy(endpointUrl, bytesLimit, contentType, payload) {
   var data = payload.data
   var bytesCount = payload.bytesCount
   var url = addBatchPrecision(endpointUrl)
   var canUseBeacon = !!navigator.sendBeacon && bytesCount < bytesLimit
   if (canUseBeacon) {
     try {
-      var isQueued = navigator.sendBeacon(url, data)
+      var beaconData
+      if (contentType) {
+        beaconData = new Blob([data], {
+          type: contentType
+        })
+      } else {
+        beaconData = data
+      }
+
+      var isQueued = navigator.sendBeacon(url, beaconData)
 
       if (isQueued) {
         return
@@ -55,12 +78,13 @@ function sendBeaconStrategy(endpointUrl, bytesLimit, payload) {
       // reportBeaconError(e)
     }
   }
-  sendXHR(url, data)
+  sendXHR(url, contentType, data)
 }
 
 export function fetchKeepAliveStrategy(
   endpointUrl,
   bytesLimit,
+  contentType,
   payload,
   onResponse
 ) {
@@ -69,12 +93,18 @@ export function fetchKeepAliveStrategy(
   var url = addBatchPrecision(endpointUrl)
   var canUseKeepAlive = isKeepAliveSupported() && bytesCount < bytesLimit
   if (canUseKeepAlive) {
-    fetch(url, {
+    var fetchOption = {
       method: 'POST',
       body: data,
       keepalive: true,
       mode: 'cors'
-    }).then(
+    }
+    if (contentType) {
+      fetchOption.headers = {
+        'Content-Type': contentType
+      }
+    }
+    fetch(url, fetchOption).then(
       monitor(function (response) {
         if (typeof onResponse === 'function') {
           onResponse({ status: response.status, type: response.type })
@@ -82,11 +112,11 @@ export function fetchKeepAliveStrategy(
       }),
       monitor(function () {
         // failed to queue the request
-        sendXHR(url, data, onResponse)
+        sendXHR(url, contentType, data, onResponse)
       })
     )
   } else {
-    sendXHR(url, data, onResponse)
+    sendXHR(url, contentType, data, onResponse)
   }
 }
 
@@ -99,9 +129,14 @@ function isKeepAliveSupported() {
   }
 }
 
-function sendXHR(url, data, onResponse) {
+function sendXHR(url, contentType, data, onResponse) {
   const request = new XMLHttpRequest()
   request.open('POST', url, true)
+  if (contentType) {
+    //application/json; charset=UTF-8
+    request.setRequestHeader('Content-Type', contentType)
+  }
+
   addEventListener(
     request,
     'loadend',

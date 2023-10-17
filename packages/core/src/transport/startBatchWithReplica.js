@@ -15,6 +15,7 @@ export function startBatchWithReplica(
       createHttpRequest(
         endpointUrl,
         configuration.batchBytesLimit,
+        configuration.sendContentTypeByJson,
         reportError
       ),
       createFlushController({
@@ -24,7 +25,8 @@ export function startBatchWithReplica(
         pageExitObservable: pageExitObservable,
         sessionExpireObservable: sessionExpireObservable
       }),
-      configuration.messageBytesLimit
+      configuration.messageBytesLimit,
+      configuration.sendContentTypeByJson
     )
   }
 

@@ -38,6 +38,7 @@ export function callMonitored(fn, context, args) {
 
 export function displayIfDebugEnabled(api) {
   var args = [].slice.call(arguments, 1)
+  display.apply(null, [api, '[MONITOR]'].concat(args))
   if (debugMode) {
     display.apply(null, [api, '[MONITOR]'].concat(args))
   }

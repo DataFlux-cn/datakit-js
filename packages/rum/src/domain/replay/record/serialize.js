@@ -1,8 +1,9 @@
 import {
   assign,
   startsWith,
-  isNodeShadowHost,
-  isNodeShadowRoot
+  isNodeShadowRoot,
+  forEachChildNodes,
+  hasChildNodes
 } from '@cloudcare/browser-core'
 import { STABLE_ATTRIBUTES } from '../../rumEventsCollection/actions/getSelectorsFromElement'
 import {
@@ -109,18 +110,13 @@ function serializeDocumentTypeNode(documentType) {
 }
 
 function serializeDocumentFragmentNode(element, options) {
-  var childNodes = []
-  if (element.childNodes.length) {
-    childNodes = serializeChildNodes(element, options)
-  }
-
   var isShadowRoot = isNodeShadowRoot(element)
   if (isShadowRoot) {
     options.serializationContext.shadowRootsController.addShadowRoot(element)
   }
   return {
     type: NodeType.DocumentFragment,
-    childNodes: childNodes,
+    childNodes: serializeChildNodes(element, options),
     isShadowRoot: isShadowRoot,
     adoptedStyleSheets: isShadowRoot
       ? serializeStyleSheets(element.adoptedStyleSheets)
@@ -185,7 +181,7 @@ export function serializeElementNode(element, options) {
   )
 
   var childNodes = []
-  if (element.childNodes.length && tagName !== 'style') {
+  if (hasChildNodes(element) && tagName !== 'style') {
     // OBJECT POOLING OPTIMIZATION:
     // We should not create a new object systematically as it could impact performances. Try to reuse
     // the same object as much as possible, and clone it only if we need to.
@@ -204,12 +200,12 @@ export function serializeElementNode(element, options) {
     childNodes = serializeChildNodes(element, childNodesSerializationOptions)
   }
 
-  if (isNodeShadowHost(element)) {
-    var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
-    if (shadowRoot !== null) {
-      childNodes.push(shadowRoot)
-    }
-  }
+  //   if (isNodeShadowHost(element)) {
+  //     var shadowRoot = serializeNodeWithId(element.shadowRoot, options)
+  //     if (shadowRoot !== null) {
+  //       childNodes.push(shadowRoot)
+  //     }
+  //   }
 
   return {
     type: NodeType.Element,
@@ -253,12 +249,13 @@ function serializeCDataNode() {
 
 export function serializeChildNodes(node, options) {
   var result = []
-  node.childNodes.forEach(function (childNode) {
+  forEachChildNodes(node, function (childNode) {
     var serializedChildNode = serializeNodeWithId(childNode, options)
     if (serializedChildNode) {
       result.push(serializedChildNode)
     }
   })
+  //   node.childNodes.forEach()
   return result
 }
 
