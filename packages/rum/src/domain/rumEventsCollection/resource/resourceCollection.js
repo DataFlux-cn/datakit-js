@@ -27,7 +27,6 @@ import {
   isCacheHit,
   isResourceUrlLimit
 } from './resourceUtils'
-import { supportPerformanceEntry } from '../../performanceCollection'
 import { PageState } from '../../contexts/pageStateHistory.js'
 export function startResourceCollection(
   lifeCycle,
@@ -186,12 +185,7 @@ function computePerformanceEntryMetrics(timing) {
     )
   }
 }
-function toPerformanceEntryRepresentation(entry) {
-  if (supportPerformanceEntry() && entry instanceof PerformanceEntry) {
-    entry.toJSON()
-  }
-  return entry
-}
+
 function computeRequestTracingInfo(request) {
   var hasBeenTraced = request.traceSampled && request.traceId && request.spanId
   if (!hasBeenTraced) {

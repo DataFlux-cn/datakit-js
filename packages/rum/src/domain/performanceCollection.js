@@ -13,7 +13,8 @@ import {
   runOnReadyState,
   setTimeout,
   addEventListener,
-  monitor
+  monitor,
+  assign
 } from '@cloudcare/browser-core'
 import {
   FAKE_INITIAL_DOCUMENT,
@@ -55,7 +56,8 @@ export function startPerformanceCollection(lifeCycle, configuration) {
     var experimentalEntries = [
       'largest-contentful-paint',
       'first-input',
-      'layout-shift'
+      'layout-shift',
+      'event'
     ]
     try {
       // Experimental entries are not retrieved by performance.getEntries()
@@ -63,7 +65,13 @@ export function startPerformanceCollection(lifeCycle, configuration) {
       // to get values that could happen before SDK init
       each(experimentalEntries, function (type) {
         var observer = new PerformanceObserver(handlePerformanceEntryList)
-        observer.observe({ type: type, buffered: true })
+        observer.observe({
+          type: type,
+          buffered: true,
+          // durationThreshold only impact PerformanceEventTiming entries used for INP computation which requires a threshold at 40 (default is 104ms)
+          // cf: https://github.com/GoogleChrome/web-vitals/blob/3806160ffbc93c3c4abf210a167b81228172b31c/src/onINP.ts#L209
+          durationThreshold: 40
+        })
       })
     } catch (e) {
       // Some old browser versions (ex: chrome 67) don't support the PerformanceObserver type and buffered options
@@ -100,7 +108,10 @@ export function retrieveInitialDocumentResourceTiming(callback) {
     var forcedAttributes = {
       entryType: 'resource',
       initiatorType: FAKE_INITIAL_DOCUMENT,
-      traceId: ''
+      traceId: '',
+      toJSON: function () {
+        return assign({}, timing, { toJSON: undefined })
+      }
     }
     if (
       supportPerformanceTimingEvent('navigation') &&
@@ -167,7 +178,10 @@ function retrieveFirstInputTiming(callback) {
       var timing = {
         entryType: 'first-input',
         processingStart: relativeNow(),
-        startTime: evt.timeStamp
+        processingEnd: relativeNow(),
+        startTime: evt.timeStamp,
+        duration: 0,
+        name: ''
       }
 
       if (evt.type === DOM_EVENT.POINTER_DOWN) {
@@ -236,7 +250,8 @@ function handleRumPerformanceEntries(lifeCycle, configuration, entries) {
       entry.entryType === 'longtask' ||
       entry.entryType === 'largest-contentful-paint' ||
       entry.entryType === 'first-input' ||
-      entry.entryType === 'layout-shift'
+      entry.entryType === 'layout-shift' ||
+      entry.entryType === 'event'
     )
   })
 
@@ -267,8 +282,4 @@ function isForbiddenResource(configuration, entry) {
     entry.entryType === 'resource' &&
     !isAllowedRequestUrl(configuration, entry.name)
   )
-}
-export function supportPerformanceEntry() {
-  // Safari 10 doesn't support PerformanceEntry
-  return typeof PerformanceEntry === 'function'
 }

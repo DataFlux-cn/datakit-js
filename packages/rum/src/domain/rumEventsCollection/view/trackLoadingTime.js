@@ -21,7 +21,11 @@ export function trackLoadingTime(
       callback(Math.max.apply(Math, loadingTimeCandidates))
     }
   }
-
+  function stopEndCallback() {
+    if (loadingTimeCandidates.length > 0) {
+      callback(Math.max.apply(Math, loadingTimeCandidates))
+    }
+  }
   var _waitPageActivityEnd = waitPageActivityEnd(
     lifeCycle,
     domMutationObservable,
@@ -46,6 +50,9 @@ export function trackLoadingTime(
         invokeCallbackIfAllCandidatesAreReceived()
       }
     },
-    stop: stop
+    stop: function () {
+      stop()
+      stopEndCallback()
+    }
   }
 }
