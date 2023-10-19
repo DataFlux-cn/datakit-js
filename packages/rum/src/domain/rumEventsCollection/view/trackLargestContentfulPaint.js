@@ -5,7 +5,8 @@ import {
   LifeCycleEventType,
   ONE_MINUTE
 } from '@cloudcare/browser-core'
-import { trackFirstHidden } from './trackFirstHidden'
+import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
+
 /**
  * Track the largest contentful paint (LCP) occurring during the initial View.  This can yield
  * multiple values, only the most recent one should be used.
@@ -14,9 +15,13 @@ import { trackFirstHidden } from './trackFirstHidden'
  */
 // It happens in some cases like sleep mode or some browser implementations
 export var LCP_MAXIMUM_DELAY = 10 * ONE_MINUTE
-export function trackLargestContentfulPaint(lifeCycle, eventTarget, callback) {
-  var firstHidden = trackFirstHidden()
-
+export function trackLargestContentfulPaint(
+  lifeCycle,
+  configuration,
+  firstHidden,
+  eventTarget,
+  callback
+) {
   // Ignore entries that come after the first user interaction.  According to the documentation, the
   // browser should not send largest-contentful-paint entries after a user interact with the page,
   // but the web-vitals reference implementation uses this as a safeguard.
@@ -37,12 +42,22 @@ export function trackLargestContentfulPaint(lifeCycle, eventTarget, callback) {
         return (
           entry.entryType === 'largest-contentful-paint' &&
           entry.startTime < firstInteractionTimestamp &&
-          entry.startTime < firstHidden.timeStamp &&
+          entry.startTime < firstHidden.geTimeStamp() &&
           entry.startTime < LCP_MAXIMUM_DELAY
         )
       })
       if (lcpEntry) {
-        callback(lcpEntry.startTime, lcpEntry.element)
+        var lcpTargetSelector
+        if (lcpEntry.element) {
+          lcpTargetSelector = getSelectorFromElement(
+            lcpEntry.element,
+            configuration.actionNameAttribute
+          )
+        }
+        callback({
+          value: lcpEntry.startTime,
+          targetSelector: lcpTargetSelector
+        })
       }
     }
   )

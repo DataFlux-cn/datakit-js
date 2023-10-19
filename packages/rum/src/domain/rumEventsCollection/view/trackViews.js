@@ -15,7 +15,9 @@ import {
   getPathFromHash,
   noop,
   setInterval,
+  Observable,
   clearInterval,
+  setTimeout,
   isNullUndefinedDefaultValue
 } from '@cloudcare/browser-core'
 
@@ -24,7 +26,7 @@ import { trackCommonViewMetrics } from './trackCommonViewMetrics'
 import { trackViewEventCounts } from './trackViewEventCounts'
 export var THROTTLE_VIEW_UPDATE_PERIOD = 3000
 export var SESSION_KEEP_ALIVE_INTERVAL = 5 * ONE_MINUTE
-
+export var KEEP_TRACKING_AFTER_VIEW_DELAY = 5 * ONE_MINUTE
 export function trackViews(
   location,
   lifeCycle,
@@ -34,8 +36,9 @@ export function trackViews(
   areViewsTrackedAutomatically,
   initialViewOptions
 ) {
+  var activeViews = new Set()
   function startNewView(loadingType, startClocks, viewOptions) {
-    return newView(
+    var newlyCreatedView = newView(
       lifeCycle,
       domMutationObservable,
       configuration,
@@ -44,6 +47,11 @@ export function trackViews(
       startClocks,
       viewOptions
     )
+    activeViews.add(newlyCreatedView)
+    newlyCreatedView.stopObservable.subscribe(function () {
+      activeViews.delete(newlyCreatedView)
+    })
+    return newlyCreatedView
   }
   var currentView = startNewView(
     ViewLoadingType.INITIAL_LOAD,
@@ -59,7 +67,7 @@ export function trackViews(
   }
   function startViewLifeCycle() {
     lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
-      startNewView(ViewLoadingType.ROUTE_CHANGE, undefined, {
+      currentView = startNewView(ViewLoadingType.ROUTE_CHANGE, undefined, {
         name: currentView.name,
         service: currentView.service,
         version: currentView.version
@@ -115,6 +123,9 @@ export function trackViews(
         locationChangeSubscription.unsubscribe()
       }
       currentView.end()
+      activeViews.forEach(function (view) {
+        view.stop()
+      })
     }
   }
 }
@@ -133,6 +144,7 @@ function newView(
     startClocks = clocksNow()
   }
   var id = UUID()
+  var stopObservable = new Observable()
   var customTimings = {}
   var documentVersion = 0
   var endClocks
@@ -178,23 +190,28 @@ function newView(
   var setLoadEvent = _trackCommonViewMetrics.setLoadEvent
   var stopCommonViewMetricsTracking = _trackCommonViewMetrics.stop
   var getCommonViewMetrics = _trackCommonViewMetrics.getCommonViewMetrics
-
+  var stopINPTracking = _trackCommonViewMetrics.stopINPTracking
+  var setViewEnd = _trackCommonViewMetrics.setViewEnd
   var _trackInitialViewTimings =
     loadingType === ViewLoadingType.INITIAL_LOAD
-      ? trackInitialViewMetrics(lifeCycle, setLoadEvent, scheduleViewUpdate)
+      ? trackInitialViewMetrics(
+          lifeCycle,
+          configuration,
+          setLoadEvent,
+          scheduleViewUpdate
+        )
       : {
-          scheduleStop: noop,
+          stop: noop,
           initialViewMetrics: {}
         }
-  var scheduleStopInitialViewMetricsTracking =
-    _trackInitialViewTimings.scheduleStop
+  var stopInitialViewMetricsTracking = _trackInitialViewTimings.stop
   var initialViewMetrics = _trackInitialViewTimings.initialViewMetrics
   var _trackViewEventCounts = trackViewEventCounts(
     lifeCycle,
     id,
     scheduleViewUpdate
   )
-  var scheduleStopEventCountsTracking = _trackViewEventCounts.scheduleStop
+  var stopEventCountsTracking = _trackViewEventCounts.scheduleStop
   var eventCounts = _trackViewEventCounts.eventCounts
 
   // Session keep alive
@@ -202,7 +219,6 @@ function newView(
     triggerViewUpdate,
     SESSION_KEEP_ALIVE_INTERVAL
   )
-  // Initial view update
   triggerViewUpdate()
 
   function triggerViewUpdate() {
@@ -229,12 +245,11 @@ function newView(
       eventCounts: eventCounts
     })
   }
-
-  return {
+  var result = {
     name: name,
     service: service,
     version: version,
-    scheduleUpdate: scheduleViewUpdate,
+    stopObservable: stopObservable,
     end: function (options) {
       if (endClocks) {
         // view already ended
@@ -250,12 +265,19 @@ function newView(
       )
       lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks: endClocks })
       clearInterval(keepAliveIntervalId)
+      setViewEnd(endClocks.relative)
       stopCommonViewMetricsTracking()
-      scheduleStopInitialViewMetricsTracking()
-      scheduleStopEventCountsTracking()
       triggerViewUpdate()
+      setTimeout(function () {
+        result.stop()
+      }, KEEP_TRACKING_AFTER_VIEW_DELAY)
     },
-
+    stop: function () {
+      stopInitialViewMetricsTracking()
+      stopEventCountsTracking()
+      stopINPTracking()
+      stopObservable.notify()
+    },
     addTiming: function (name, time) {
       if (endClocks) {
         return
@@ -267,6 +289,7 @@ function newView(
       scheduleViewUpdate()
     }
   }
+  return result
 }
 
 /**

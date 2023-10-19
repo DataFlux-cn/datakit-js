@@ -36,6 +36,7 @@ export function trackLoadingTime(
       }
     }
   )
+
   var stop = _waitPageActivityEnd.stop
   return {
     setLoadEvent: function (loadEvent) {

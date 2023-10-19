@@ -5,7 +5,8 @@ import {
   isNumber,
   RumEventType,
   LifeCycleEventType,
-  extend2Lev
+  extend2Lev,
+  findByPath
 } from '@cloudcare/browser-core'
 import { trackViews } from './trackViews'
 import { toValidEntry } from '../resource/resourceUtils'
@@ -75,6 +76,7 @@ function computePerformanceViewDetails(entry) {
   }
   return details
 }
+
 function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
   var replayStats = recorderApi.getReplayStats(view.id)
   var pageStates = pageStateHistory.findAll(
@@ -96,36 +98,64 @@ function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
       frustration: {
         count: view.eventCounts.frustrationCount
       },
-      cumulative_layout_shift: view.commonViewMetrics.cumulativeLayoutShift,
-      first_byte: toServerDuration(view.initialViewMetrics.firstByte),
-      dom_complete: toServerDuration(view.initialViewMetrics.domComplete),
-      dom_content_loaded: toServerDuration(
-        view.initialViewMetrics.domContentLoaded
+      cumulative_layout_shift: findByPath(
+        view.commonViewMetrics,
+        'cumulativeLayoutShift.value'
       ),
-      dom_interactive: toServerDuration(view.initialViewMetrics.domInteractive),
+      cumulative_layout_shift_target_selector: findByPath(
+        view.commonViewMetrics,
+        'cumulativeLayoutShift.targetSelector'
+      ),
+      first_byte: toServerDuration(
+        findByPath(view.initialViewMetrics, 'navigationTimings.firstByte')
+      ),
+      dom_complete: toServerDuration(
+        findByPath(view.initialViewMetrics, 'navigationTimings.domComplete')
+      ),
+      dom_content_loaded: toServerDuration(
+        findByPath(
+          view.initialViewMetrics,
+          'navigationTimings.domContentLoaded'
+        )
+      ),
+      dom_interactive: toServerDuration(
+        findByPath(view.initialViewMetrics, 'navigationTimings.domInteractive')
+      ),
       error: {
         count: view.eventCounts.errorCount
       },
       first_contentful_paint: toServerDuration(
-        view.initialViewMetrics.firstContentfulPaint
+        findByPath(view.initialViewMetrics, 'firstContentfulPaint')
       ),
       first_input_delay: toServerDuration(
-        view.initialViewMetrics.firstInputDelay
+        findByPath(view.initialViewMetrics, 'firstInput.delay')
       ),
       first_input_time: toServerDuration(
-        view.initialViewMetrics.firstInputTime
+        findByPath(view.initialViewMetrics, 'firstInput.time')
+      ),
+      first_input_target_selector: findByPath(
+        view.initialViewMetrics,
+        'firstInput.targetSelector'
       ),
       interaction_to_next_paint: toServerDuration(
-        view.commonViewMetrics.interactionToNextPaint
+        findByPath(view.commonViewMetrics, 'interactionToNextPaint.value')
+      ),
+      interaction_to_next_paint_target_selector: findByPath(
+        view.commonViewMetrics,
+        'interactionToNextPaint.targetSelector'
       ),
       is_active: view.isActive,
       name: view.name,
       largest_contentful_paint: toServerDuration(
-        view.initialViewMetrics.largestContentfulPaint
+        findByPath(view.initialViewMetrics, 'largestContentfulPaint.value')
       ),
-      largest_contentful_paint_element_selector:
-        view.initialViewMetrics.largestContentfulPaintElement,
-      load_event: toServerDuration(view.initialViewMetrics.loadEvent),
+      largest_contentful_paint_element_selector: findByPath(
+        view.initialViewMetrics,
+        'largestContentfulPaint.targetSelector'
+      ),
+      load_event: toServerDuration(
+        findByPath(view.initialViewMetrics, 'navigationTimings.loadEvent')
+      ),
       loading_time: discardNegativeDuration(
         toServerDuration(view.commonViewMetrics.loadingTime)
       ),
@@ -142,12 +172,11 @@ function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
       ? {
           scroll: {
             max_depth: view.commonViewMetrics.scroll.maxDepth,
-            max_depth_scroll_height:
-              view.commonViewMetrics.scroll.maxDepthScrollHeight,
             max_depth_scroll_top:
               view.commonViewMetrics.scroll.maxDepthScrollTop,
-            max_depth_time: toServerDuration(
-              view.commonViewMetrics.scroll.maxDepthTime
+            max_scroll_height: view.commonViewMetrics.scroll.maxScrollHeight,
+            max_scroll_height_time: toServerDuration(
+              view.commonViewMetrics.scroll.maxScrollHeightTime
             )
           }
         }

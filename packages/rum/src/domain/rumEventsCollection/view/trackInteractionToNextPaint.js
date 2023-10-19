@@ -1,10 +1,14 @@
 import {
   noop,
   LifeCycleEventType,
-  ViewLoadingType
+  ViewLoadingType,
+  addTelemetryDebug,
+  ONE_MINUTE,
+  elapsed,
+  isElementNode
 } from '@cloudcare/browser-core'
 import { supportPerformanceTimingEvent } from '../../performanceCollection'
-
+import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
 import {
   getInteractionCount,
   initInteractionCountPolyfill
@@ -13,18 +17,26 @@ import {
 // Arbitrary value to prevent unnecessary memory usage on views with lots of interactions.
 var MAX_INTERACTION_ENTRIES = 10
 
+export var MAX_INP_VALUE = 1 * ONE_MINUTE
+
 /**
  * Track the interaction to next paint (INP).
  * To avoid outliers, return the p98 worst interaction of the view.
  * Documentation: https://web.dev/inp/
  * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/main/src/onINP.ts
  */
-export function trackInteractionToNextPaint(viewLoadingType, lifeCycle) {
+export function trackInteractionToNextPaint(
+  configuration,
+  viewStart,
+  viewLoadingType,
+  lifeCycle
+) {
   if (!isInteractionToNextPaintSupported()) {
     return {
       getInteractionToNextPaint: function () {
         return undefined
       },
+      setViewEnd: noop,
       stop: noop
     }
   }
@@ -32,24 +44,55 @@ export function trackInteractionToNextPaint(viewLoadingType, lifeCycle) {
   var _trackViewInteractionCount = trackViewInteractionCount(viewLoadingType)
   var getViewInteractionCount =
     _trackViewInteractionCount.getViewInteractionCount
-  var longestInteractions = trackLongestInteractions(getViewInteractionCount)
-  var inpDuration = -1
+  var stopViewInteractionCount =
+    _trackViewInteractionCount.stopViewInteractionCount
 
+  let viewEnd = Infinity
+  var longestInteractions = trackLongestInteractions(getViewInteractionCount)
+  var interactionToNextPaint = -1
+  var interactionToNextPaintTargetSelector
+  var telemetryCollected = false
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
       for (var entry of entries) {
         if (
           (entry.entryType === 'event' || entry.entryType === 'first-input') &&
-          entry.interactionId
+          entry.interactionId &&
+          entry.startTime >= viewStart &&
+          entry.startTime <= viewEnd
         ) {
           longestInteractions.process(entry)
         }
       }
 
-      var newInpDuration = longestInteractions.estimateP98Duration()
-      if (newInpDuration) {
-        inpDuration = newInpDuration
+      var newInteraction = longestInteractions.estimateP98Duration()
+      if (newInteraction) {
+        interactionToNextPaint = newInteraction.duration
+        if (interactionToNextPaint > 10 * ONE_MINUTE && !telemetryCollected) {
+          telemetryCollected = true
+          addTelemetryDebug('INP outlier', {
+            inp: interactionToNextPaint,
+            interaction: {
+              timeFromViewStart: elapsed(viewStart, newInteraction.startTime),
+              duration: newInteraction.duration,
+              startTime: newInteraction.startTime,
+              processingStart: newInteraction.processingStart,
+              processingEnd: newInteraction.processingEnd,
+              interactionId: newInteraction.interactionId,
+              name: newInteraction.name,
+              targetNodeName: newInteraction.target?.nodeName
+            }
+          })
+        }
+        if (newInteraction.target && isElementNode(newInteraction.target)) {
+          interactionToNextPaintTargetSelector = getSelectorFromElement(
+            newInteraction.target,
+            configuration.actionNameAttribute
+          )
+        } else {
+          interactionToNextPaintTargetSelector = undefined
+        }
       }
     }
   )
@@ -58,11 +101,20 @@ export function trackInteractionToNextPaint(viewLoadingType, lifeCycle) {
     getInteractionToNextPaint: function () {
       // If no INP duration where captured because of the performanceObserver 40ms threshold
       // but the view interaction count > 0 then report 0
-      if (inpDuration >= 0) {
-        return inpDuration
+      if (interactionToNextPaint >= 0) {
+        return {
+          value: Math.min(interactionToNextPaint, MAX_INP_VALUE),
+          targetSelector: interactionToNextPaintTargetSelector
+        }
       } else if (getViewInteractionCount()) {
-        return 0
+        return {
+          value: 0
+        }
       }
+    },
+    setViewEnd: function (viewEndTime) {
+      viewEnd = viewEndTime
+      stopViewInteractionCount()
     },
     stop: subscribe.unsubscribe
   }
@@ -118,8 +170,6 @@ function trackLongestInteractions(getViewInteractionCount) {
         Math.floor(getViewInteractionCount() / 50)
       )
       return longestInteractions[interactionIndex]
-        ? longestInteractions[interactionIndex].duration
-        : undefined
     }
   }
 }
@@ -128,9 +178,23 @@ export function trackViewInteractionCount(viewLoadingType) {
   initInteractionCountPolyfill()
   var previousInteractionCount =
     viewLoadingType === ViewLoadingType.INITIAL_LOAD ? 0 : getInteractionCount()
+  var state = { stopped: false }
+
+  function computeViewInteractionCount() {
+    return getInteractionCount() - previousInteractionCount
+  }
   return {
     getViewInteractionCount: function () {
-      return getInteractionCount() - previousInteractionCount
+      if (state.stopped) {
+        return state.interactionCount
+      }
+      return computeViewInteractionCount()
+    },
+    stopViewInteractionCount: function () {
+      state = {
+        stopped: true,
+        interactionCount: computeViewInteractionCount()
+      }
     }
   }
 }

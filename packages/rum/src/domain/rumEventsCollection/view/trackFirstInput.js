@@ -1,5 +1,11 @@
-import { elapsed, find, LifeCycleEventType } from '@cloudcare/browser-core'
-import { trackFirstHidden } from './trackFirstHidden'
+import {
+  elapsed,
+  find,
+  LifeCycleEventType,
+  isElementNode
+} from '@cloudcare/browser-core'
+import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
+
 /**
  * Track the first input occurring during the initial View to return:
  * - First Input Delay
@@ -8,15 +14,19 @@ import { trackFirstHidden } from './trackFirstHidden'
  * Documentation: https://web.dev/fid/
  * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/master/src/getFID.ts
  */
-export function trackFirstInputTimings(lifeCycle, callback) {
-  var firstHidden = trackFirstHidden()
+export function trackFirstInput(
+  lifeCycle,
+  configuration,
+  firstHidden,
+  callback
+) {
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
       var firstInputEntry = find(entries, function (entry) {
         return (
           entry.entryType === 'first-input' &&
-          entry.startTime < firstHidden.timeStamp
+          entry.startTime < firstHidden.geTimeStamp()
         )
       })
       if (firstInputEntry) {
@@ -24,12 +34,19 @@ export function trackFirstInputTimings(lifeCycle, callback) {
           firstInputEntry.startTime,
           firstInputEntry.processingStart
         )
+        var firstInputTargetSelector
+        if (firstInputEntry.target && isElementNode(firstInputEntry.target)) {
+          firstInputTargetSelector = getSelectorFromElement(
+            firstInputEntry.target,
+            configuration.actionNameAttribute
+          )
+        }
         callback({
           // Ensure firstInputDelay to be positive, see
           // https://bugs.chromium.org/p/chromium/issues/detail?id=1185815
-          firstInputDelay: firstInputDelay >= 0 ? firstInputDelay : 0,
-          firstInputTime: firstInputEntry.startTime,
-          firstInputTarget: firstInputEntry.target
+          delay: firstInputDelay >= 0 ? firstInputDelay : 0,
+          time: firstInputEntry.startTime,
+          targetSelector: firstInputTargetSelector
         })
       }
     }

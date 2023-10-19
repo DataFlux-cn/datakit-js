@@ -25,22 +25,22 @@ export function trackEventCounts(data) {
         case RumEventType.ERROR:
           eventCounts.errorCount += 1
 
-          callback(eventCounts)
+          callback()
           break
         case RumEventType.ACTION:
           if (event.action.frustration) {
             eventCounts.frustrationCount += event.action.frustration.type.length
           }
           eventCounts.actionCount += 1
-          callback(eventCounts)
+          callback()
           break
         case RumEventType.LONG_TASK:
           eventCounts.longTaskCount += 1
-          callback(eventCounts)
+          callback()
           break
         case RumEventType.RESOURCE:
           eventCounts.resourceCount += 1
-          callback(eventCounts)
+          callback()
           break
       }
     }

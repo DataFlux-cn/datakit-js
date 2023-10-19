@@ -1,42 +1,37 @@
 import { DOM_EVENT, addEventListeners } from '@cloudcare/browser-core'
-var trackFirstHiddenSingleton
-var stopListeners
 
 export function trackFirstHidden(eventTarget) {
   if (typeof eventTarget === 'undefined') {
     eventTarget = window
   }
-  if (!trackFirstHiddenSingleton) {
-    if (document.visibilityState === 'hidden') {
-      trackFirstHiddenSingleton = { timeStamp: 0 }
-    } else {
-      trackFirstHiddenSingleton = {
-        timeStamp: Infinity
-      }
-      var listeners = addEventListeners(
-        eventTarget,
-        [DOM_EVENT.PAGE_HIDE, DOM_EVENT.VISIBILITY_CHANGE],
-        function (event) {
-          if (
-            event.type === 'pagehide' ||
-            document.visibilityState === 'hidden'
-          ) {
-            trackFirstHiddenSingleton.timeStamp = event.timeStamp
-            stopListeners()
-          }
-        },
-        { capture: true }
-      )
-      var stopListeners = listeners.stop
+  var timeStamp
+  var stopListeners
+  if (document.visibilityState === 'hidden') {
+    timeStamp = 0
+  } else {
+    timeStamp = Infinity
+    var stopListeners = addEventListeners(
+      eventTarget,
+      [DOM_EVENT.PAGE_HIDE, DOM_EVENT.VISIBILITY_CHANGE],
+      function (event) {
+        if (
+          event.type === DOM_EVENT.PAGE_HIDE ||
+          document.visibilityState === 'hidden'
+        ) {
+          timeStamp = event.timeStamp
+          stopListeners()
+        }
+      },
+      { capture: true }
+    ).stop
+  }
+
+  return {
+    geTimeStamp() {
+      return timeStamp
+    },
+    stop: function () {
+      stopListeners && stopListeners()
     }
   }
-
-  return trackFirstHiddenSingleton
-}
-
-export function resetFirstHidden() {
-  if (stopListeners) {
-    stopListeners()
-  }
-  trackFirstHiddenSingleton = undefined
 }

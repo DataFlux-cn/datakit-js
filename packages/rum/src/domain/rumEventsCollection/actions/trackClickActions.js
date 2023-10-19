@@ -52,7 +52,6 @@ export function trackClickActions(
         configuration,
         lifeCycle,
         domMutationObservable,
-        history,
         pointerDownEvent
       )
     },
@@ -74,12 +73,14 @@ export function trackClickActions(
   var stopActionEventsListener = _listenActionEvents.stop
   var actionContexts = {
     findActionId: function (startTime) {
-      return history.find(startTime)
+      const allIds = history.findAll(startTime)
+      if (allIds && allIds.length) {
+        return allIds[allIds.length - 1]
+      }
+      return undefined
     },
     findAllActionId: function (startTime) {
-      return configuration.trackFrustrations
-        ? history.findAll(startTime)
-        : history.find(startTime)
+      return history.findAll(startTime)
     }
   }
 
@@ -110,24 +111,12 @@ function processPointerDown(
   configuration,
   lifeCycle,
   domMutationObservable,
-  history,
   pointerDownEvent
 ) {
-  if (!configuration.trackFrustrations && history.find()) {
-    // TODO: remove this in a future major version. To keep retrocompatibility, ignore any new
-    // action if another one is already occurring.
-    return
-  }
-
   var clickActionBase = computeClickActionBase(
     pointerDownEvent,
     configuration.actionNameAttribute
   )
-  if (!configuration.trackFrustrations && !clickActionBase.name) {
-    // TODO: remove this in a future major version. To keep retrocompatibility, ignore any action
-    // with a blank name
-    return
-  }
 
   var hadActivityOnPointerDown = false
 
@@ -138,8 +127,6 @@ function processPointerDown(
     function (pageActivityEndEvent) {
       hadActivityOnPointerDown = pageActivityEndEvent.hadActivity
     },
-    // We don't care about the activity duration, we just want to know whether an activity did happen
-    // within the "validation delay" or not. Limit the duration so the callback is called sooner.
     PAGE_ACTIVITY_VALIDATION_DELAY
   )
 
@@ -169,10 +156,7 @@ function startClickAction(
     clickActionBase,
     startEvent
   )
-
-  if (configuration.trackFrustrations) {
-    appendClickToClickChain(click)
-  }
+  appendClickToClickChain(click)
   var _waitPageActivityEnd = waitPageActivityEnd(
     lifeCycle,
     domMutationObservable,
@@ -195,18 +179,6 @@ function startClickAction(
           )
         } else {
           click.stop()
-        }
-
-        // Validate or discard the click only if we don't track frustrations. It'll be done when
-        // the click chain is finalized.
-        if (!configuration.trackFrustrations) {
-          if (!pageActivityEndEvent.hadActivity) {
-            // If we are not tracking frustrations, we should discard the click to keep backward
-            // compatibility.
-            click.discard()
-          } else {
-            click.validate()
-          }
         }
       }
     },

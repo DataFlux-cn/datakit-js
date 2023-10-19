@@ -1,72 +1,68 @@
-import { setTimeout, assign, ONE_MINUTE } from '@cloudcare/browser-core'
+import { ONE_MINUTE } from '@cloudcare/browser-core'
 import { trackFirstContentfulPaint } from './trackFirstContentfulPaint'
-import { trackFirstInputTimings } from './trackFirstInputTimings'
+import { trackFirstInput } from './trackFirstInput'
 import { trackNavigationTimings } from './trackNavigationTimings'
 import { trackLargestContentfulPaint } from './trackLargestContentfulPaint'
-import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
+import { trackFirstHidden } from './trackFirstHidden'
 
 export var KEEP_TRACKING_TIMINGS_AFTER_VIEW_DELAY = 5 * ONE_MINUTE
 export function trackInitialViewMetrics(
   lifeCycle,
+  configuration,
   setLoadEvent,
   scheduleViewUpdate
 ) {
   var initialViewMetrics = {}
-  function setMetrics(newMetrics) {
-    assign(initialViewMetrics, newMetrics)
-    scheduleViewUpdate()
-  }
-
   var _trackNavigationTimings = trackNavigationTimings(
     lifeCycle,
     function (navigationTimings) {
       setLoadEvent(navigationTimings.loadEvent)
-      setMetrics(navigationTimings)
+      initialViewMetrics.navigationTimings = navigationTimings
+      scheduleViewUpdate()
     }
   )
+  var firstHidden = trackFirstHidden()
   var stopNavigationTracking = _trackNavigationTimings.stop
   var _trackFirstContentfulPaint = trackFirstContentfulPaint(
     lifeCycle,
+    firstHidden,
     function (firstContentfulPaint) {
-      setMetrics({ firstContentfulPaint: firstContentfulPaint })
+      initialViewMetrics.firstContentfulPaint = firstContentfulPaint
+      scheduleViewUpdate()
     }
   )
   var stopFCPTracking = _trackFirstContentfulPaint.stop
   var _trackLargestContentfulPaint = trackLargestContentfulPaint(
     lifeCycle,
+    configuration,
+    firstHidden,
     window,
-    function (largestContentfulPaint, lcpElement) {
-      setMetrics({
-        largestContentfulPaint: largestContentfulPaint,
-        largestContentfulPaintElement: lcpElement
-          ? getSelectorFromElement(lcpElement)
-          : undefined
-      })
+    function (largestContentfulPaint) {
+      initialViewMetrics.largestContentfulPaint = largestContentfulPaint
+      scheduleViewUpdate()
     }
   )
   var stopLCPTracking = _trackLargestContentfulPaint.stop
-  var _trackFirstInputTimings = trackFirstInputTimings(
+  var _trackFirstInput = trackFirstInput(
     lifeCycle,
-    function (firttime) {
-      setMetrics({
-        firstInputDelay: firttime.firstInputDelay,
-        firstInputTime: firttime.firstInputTime
-      })
+    configuration,
+    firstHidden,
+    function (firstInput) {
+      initialViewMetrics.firstInput = firstInput
+      scheduleViewUpdate()
     }
   )
-  var stopFIDTracking = _trackFirstInputTimings.stop
+  var stopFIDTracking = _trackFirstInput.stop
   function stop() {
     stopNavigationTracking()
     stopFCPTracking()
     stopLCPTracking()
     stopFIDTracking()
+    firstHidden.stop()
   }
 
   return {
     stop: stop,
-    initialViewMetrics: initialViewMetrics,
-    scheduleStop: function () {
-      setTimeout(stop, KEEP_TRACKING_TIMINGS_AFTER_VIEW_DELAY)
-    }
+    initialViewMetrics: initialViewMetrics
   }
 }

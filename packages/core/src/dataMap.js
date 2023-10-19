@@ -12,7 +12,6 @@ export var commonTags = {
   session_id: 'session.id',
   session_type: 'session.type',
   session_sampling: 'session.is_sampling',
-  session_has_replay: 'session.has_replay',
   is_signin: 'user.is_signin',
   os: 'device.os',
   os_version: 'device.os_version',
@@ -36,7 +35,10 @@ export var commonFields = {
   action_id: 'action.id',
   action_ids: 'action.ids',
   view_in_foreground: 'view.in_foreground',
-  display: 'display'
+  display: 'display',
+  session_has_replay: 'session.has_replay',
+  is_login: 'user.is_login',
+  page_states: '_gc.page_states'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -60,6 +62,8 @@ export var dataMap = {
       largest_contentful_paint_element_selector:
         'view.largest_contentful_paint_element_selector',
       cumulative_layout_shift: 'view.cumulative_layout_shift',
+      cumulative_layout_shift_target_selector:
+        'view.cumulative_layout_shift_target_selector',
       first_input_delay: 'view.first_input_delay',
       loading_time: 'view.loading_time',
       dom_interactive: 'view.dom_interactive',
@@ -67,15 +71,17 @@ export var dataMap = {
       dom_complete: 'view.dom_complete',
       load_event: 'view.load_event',
       first_input_time: 'view.first_input_time',
+      first_input_target_selector: 'view.first_input_target_selector',
       first_paint_time: 'view.fpt',
       interaction_to_next_paint: 'view.interaction_to_next_paint',
+      interaction_to_next_paint_target_selector:
+        'view.interaction_to_next_paint_target_selector',
       resource_load_time: 'view.resource_load_time',
       time_to_interactive: 'view.tti',
       dom: 'view.dom',
       dom_ready: 'view.dom_ready',
       time_spent: 'view.time_spent',
       first_byte: 'view.first_byte',
-      page_states: '_gc.page_states',
       frustration_count: 'view.frustration.count',
       custom_timings: 'view.custom_timings'
     }

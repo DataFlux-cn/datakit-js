@@ -5,53 +5,58 @@ import {
   throttle,
   addEventListener,
   DOM_EVENT,
-  getScrollY
+  getScrollY,
+  monitor,
+  Observable
 } from '@cloudcare/browser-core'
 import { getViewportDimension } from '../../initViewportObservable'
 
 /** Arbitrary scroll throttle duration */
 export var THROTTLE_SCROLL_DURATION = ONE_SECOND
 
-export function trackScrollMetrics(viewStart, callback, getScrollValues) {
-  if (getScrollValues === undefined) {
-    getScrollValues = computeScrollValues
+export function trackScrollMetrics(
+  configuration,
+  viewStart,
+  callback,
+  scrollValues
+) {
+  if (scrollValues === undefined) {
+    scrollValues = createScrollValuesObservable(configuration)
   }
-  var maxDepth = 0
-  var handleScrollEvent = throttle(
-    function () {
-      var _scrollValues = getScrollValues()
-      var scrollHeight = _scrollValues._scrollValues
-      var scrollDepth = _scrollValues.scrollDepth
-      var scrollTop = _scrollValues.scrollTop
-      if (scrollDepth > maxDepth) {
-        var now = relativeNow()
-        var maxDepthTime = elapsed(viewStart.relative, now)
-        maxDepth = scrollDepth
-        callback({
-          maxDepth: maxDepth,
-          maxDepthScrollHeight: scrollHeight,
-          maxDepthTime: maxDepthTime,
-          maxDepthScrollTop: scrollTop
-        })
-      }
-    },
-    THROTTLE_SCROLL_DURATION,
-    { leading: false, trailing: true }
-  )
+  var maxScrollDepth = 0
+  var maxScrollHeight = 0
+  var maxScrollHeightTime = 0
+  var subscription = scrollValues.subscribe(function (data) {
+    var scrollDepth = data.scrollDepth
+    var scrollTop = data.scrollTop
+    var scrollHeight = data.scrollHeight
+    var shouldUpdate = false
 
-  var _addEventListener = addEventListener(
-    window,
-    DOM_EVENT.SCROLL,
-    handleScrollEvent.throttled,
-    {
-      passive: true
+    if (scrollDepth > maxScrollDepth) {
+      maxScrollDepth = scrollDepth
+      shouldUpdate = true
     }
-  )
+
+    if (scrollHeight > maxScrollHeight) {
+      maxScrollHeight = scrollHeight
+      var now = relativeNow()
+      maxScrollHeightTime = elapsed(viewStart.relative, now)
+      shouldUpdate = true
+    }
+
+    if (shouldUpdate) {
+      callback({
+        maxDepth: Math.min(maxScrollDepth, maxScrollHeight),
+        maxDepthScrollTop: scrollTop,
+        maxScrollHeight: maxScrollHeight,
+        maxScrollHeightTime: maxScrollHeightTime
+      })
+    }
+  })
 
   return {
     stop: function () {
-      handleScrollEvent.cancel()
-      _addEventListener.stop()
+      return subscription.unsubscribe()
     }
   }
 }
@@ -71,4 +76,43 @@ export function computeScrollValues() {
     scrollDepth: scrollDepth,
     scrollTop: scrollTop
   }
+}
+export function createScrollValuesObservable(configuration, throttleDuration) {
+  if (throttleDuration === undefined) {
+    throttleDuration = THROTTLE_SCROLL_DURATION
+  }
+  var observable = new Observable(function () {
+    function notify() {
+      observable.notify(computeScrollValues())
+    }
+
+    if (window.ResizeObserver) {
+      var throttledNotify = throttle(notify, throttleDuration, {
+        leading: false,
+        trailing: true
+      })
+
+      var observerTarget = document.scrollingElement || document.documentElement
+      var resizeObserver = new ResizeObserver(
+        monitor(throttledNotify.throttled)
+      )
+      resizeObserver.observe(observerTarget)
+      var eventListener = addEventListener(
+        window,
+        DOM_EVENT.SCROLL,
+        throttledNotify.throttled,
+        {
+          passive: true
+        }
+      )
+
+      return function () {
+        throttledNotify.cancel()
+        resizeObserver.unobserve(observerTarget)
+        eventListener.stop()
+      }
+    }
+  })
+
+  return observable
 }

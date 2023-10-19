@@ -7,8 +7,6 @@ import {
   isArray,
   extend,
   isString,
-  toServerDuration,
-  isBoolean,
   isEmptyObject,
   isObject
 } from '../helper/tools'
@@ -47,7 +45,7 @@ export var processedMessageByDataMap = function (message) {
         var _value = findByPath(message, value_path)
         filterFileds.push(_key)
         if (_value || isNumber(_value)) {
-          rowData.tags[_key] = escapeJsonValue(_value)
+          rowData.tags[_key] = escapeJsonValue(_value, true)
           tagsStr.push(escapeRowData(_key) + '=' + escapeRowData(_value))
         }
       })

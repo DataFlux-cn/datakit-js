@@ -11,7 +11,10 @@ import {
   RequestType,
   ResourceType,
   RumEventType,
-  LifeCycleEventType
+  LifeCycleEventType,
+  toServerDuration,
+  some,
+  isNullUndefinedDefaultValue
 } from '@cloudcare/browser-core'
 import { matchRequestTiming } from './matchRequestTiming'
 import {
@@ -25,11 +28,17 @@ import {
   isResourceUrlLimit
 } from './resourceUtils'
 import { supportPerformanceEntry } from '../../performanceCollection'
-export function startResourceCollection(lifeCycle, configuration) {
+import { PageState } from '../../contexts/pageStateHistory.js'
+export function startResourceCollection(
+  lifeCycle,
+  configuration,
+  sessionManager,
+  pageStateHistory
+) {
   lifeCycle.subscribe(LifeCycleEventType.REQUEST_COMPLETED, function (request) {
     lifeCycle.notify(
       LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processRequest(request)
+      processRequest(request, sessionManager, pageStateHistory)
     )
   })
 
@@ -45,7 +54,7 @@ export function startResourceCollection(lifeCycle, configuration) {
         ) {
           lifeCycle.notify(
             LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-            processResourceEntry(entry)
+            processResourceEntry(entry, sessionManager, pageStateHistory)
           )
         }
       }
@@ -53,7 +62,7 @@ export function startResourceCollection(lifeCycle, configuration) {
   )
 }
 
-function processRequest(request) {
+function processRequest(request, sessionManager, pageStateHistory) {
   var type =
     request.type === RequestType.XHR ? ResourceType.XHR : ResourceType.FETCH
   var matchingTiming = matchRequestTiming(request)
@@ -64,6 +73,20 @@ function processRequest(request) {
     ? computePerformanceEntryMetrics(matchingTiming)
     : undefined
   var tracingInfo = computeRequestTracingInfo(request)
+
+  var duration = computeRequestDuration(
+    pageStateHistory,
+    startClocks,
+    request.duration
+  )
+  var pageStateInfo = computePageStateInfo(
+    pageStateHistory,
+    startClocks,
+    isNullUndefinedDefaultValue(
+      matchingTiming && matchingTiming.duration,
+      request.duration
+    )
+  )
   var urlObj = urlParse(request.url).getParse()
   var resourceEvent = extend2Lev(
     {
@@ -71,7 +94,7 @@ function processRequest(request) {
       resource: {
         id: UUID,
         type: type,
-        duration: msToNs(request.duration),
+        duration: duration,
         method: request.method,
         status: request.status,
         statusGroup: getStatusGroup(request.status),
@@ -84,14 +107,14 @@ function processRequest(request) {
       type: RumEventType.RESOURCE
     },
     tracingInfo,
-    correspondingTimingOverrides
+    correspondingTimingOverrides,
+    pageStateInfo
   )
   return {
     startTime: startClocks.relative,
     rawRumEvent: resourceEvent,
     domainContext: {
-      performanceEntry:
-        matchingTiming && toPerformanceEntryRepresentation(matchingTiming),
+      performanceEntry: matchingTiming,
       xhr: request.xhr,
       response: request.response,
       requestInput: request.input,
@@ -101,9 +124,11 @@ function processRequest(request) {
   }
 }
 
-function processResourceEntry(entry) {
+function processResourceEntry(entry, sessionManager, pageStateHistory) {
   var type = computeResourceKind(entry)
   var entryMetrics = computePerformanceEntryMetrics(entry)
+  var startClocks = relativeToClocks(entry.startTime)
+
   var tracingInfo = computeEntryTracingInfo(entry)
   var urlObj = urlParse(entry.name).getParse()
   var statusCode = ''
@@ -112,7 +137,13 @@ function processResourceEntry(entry) {
   } else if (isCacheHit(entry)) {
     statusCode = 200
   }
-  var startClocks = relativeToClocks(entry.startTime)
+
+  var pageStateInfo = computePageStateInfo(
+    pageStateHistory,
+    startClocks,
+    entry.duration
+  )
+
   var resourceEvent = extend2Lev(
     {
       date: startClocks.timeStamp,
@@ -131,13 +162,14 @@ function processResourceEntry(entry) {
       type: RumEventType.RESOURCE
     },
     tracingInfo,
-    entryMetrics
+    entryMetrics,
+    pageStateInfo
   )
   return {
     startTime: startClocks.relative,
     rawRumEvent: resourceEvent,
     domainContext: {
-      performanceEntry: toPerformanceEntryRepresentation(entry)
+      performanceEntry: entry
     }
   }
 }
@@ -173,7 +205,27 @@ function computeRequestTracingInfo(request) {
     resource: { id: UUID() }
   }
 }
-
+function computePageStateInfo(pageStateHistory, startClocks, duration) {
+  return {
+    _gc: {
+      page_states: pageStateHistory.findAll(startClocks.relative, duration),
+      page_was_discarded: String(document.wasDiscarded)
+    }
+  }
+}
+function computeRequestDuration(pageStateHistory, startClocks, duration) {
+  const requestCrosseds = pageStateHistory.findAll(
+    startClocks.relative,
+    duration
+  )
+  var requestCrossedFrozenState
+  if (requestCrosseds) {
+    requestCrossedFrozenState = some(requestCrosseds, function (pageState) {
+      return pageState.state === PageState.FROZEN
+    })
+  }
+  return !requestCrossedFrozenState ? toServerDuration(duration) : undefined
+}
 function computeEntryTracingInfo(entry) {
   return entry.traceId ? { _gc: { traceId: entry.traceId } } : undefined
 }

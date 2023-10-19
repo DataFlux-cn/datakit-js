@@ -20,6 +20,7 @@ import { startActionCollection } from '../domain/rumEventsCollection/actions/act
 import { startRumBatch } from '../transport/startRumBatch'
 import { startRumEventBridge } from '../transport/startRumEventBridge'
 import { startRumAssembly } from '../domain/assembly'
+import { startDisplayContext } from '../domain/contexts/displayContext.js'
 import { startInternalContext } from '../domain/contexts/internalContext'
 // import { startForegroundContexts } from '../domain/contexts/foregroundContexts'
 import { startUrlContexts } from '../domain/contexts/urlContexts'
@@ -38,6 +39,7 @@ export function startRum(
   userContextManager,
   initialViewOptions
 ) {
+  var cleanupTasks = []
   var lifeCycle = new LifeCycle()
   var telemetry = startRumTelemetry(configuration)
   telemetry.setContextProvider(function () {
@@ -64,7 +66,9 @@ export function startRum(
   pageExitObservable.subscribe(function (event) {
     lifeCycle.notify(LifeCycleEventType.PAGE_EXITED, event)
   })
-
+  cleanupTasks.push(function () {
+    pageExitSubscription.unsubscribe()
+  })
   var session = !canUseEventBridge()
     ? startRumSessionManager(configuration, lifeCycle)
     : startRumSessionManagerStub()
@@ -77,6 +81,9 @@ export function startRum(
       pageExitObservable,
       session.expireObservable
     )
+    cleanupTasks.push(function () {
+      batch.stop()
+    })
   } else {
     startRumEventBridge(lifeCycle)
   }
@@ -105,9 +112,13 @@ export function startRum(
   var urlContexts = _startRumEventCollection.urlContexts
   var actionContexts = _startRumEventCollection.actionContexts
   var pageStateHistory = _startRumEventCollection.pageStateHistory
+  var stopRumEventCollection = _startRumEventCollection.stop
   var addAction = _startRumEventCollection.addAction
+
+  cleanupTasks.push(stopRumEventCollection)
+
   startLongTaskCollection(lifeCycle, session)
-  startResourceCollection(lifeCycle, configuration)
+  startResourceCollection(lifeCycle, configuration, session, pageStateHistory)
 
   var _startViewCollection = startViewCollection(
     lifeCycle,
@@ -121,6 +132,9 @@ export function startRum(
   )
   var addTiming = _startViewCollection.addTiming
   var startView = _startViewCollection.startView
+  var stopViewCollection = _startViewCollection.stop
+  cleanupTasks.push(stopViewCollection)
+
   var _startErrorCollection = startErrorCollection(
     lifeCycle,
     configuration,
@@ -148,7 +162,12 @@ export function startRum(
     stopSession: function () {
       session.expire()
     },
-    getInternalContext: internalContext.get
+    getInternalContext: internalContext.get,
+    stop: function () {
+      cleanupTasks.forEach(function (task) {
+        task()
+      })
+    }
   }
 }
 function startRumTelemetry(configuration) {
@@ -189,6 +208,8 @@ export function startRumEventCollection(
   )
   var actionContexts = _startActionCollection.actionContexts
   var addAction = _startActionCollection.addAction
+
+  var displayContext = startDisplayContext()
   startRumAssembly(
     configuration,
     lifeCycle,
@@ -197,6 +218,7 @@ export function startRumEventCollection(
     viewContexts,
     urlContexts,
     actionContexts,
+    displayContext,
     buildCommonContext,
     reportError
   )
@@ -208,7 +230,9 @@ export function startRumEventCollection(
     actionContexts: actionContexts,
     stop: function () {
       viewContexts.stop()
+      urlContexts.stop()
       pageStateHistory.stop()
+      displayContext.stop()
     }
   }
 }

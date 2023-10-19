@@ -1,5 +1,5 @@
 import { toValidEntry } from './resourceUtils'
-import { map, filter } from '@cloudcare/browser-core'
+import { map, filter, addDuration } from '@cloudcare/browser-core'
 
 /**
  * Look for corresponding timing in resource timing buffer
@@ -26,7 +26,7 @@ export function matchRequestTiming(request) {
   var candidates = map(sameNameEntries, function (entry) {
     return entry.toJSON()
   })
-  
+
   candidates = filter(candidates, toValidEntry)
   candidates = filter(candidates, function (entry) {
     return isBetween(
@@ -42,20 +42,11 @@ export function matchRequestTiming(request) {
   if (candidates.length === 1) {
     return candidates[0]
   }
-
-  if (candidates.length === 2 && firstCanBeOptionRequest(candidates)) {
-    return candidates[1]
-  }
-
   return
 }
 
-function firstCanBeOptionRequest(correspondingEntries) {
-  return endTime(correspondingEntries[0]) <= correspondingEntries[1].startTime
-}
-
 function endTime(timing) {
-  return timing.startTime + timing.duration
+  return addDuration(timing.startTime, timing.duration)
 }
 
 function isBetween(timing, start, end) {
@@ -63,6 +54,6 @@ function isBetween(timing, start, end) {
   var errorMargin = 1
   return (
     timing.startTime >= start - errorMargin &&
-    endTime(timing) <= end + errorMargin
+    endTime(timing) <= addDuration(end, errorMargin)
   )
 }

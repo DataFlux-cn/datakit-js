@@ -1,11 +1,6 @@
-import { noop } from '@cloudcare/browser-core'
-
-import { computeScrollValues, trackScrollMetrics } from './trackScrollMetrics'
+import { trackScrollMetrics } from './trackScrollMetrics'
 import { trackLoadingTime } from './trackLoadingTime'
-import {
-  isLayoutShiftSupported,
-  trackCumulativeLayoutShift
-} from './trackCumulativeLayoutShift'
+import { trackCumulativeLayoutShift } from './trackCumulativeLayoutShift'
 import { trackInteractionToNextPaint } from './trackInteractionToNextPaint'
 
 export function trackCommonViewMetrics(
@@ -25,60 +20,48 @@ export function trackCommonViewMetrics(
     viewStart,
     function (newLoadingTime) {
       commonViewMetrics.loadingTime = newLoadingTime
-
-      // We compute scroll metrics at loading time to ensure we have scroll data when loading the view initially
-      // This is to ensure that we have the depth data even if the user didn't scroll or if the view is not scrollable.
-      var _computeScrollValues = computeScrollValues()
-
-      commonViewMetrics.scroll = {
-        maxDepth: _computeScrollValues.scrollDepth,
-        maxDepthScrollHeight: _computeScrollValues.scrollHeight,
-        maxDepthTime: newLoadingTime,
-        maxDepthScrollTop: _computeScrollValues.scrollTop
-      }
       scheduleViewUpdate()
     }
   )
   var stopLoadingTimeTracking = _trackLoadingTime.stop
   var setLoadEvent = _trackLoadingTime.setLoadEvent
   var _trackScrollMetrics = trackScrollMetrics(
+    configuration,
     viewStart,
     function (newScrollMetrics) {
       commonViewMetrics.scroll = newScrollMetrics
-    },
-    computeScrollValues
+    }
   )
   var stopScrollMetricsTracking = _trackScrollMetrics.stop
   var stopCLSTracking
-  if (isLayoutShiftSupported()) {
-    commonViewMetrics.cumulativeLayoutShift = 0
-    var _trackCumulativeLayoutShift = trackCumulativeLayoutShift(
-      lifeCycle,
-      function (cumulativeLayoutShift) {
-        commonViewMetrics.cumulativeLayoutShift = cumulativeLayoutShift
-        scheduleViewUpdate()
-      }
-    )
-    stopCLSTracking = _trackCumulativeLayoutShift.stop
-  } else {
-    stopCLSTracking = noop
-  }
-
+  var _trackCumulativeLayoutShift = trackCumulativeLayoutShift(
+    lifeCycle,
+    configuration,
+    function (cumulativeLayoutShift) {
+      commonViewMetrics.cumulativeLayoutShift = cumulativeLayoutShift
+      scheduleViewUpdate()
+    }
+  )
+  var stopCLSTracking = _trackCumulativeLayoutShift.stop
   var _trackInteractionToNextPaint = trackInteractionToNextPaint(
+    configuration,
+    viewStart.relative,
     loadingType,
     lifeCycle
   )
   var stopINPTracking = _trackInteractionToNextPaint.stop
   var getInteractionToNextPaint =
     _trackInteractionToNextPaint.getInteractionToNextPaint
+  var setViewEnd = _trackInteractionToNextPaint.setViewEnd
   return {
     stop: function () {
       stopLoadingTimeTracking()
       stopCLSTracking()
       stopScrollMetricsTracking()
-      stopINPTracking()
     },
+    stopINPTracking: stopINPTracking,
     setLoadEvent: setLoadEvent,
+    setViewEnd: setViewEnd,
     getCommonViewMetrics: function () {
       commonViewMetrics.interactionToNextPaint = getInteractionToNextPaint()
       return commonViewMetrics

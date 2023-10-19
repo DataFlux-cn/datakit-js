@@ -1,5 +1,5 @@
 import { jsonStringify } from './jsonStringify'
-import { isString } from '../tools'
+import { isString, isNumber } from '../tools'
 export function escapeRowData(str) {
   if (typeof str === 'object' && str) {
     str = jsonStringify(str)
@@ -12,12 +12,15 @@ export function escapeRowData(str) {
   })
 }
 
-export function escapeJsonValue(value) {
-  if (isString(value)) {
-    return value
-  } else {
-    return jsonStringify(value)
+export function escapeJsonValue(value, isTag) {
+  if (typeof value === 'object' && value) {
+    value = jsonStringify(value)
+  } else if (isTag) {
+    // tag  json  只能是字符串
+    value = '' + value
   }
+
+  return value
 }
 
 export function escapeFieldValueStr(str) {
