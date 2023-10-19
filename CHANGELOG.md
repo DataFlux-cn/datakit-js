@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.1.3
+
+- fix: bug
+- fix: bug
+- feat: 1. add cumulative_layout_shift_target_selector, first_input_target_selector,interaction_to_next_paint_target_selector metric
+- feat: add config to json send data
+- feat: update changelog
+- fix: npm version
+- fix: bug
+- feat: add storeContextsToLocal configuration to localstorage global context
+- fix: fix memory leak when using shadow dom
+
 ## v3.1.2
 
 - fix: npm version
