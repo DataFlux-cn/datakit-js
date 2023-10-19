@@ -3,11 +3,7 @@ import {
   getParentNode,
   isTextNode
 } from '@cloudcare/browser-core'
-import {
-  switchToAbsoluteUrl,
-  getCssRulesString,
-  getHref
-} from './serializationUtils'
+
 import {
   NodePrivacyLevel,
   PRIVACY_ATTR_NAME,

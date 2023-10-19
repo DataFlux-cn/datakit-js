@@ -1,5 +1,14 @@
-import { round, ONE_SECOND, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  find,
+  noop,
+  round,
+  ONE_SECOND,
+  LifeCycleEventType,
+  isElementNode
+} from '@cloudcare/browser-core'
 import { supportPerformanceTimingEvent } from '../../performanceCollection'
+import { getSelectorFromElement } from '../actions/getSelectorsFromElement'
+
 /**
  * Track the cumulative layout shifts (CLS).
  * Layout shifts are grouped into session windows.
@@ -17,8 +26,16 @@ import { supportPerformanceTimingEvent } from '../../performanceCollection'
  * https://web.dev/evolving-cls/
  * Reference implementation: https://github.com/GoogleChrome/web-vitals/blob/master/src/getCLS.ts
  */
-export function trackCumulativeLayoutShift(lifeCycle, callback) {
+export function trackCumulativeLayoutShift(lifeCycle, configuration, callback) {
+  if (!isLayoutShiftSupported()) {
+    return {
+      stop: noop
+    }
+  }
   var maxClsValue = 0
+  callback({
+    value: 0
+  })
   var window = slidingSessionWindow()
   var _subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
@@ -29,7 +46,19 @@ export function trackCumulativeLayoutShift(lifeCycle, callback) {
           window.update(entry)
           if (window.value() > maxClsValue) {
             maxClsValue = window.value()
-            callback(round(maxClsValue, 4))
+            var cls = round(maxClsValue, 4)
+            var clsTarget = window.largestLayoutShiftTarget()
+            var cslTargetSelector
+            if (clsTarget) {
+              cslTargetSelector = getSelectorFromElement(
+                clsTarget,
+                configuration.actionNameAttribute
+              )
+            }
+            callback({
+              value: cls,
+              targetSelector: cslTargetSelector
+            })
           }
         }
       }
@@ -45,6 +74,9 @@ function slidingSessionWindow() {
   var value = 0
   var startTime
   var endTime
+  var largestLayoutShift = 0
+  var largestLayoutShiftTarget
+  var largestLayoutShiftTime
   return {
     update: function (entry) {
       var shouldCreateNewWindow =
@@ -54,13 +86,37 @@ function slidingSessionWindow() {
       if (shouldCreateNewWindow) {
         startTime = endTime = entry.startTime
         value = entry.value
+        largestLayoutShift = 0
+        largestLayoutShiftTarget = undefined
       } else {
         value += entry.value
         endTime = entry.startTime
       }
+
+      if (entry.value > largestLayoutShift) {
+        largestLayoutShift = entry.value
+        largestLayoutShiftTime = entry.startTime
+
+        if (entry.sources && entry.sources.length) {
+          var findTarget = find(entry.sources, function (s) {
+            return !!s.node && isElementNode(s.node)
+          })
+          if (findTarget) {
+            largestLayoutShiftTarget = findTarget.node
+          }
+        } else {
+          largestLayoutShiftTarget = undefined
+        }
+      }
     },
     value: function () {
       return value
+    },
+    largestLayoutShiftTarget: function () {
+      return largestLayoutShiftTarget
+    },
+    largestLayoutShiftTime: function () {
+      return largestLayoutShiftTime
     }
   }
 }

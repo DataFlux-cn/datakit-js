@@ -12,7 +12,6 @@ import {
   display,
   assign
 } from '@cloudcare/browser-core'
-import { getDisplayContext } from './contexts/displayContext'
 var SessionType = {
   SYNTHETICS: 'synthetics',
   USER: 'user'
@@ -36,6 +35,7 @@ export function startRumAssembly(
   viewContexts,
   urlContexts,
   actionContexts,
+  displayContext,
   buildCommonContext,
   reportError
 ) {
@@ -117,7 +117,8 @@ export function startRumAssembly(
           date: timeStampNow(),
           user: {
             id: userSessionManager.getId(),
-            is_signin: 'F'
+            is_signin: 'F',
+            is_login: false
           },
           session: {
             // must be computed on each event because synthetics instrumentation can be done after sdk execution
@@ -139,7 +140,7 @@ export function startRumAssembly(
             needToAssembleWithAction(rawRumEvent) && actionId
               ? { id: actionId, ids: actionIds }
               : undefined,
-          display: getDisplayContext()
+          display: displayContext.get()
         }
 
         var rumEvent = extend2Lev(rumContext, viewContext, rawRumEvent)
@@ -156,7 +157,8 @@ export function startRumAssembly(
           serverRumEvent.user = extend2Lev(
             {
               // id: session.getAnonymousID(),
-              is_signin: 'T'
+              is_signin: 'T',
+              is_login: true
             },
             commonContext.user
           )

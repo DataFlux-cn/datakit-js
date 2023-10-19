@@ -2,6 +2,7 @@ import { each, noop } from './tools'
 import { jsonStringify } from '../helper/serialisation/jsonStringify'
 import { computeStackTrace } from '../tracekit'
 import { callMonitored } from '../helper/monitor'
+import { sanitize } from '../helper/sanitize'
 export var NO_ERROR_STACK_PRESENT_MESSAGE =
   'No stack, consider using an instance of Error'
 export var ErrorSource = {

@@ -1,8 +1,6 @@
 import { find, LifeCycleEventType, ONE_MINUTE } from '@cloudcare/browser-core'
-import { trackFirstHidden } from './trackFirstHidden'
 export var TIMING_MAXIMUM_DELAY = 10 * ONE_MINUTE
-export function trackFirstContentfulPaint(lifeCycle, callback) {
-  var firstHidden = trackFirstHidden()
+export function trackFirstContentfulPaint(lifeCycle, firstHidden, callback) {
   var subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
     function (entries) {
@@ -10,7 +8,7 @@ export function trackFirstContentfulPaint(lifeCycle, callback) {
         return (
           entry.entryType === 'paint' &&
           entry.name === 'first-contentful-paint' &&
-          entry.startTime < firstHidden.timeStamp &&
+          entry.startTime < firstHidden.geTimeStamp() &&
           entry.startTime < TIMING_MAXIMUM_DELAY
         )
       })

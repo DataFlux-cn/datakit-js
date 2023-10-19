@@ -74,7 +74,6 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
     initConfiguration.trackUserInteractions,
     initConfiguration.trackInteractions
   )
-  var trackFrustrations = !!initConfiguration.trackFrustrations
 
   return assign(
     {
@@ -90,8 +89,7 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
         initConfiguration.excludedActivityUrls,
         []
       ),
-      trackUserInteractions: trackUserInteractions || trackFrustrations,
-      trackFrustrations: trackFrustrations,
+      trackUserInteractions: trackUserInteractions,
       trackViewsManually: !!initConfiguration.trackViewsManually,
       traceType: isNullUndefinedDefaultValue(
         initConfiguration.traceType,
