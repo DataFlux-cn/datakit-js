@@ -2,7 +2,7 @@
     "name": "@cloudcare/browser-logs",
     "main": "cjs/index.js",
     "module": "esm/index.js",
-    "version": "3.1.3",
+    "version": "3.1.4",
     "dependencies": {
         "@cloudcare/browser-core": "3.1.3"
     },

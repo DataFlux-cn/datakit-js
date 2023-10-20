@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.4
+
+- fix: _dd to _gc
+- updrade: changelog
+
 ## v3.1.3
 
 
