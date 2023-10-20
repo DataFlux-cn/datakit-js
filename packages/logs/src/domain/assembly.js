@@ -50,7 +50,7 @@ export function startLogsAssembly(
         service: configuration.service || 'browser',
         env: configuration.env || '',
         version: configuration.version || '',
-        _dd: {
+        _gc: {
           sdkName: configuration.sdkName,
           sdkVersion: configuration.sdkVersion
         },
