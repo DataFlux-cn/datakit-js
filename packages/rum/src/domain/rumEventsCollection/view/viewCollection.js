@@ -37,41 +37,64 @@ export function startViewCollection(
     initialViewOptions
   )
 }
-function computePerformanceViewDetails(entry) {
-  var validEntry = toValidEntry(entry)
-  if (!validEntry) {
+function computePerformanceViewDetails(navigationTimings) {
+  if (!navigationTimings) {
     return undefined
   }
-  var fetchStart = validEntry.fetchStart,
-    responseEnd = validEntry.responseEnd,
-    domInteractive = validEntry.domInteractive,
-    domContentLoaded = validEntry.domContentLoaded,
-    domComplete = validEntry.domComplete,
-    loadEventEnd = validEntry.loadEventEnd,
-    loadEventStart = validEntry.loadEventStart,
-    domContentLoadedEventEnd = validEntry.domContentLoadedEventEnd
+  var fetchStart = navigationTimings.fetchStart,
+    responseEnd = navigationTimings.responseEnd,
+    domInteractive = navigationTimings.domInteractive,
+    domContentLoaded = navigationTimings.domContentLoaded,
+    domComplete = navigationTimings.domComplete,
+    loadEventEnd = navigationTimings.loadEventEnd,
+    loadEventStart = navigationTimings.loadEventStart,
+    domContentLoadedEventEnd = navigationTimings.domContentLoadedEventEnd
   var details = {}
-  if (responseEnd !== fetchStart) {
+  if (
+    isNumber(responseEnd) &&
+    isNumber(fetchStart) &&
+    responseEnd !== fetchStart
+  ) {
     details.fpt = toServerDuration(responseEnd - fetchStart)
     var apdexLevel = parseInt((responseEnd - fetchStart) / 1000) // 秒数取整
     details.apdexLevel = apdexLevel > 9 ? 9 : apdexLevel
   }
-  if (domInteractive !== fetchStart) {
+  if (
+    isNumber(domInteractive) &&
+    isNumber(fetchStart) &&
+    domInteractive !== fetchStart
+  ) {
     details.tti = toServerDuration(domInteractive - fetchStart)
   }
-  if (domContentLoaded !== fetchStart) {
+  if (
+    isNumber(domContentLoaded) &&
+    isNumber(fetchStart) &&
+    domContentLoaded !== fetchStart
+  ) {
     details.dom_ready = toServerDuration(domContentLoaded - fetchStart)
   }
   // Make sure a connection occurred
-  if (loadEventEnd !== fetchStart) {
+  if (
+    isNumber(loadEventEnd) &&
+    isNumber(fetchStart) &&
+    loadEventEnd !== fetchStart
+  ) {
     details.load = toServerDuration(loadEventEnd - fetchStart)
   }
-  if (loadEventStart !== domContentLoadedEventEnd) {
+  if (
+    isNumber(loadEventStart) &&
+    isNumber(domContentLoadedEventEnd) &&
+    loadEventStart !== domContentLoadedEventEnd
+  ) {
     details.resource_load_time = toServerDuration(
       loadEventStart - domContentLoadedEventEnd
     )
   }
-  if (domComplete !== domInteractive) {
+  if (
+    isNumber(domComplete) &&
+    isNumber(domInteractive) &&
+    domComplete !== domInteractive
+  ) {
     details.dom = toServerDuration(domComplete - domInteractive)
   }
   return details
@@ -196,7 +219,9 @@ function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
     )
   }
   viewEvent = extend2Lev(viewEvent, {
-    view: computePerformanceViewDetails(view.initialViewMetrics)
+    view: computePerformanceViewDetails(
+      view.initialViewMetrics.navigationTimings
+    )
   })
   return {
     rawRumEvent: viewEvent,

@@ -35,7 +35,7 @@ export function areCookiesAuthorized(options) {
   try {
     // Use a unique cookie name to avoid issues when the SDK is initialized multiple times during
     // the test cookie lifetime
-    var testCookieName = `dd_cookie_test_${UUID()}`
+    var testCookieName = `gc_cookie_test_${UUID()}`
     var testCookieValue = 'test'
     setCookie(testCookieName, testCookieValue, ONE_SECOND, options)
     return getCookie(testCookieName) === testCookieValue
