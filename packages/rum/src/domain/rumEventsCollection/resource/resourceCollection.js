@@ -72,7 +72,6 @@ function processRequest(request, sessionManager, pageStateHistory) {
     ? computePerformanceEntryMetrics(matchingTiming)
     : undefined
   var tracingInfo = computeRequestTracingInfo(request)
-
   var duration = computeRequestDuration(
     pageStateHistory,
     startClocks,
