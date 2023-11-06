@@ -148,6 +148,7 @@ export function createPageActivityObservable(
           if (isExcludedUrl(configuration, startEvent.url)) {
             return
           }
+
           if (firstRequestIndex === undefined) {
             firstRequestIndex = startEvent.requestIndex
           }

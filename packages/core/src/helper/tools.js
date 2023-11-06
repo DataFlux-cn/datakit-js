@@ -1594,29 +1594,54 @@ export function isPercentage(value) {
 export function getLocationOrigin() {
   return getLinkElementOrigin(window.location)
 }
-
-var browserIsIE
+export var Browser = {
+  IE: 0,
+  CHROMIUM: 1,
+  SAFARI: 2,
+  OTHER: 3
+}
 export function isIE() {
-  if (browserIsIE === undefined) {
-    browserIsIE = Boolean(document.documentMode)
-  }
-  return browserIsIE
+  return detectBrowserCached() === Browser.IE
 }
-var browserIsChromium
 export function isChromium() {
-  if (browserIsChromium === undefined) {
-    browserIsChromium =
-      !!window.chrome || /HeadlessChrome/.test(window.navigator.userAgent)
-  }
-  return browserIsChromium
+  return detectBrowserCached() === Browser.CHROMIUM
 }
-var browserIsSafari
 export function isSafari() {
-  if (browserIsSafari === undefined) {
-    browserIsSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-  }
-  return browserIsSafari
+  return detectBrowserCached() === Browser.SAFARI
 }
+var browserCache
+function detectBrowserCached() {
+  return isNullUndefinedDefaultValue(
+    browserCache,
+    (browserCache = detectBrowser())
+  )
+}
+export function detectBrowser(browserWindow) {
+  if (typeof browserWindow === 'undefined') {
+    browserWindow = window
+  }
+  var userAgent = browserWindow.navigator.userAgent
+  if (browserWindow.chrome || /HeadlessChrome/.test(userAgent)) {
+    return Browser.CHROMIUM
+  }
+
+  if (
+    // navigator.vendor is deprecated, but it is the most resilient way we found to detect
+    // "Apple maintained browsers" (AKA Safari). If one day it gets removed, we still have the
+    // useragent test as a semi-working fallback.
+    browserWindow.navigator.vendor?.indexOf('Apple') === 0 ||
+    (/safari/i.test(userAgent) && !/chrome|android/i.test(userAgent))
+  ) {
+    return Browser.SAFARI
+  }
+
+  if (browserWindow.document.documentMode) {
+    return Browser.IE
+  }
+
+  return Browser.OTHER
+}
+
 /**
  * IE fallback
  * https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/origin
