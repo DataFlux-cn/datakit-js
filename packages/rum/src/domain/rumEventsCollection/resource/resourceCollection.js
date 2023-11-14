@@ -35,10 +35,15 @@ export function startResourceCollection(
   pageStateHistory
 ) {
   lifeCycle.subscribe(LifeCycleEventType.REQUEST_COMPLETED, function (request) {
-    lifeCycle.notify(
-      LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-      processRequest(request, sessionManager, pageStateHistory)
+    var rawEvent = processRequest(
+      request,
+      configuration,
+      sessionManager,
+      pageStateHistory
     )
+    if (rawEvent) {
+      lifeCycle.notify(LifeCycleEventType.RAW_RUM_EVENT_COLLECTED, rawEvent)
+    }
   })
 
   lifeCycle.subscribe(
@@ -51,27 +56,49 @@ export function startResourceCollection(
           !isRequestKind(entry) &&
           !isResourceUrlLimit(entry.name, configuration.resourceUrlLimit)
         ) {
-          lifeCycle.notify(
-            LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
-            processResourceEntry(entry, sessionManager, pageStateHistory)
+          var rawEvent = processResourceEntry(
+            entry,
+            configuration,
+            sessionManager,
+            pageStateHistory
           )
+          if (rawEvent) {
+            lifeCycle.notify(
+              LifeCycleEventType.RAW_RUM_EVENT_COLLECTED,
+              rawEvent
+            )
+          }
         }
       }
     }
   )
 }
 
-function processRequest(request, sessionManager, pageStateHistory) {
-  var type =
-    request.type === RequestType.XHR ? ResourceType.XHR : ResourceType.FETCH
+function processRequest(
+  request,
+  configuration,
+  sessionManager,
+  pageStateHistory
+) {
   var matchingTiming = matchRequestTiming(request)
   var startClocks = matchingTiming
     ? relativeToClocks(matchingTiming.startTime)
     : request.startClocks
+  var shouldIndex = shouldIndexResource(
+    configuration,
+    sessionManager,
+    startClocks
+  )
+  var tracingInfo = computeRequestTracingInfo(request)
+  if (!shouldIndex && !tracingInfo) {
+    return
+  }
+  var type =
+    request.type === RequestType.XHR ? ResourceType.XHR : ResourceType.FETCH
   var correspondingTimingOverrides = matchingTiming
     ? computePerformanceEntryMetrics(matchingTiming)
     : undefined
-  var tracingInfo = computeRequestTracingInfo(request)
+
   var duration = computeRequestDuration(
     pageStateHistory,
     startClocks,
@@ -122,12 +149,24 @@ function processRequest(request, sessionManager, pageStateHistory) {
   }
 }
 
-function processResourceEntry(entry, sessionManager, pageStateHistory) {
+function processResourceEntry(
+  entry,
+  configuration,
+  sessionManager,
+  pageStateHistory
+) {
+  var startClocks = relativeToClocks(entry.startTime)
+  var shouldIndex = shouldIndexResource(
+    configuration,
+    sessionManager,
+    startClocks
+  )
+  var tracingInfo = computeEntryTracingInfo(entry)
+  if (!shouldIndex && !tracingInfo) {
+    return
+  }
   var type = computeResourceKind(entry)
   var entryMetrics = computePerformanceEntryMetrics(entry)
-  var startClocks = relativeToClocks(entry.startTime)
-
-  var tracingInfo = computeEntryTracingInfo(entry)
   var urlObj = urlParse(entry.name).getParse()
   var statusCode = ''
   if (is304(entry)) {
@@ -135,7 +174,6 @@ function processResourceEntry(entry, sessionManager, pageStateHistory) {
   } else if (isCacheHit(entry)) {
     statusCode = 200
   }
-
   var pageStateInfo = computePageStateInfo(
     pageStateHistory,
     startClocks,
@@ -170,6 +208,9 @@ function processResourceEntry(entry, sessionManager, pageStateHistory) {
       performanceEntry: entry
     }
   }
+}
+function shouldIndexResource(configuration, sessionManager, resourceStart) {
+  return sessionManager.findTrackedSession(resourceStart.relative)
 }
 
 function computePerformanceEntryMetrics(timing) {

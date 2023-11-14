@@ -1,4 +1,9 @@
-import { findCommaSeparatedValue, UUID, ONE_SECOND } from '../helper/tools'
+import {
+  findCommaSeparatedValue,
+  UUID,
+  ONE_SECOND,
+  findCommaSeparatedValues
+} from '../helper/tools'
 export var COOKIE_ACCESS_DELAY = ONE_SECOND
 
 export function setCookie(name, value, expireDelay, options) {
@@ -23,7 +28,21 @@ export function setCookie(name, value, expireDelay, options) {
 export function getCookie(name) {
   return findCommaSeparatedValue(document.cookie, name)
 }
+var initCookieParsed
+/**
+ * Returns a cached value of the cookie. Use this during SDK initialization (and whenever possible)
+ * to avoid accessing document.cookie multiple times.
+ */
+export function getInitCookie(name) {
+  if (!initCookieParsed) {
+    initCookieParsed = findCommaSeparatedValues(document.cookie)
+  }
+  return initCookieParsed.get(name)
+}
 
+export function resetInitCookies() {
+  initCookieParsed = undefined
+}
 export function deleteCookie(name, options) {
   setCookie(name, '', 0, options)
 }

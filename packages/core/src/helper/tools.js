@@ -1518,9 +1518,36 @@ export function getNavigationStart() {
   }
   return navigationStart
 }
+
+var COMMA_SEPARATED_KEY_VALUE = /([\w-]+)\s*=\s*([^;]+)/g
 export function findCommaSeparatedValue(rawString, name) {
-  var matches = rawString.match('(?:^|;)\\s*' + name + '\\s*=\\s*([^;]+)')
-  return matches ? matches[1] : undefined
+  COMMA_SEPARATED_KEY_VALUE.lastIndex = 0
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    var match = COMMA_SEPARATED_KEY_VALUE.exec(rawString)
+    if (match) {
+      if (match[1] === name) {
+        return match[2]
+      }
+    } else {
+      break
+    }
+  }
+}
+
+export function findCommaSeparatedValues(rawString) {
+  var result = new Map()
+  COMMA_SEPARATED_KEY_VALUE.lastIndex = 0
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    var match = COMMA_SEPARATED_KEY_VALUE.exec(rawString)
+    if (match) {
+      result.set(match[1], match[2])
+    } else {
+      break
+    }
+  }
+  return result
 }
 export function findByPath(source, path) {
   var pathArr = path.split('.')

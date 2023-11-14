@@ -9,7 +9,6 @@ import {
   findByPath
 } from '@cloudcare/browser-core'
 import { trackViews } from './trackViews'
-import { toValidEntry } from '../resource/resourceUtils'
 export function startViewCollection(
   lifeCycle,
   configuration,
