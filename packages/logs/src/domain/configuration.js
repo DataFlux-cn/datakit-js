@@ -2,6 +2,7 @@ import {
   assign,
   ONE_KIBI_BYTE,
   validateAndBuildConfiguration,
+  validatePostRequestRequireParamsConfiguration,
   display,
   unique,
   RawReportType,
@@ -9,7 +10,7 @@ import {
   every,
   ConsoleApiName,
   includes,
-  values,
+  values
 } from '@cloudcare/browser-core'
 import { buildEnv } from '../boot/buildEnv'
 /**
@@ -17,9 +18,10 @@ import { buildEnv } from '../boot/buildEnv'
  */
 export var DEFAULT_REQUEST_ERROR_RESPONSE_LENGTH_LIMIT = 32 * ONE_KIBI_BYTE
 
-export function validateAndBuildLogsConfiguration(
-  initConfiguration
-){
+export function validateAndBuildLogsConfiguration(initConfiguration) {
+  var requireParamsValidate =
+    validatePostRequestRequireParamsConfiguration(initConfiguration)
+  if (!requireParamsValidate) return
   var baseConfiguration = validateAndBuildConfiguration(initConfiguration)
 
   var forwardConsoleLogs = validateAndBuildForwardOption(
@@ -38,7 +40,10 @@ export function validateAndBuildLogsConfiguration(
     return
   }
 
-  if (initConfiguration.forwardErrorsToLogs && !includes(forwardConsoleLogs, ConsoleApiName.error)) {
+  if (
+    initConfiguration.forwardErrorsToLogs &&
+    !includes(forwardConsoleLogs, ConsoleApiName.error)
+  ) {
     forwardConsoleLogs.push(ConsoleApiName.error)
   }
   return assign(
@@ -46,24 +51,34 @@ export function validateAndBuildLogsConfiguration(
       forwardErrorsToLogs: initConfiguration.forwardErrorsToLogs !== false,
       forwardConsoleLogs: forwardConsoleLogs,
       forwardReports: forwardReports,
-      requestErrorResponseLengthLimit: DEFAULT_REQUEST_ERROR_RESPONSE_LENGTH_LIMIT,
+      requestErrorResponseLengthLimit:
+        DEFAULT_REQUEST_ERROR_RESPONSE_LENGTH_LIMIT
     },
     baseConfiguration,
     buildEnv
   )
 }
 
-export function validateAndBuildForwardOption(
-  option,
-  allowedValues,
-  label
-) {
+export function validateAndBuildForwardOption(option, allowedValues, label) {
   if (option === undefined) {
     return []
   }
 
-  if (!(option === 'all' || (isArray(option) && every(option, function(api) { return includes(allowedValues, api) })))) {
-    display.error(label + ' should be "all" or an array with allowed values "' + allowedValues.join('", "') + '"')
+  if (
+    !(
+      option === 'all' ||
+      (isArray(option) &&
+        every(option, function (api) {
+          return includes(allowedValues, api)
+        }))
+    )
+  ) {
+    display.error(
+      label +
+        ' should be "all" or an array with allowed values "' +
+        allowedValues.join('", "') +
+        '"'
+    )
     return
   }
   return option === 'all' ? allowedValues : unique(option)

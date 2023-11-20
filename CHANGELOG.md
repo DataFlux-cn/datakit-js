@@ -1,7 +1,21 @@
 # Changelog
 
-## v3.1.3
+## v3.1.5
 
+- fix: add deviceInfo monitor
+- fix: headless bug
+- add public dataway configuration
+- feat: add resource filter handler
+- fix: isSafir to webview bug
+- fix: remove resource console
+- fix: fix first_paint_time collection bug
+
+## v3.1.4
+
+- fix: \_dd to \_gc
+- updrade: changelog
+
+## v3.1.3
 
 - feat: 1. add cumulative_layout_shift_target_selector, first_input_target_selector,interaction_to_next_paint_target_selector metric
 - feat: add config to json send data
@@ -23,7 +37,7 @@
 ## v3.1.1
 
 - fix: remove console
-- fix: update session replay  deflate handler
+- fix: update session replay deflate handler
 - fix: update changelog
 
 ## v3.1.0
@@ -48,8 +62,8 @@
 - comment: add changelog
 - feat: updrade version
 - fix: update ci
-- fix: 修改command ci cmd help
-- feat: 添加changelog 配置
+- fix: 修改 command ci cmd help
+- feat: 添加 changelog 配置
 - feat: update changlog ci
 - feat: add changelog ci
 - fix: update esm modules handler

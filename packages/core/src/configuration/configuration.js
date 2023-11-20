@@ -89,7 +89,33 @@ export function validateAndBuildConfiguration(initConfiguration) {
     computeTransportConfiguration(initConfiguration)
   )
 }
-
+export function validatePostRequestRequireParamsConfiguration(
+  initConfiguration
+) {
+  if (
+    !initConfiguration.site &&
+    !initConfiguration.datakitOrigin &&
+    !initConfiguration.datakitUrl
+  ) {
+    display.error(
+      'datakitOrigin or site is not configured, no RUM data will be collected.'
+    )
+    return false
+  }
+  //   if (!initConfiguration.datakitUrl && !initConfiguration.datakitOrigin) {
+  //     display.error(
+  //       'datakitOrigin is not configured, no RUM data will be collected.'
+  //     )
+  //     return false
+  //   }
+  if (initConfiguration.site && !initConfiguration.clientToken) {
+    display.error(
+      'clientToken is not configured, no RUM data will be collected.'
+    )
+    return false
+  }
+  return true
+}
 export function buildCookieOptions(initConfiguration) {
   var cookieOptions = {}
 
