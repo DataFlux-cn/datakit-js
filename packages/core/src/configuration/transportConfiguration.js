@@ -25,7 +25,7 @@ function getEndPointUrl(configuration, type) {
   }
   if (configuration.site && configuration.clientToken) {
     endpoint =
-      endpoint + '?token=' + configuration.clientToken + '&to_headleass=true'
+      endpoint + '?token=' + configuration.clientToken + '&to_headless=true'
   }
   return endpoint
 }

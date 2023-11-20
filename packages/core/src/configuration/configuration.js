@@ -112,7 +112,7 @@ export function validatePostRequestRequireParamsConfiguration(
     display.error(
       'clientToken is not configured, no RUM data will be collected.'
     )
-    return
+    return false
   }
   return true
 }
