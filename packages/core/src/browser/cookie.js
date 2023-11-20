@@ -73,7 +73,7 @@ export function getCurrentSite() {
   if (getCurrentSiteCache === undefined) {
     // Use a unique cookie name to avoid issues when the SDK is initialized multiple times during
     // the test cookie lifetime
-    var testCookieName = `dd_site_test_${UUID()}`
+    var testCookieName = `gc_site_test_${UUID()}`
     var testCookieValue = 'test'
 
     var domainLevels = window.location.hostname.split('.')

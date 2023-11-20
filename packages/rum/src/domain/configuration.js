@@ -3,6 +3,7 @@ import {
   display,
   isPercentage,
   validateAndBuildConfiguration,
+  validatePostRequestRequireParamsConfiguration,
   isArray,
   TraceType,
   isNullUndefinedDefaultValue,
@@ -21,12 +22,9 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
     )
     return
   }
-  if (!initConfiguration.datakitUrl && !initConfiguration.datakitOrigin) {
-    display.error(
-      'datakitOrigin is not configured, no RUM data will be collected.'
-    )
-    return false
-  }
+  var requireParamsValidate =
+    validatePostRequestRequireParamsConfiguration(initConfiguration)
+  if (!requireParamsValidate) return
   // TODO remove fallback in next major
   if (
     initConfiguration.sessionReplaySampleRate !== undefined &&

@@ -182,12 +182,7 @@ export function makeLogsPublicApi(startLogsImpl) {
       }
       return false
     }
-    if (!initConfiguration.datakitUrl && !initConfiguration.datakitOrigin) {
-      display.error(
-        'datakitOrigin is not configured, no RUM data will be collected.'
-      )
-      return false
-    }
+
     return true
   }
 }

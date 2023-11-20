@@ -5,17 +5,29 @@ var typeMap = {
   log: '/logging',
   sessionReplay: '/rum/replay'
 }
-function getEndPointUrl(url, type) {
+function getEndPointUrl(configuration, type) {
   // type: rum, log,replay
   var subUrl = typeMap[type]
   if (!subUrl) return ''
+  var url =
+    configuration.datakitOrigin ||
+    configuration.datakitUrl ||
+    configuration.site
   if (url.indexOf('/') === 0) {
     // 绝对路径这种 /xxx
     url = location.origin + trim(url)
   }
-  if (url.lastIndexOf('/') === url.length - 1)
-    return trim(url) + 'v1/write' + subUrl
-  return trim(url) + '/v1/write' + subUrl
+  var endpoint = url
+  if (url.lastIndexOf('/') === url.length - 1) {
+    endpoint = trim(url) + 'v1/write' + subUrl
+  } else {
+    endpoint = trim(url) + '/v1/write' + subUrl
+  }
+  if (configuration.site && configuration.clientToken) {
+    endpoint =
+      endpoint + '?token=' + configuration.clientToken + '&to_headleass=true'
+  }
+  return endpoint
 }
 
 function trim(str) {
@@ -44,15 +56,9 @@ export function computeTransportConfiguration(initConfiguration) {
     isServerError = initConfiguration.isServerError
   }
   return {
-    rumEndpoint: getEndPointUrl(
-      initConfiguration.datakitUrl || initConfiguration.datakitOrigin,
-      'rum'
-    ),
-    logsEndpoint: getEndPointUrl(initConfiguration.datakitOrigin, 'log'),
-    sessionReplayEndPoint: getEndPointUrl(
-      initConfiguration.datakitOrigin,
-      'sessionReplay'
-    ),
+    rumEndpoint: getEndPointUrl(initConfiguration, 'rum'),
+    logsEndpoint: getEndPointUrl(initConfiguration, 'log'),
+    sessionReplayEndPoint: getEndPointUrl(initConfiguration, 'sessionReplay'),
     isIntakeUrl: isIntakeUrl,
     isServerError: isServerError
   }
