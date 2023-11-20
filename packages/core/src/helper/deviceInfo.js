@@ -1,4 +1,5 @@
 import { display } from '../helper/display'
+import { monitor } from '../helper/monitor'
 var VariableLibrary = {
   navigator:
     typeof window !== 'undefined' && typeof window.navigator != 'undefined'
@@ -80,7 +81,7 @@ var VariableLibrary = {
 // 方法库
 var MethodLibrary = {
   // 获取匹配库
-  getMatchMap: function (u) {
+  getMatchMap: monitor(function (u) {
     return {
       // 内核
       Trident: u.indexOf('Trident') > -1 || u.indexOf('NET CLR') > -1,
@@ -154,9 +155,9 @@ var MethodLibrary = {
       Tablet: u.indexOf('Tablet') > -1 || u.indexOf('Nexus 7') > -1,
       iPad: u.indexOf('iPad') > -1
     }
-  },
+  }),
   // 在信息map和匹配库中进行匹配
-  matchInfoMap: function (_this) {
+  matchInfoMap: monitor(function (_this) {
     var u = VariableLibrary.navigator.userAgent || ''
     var match = MethodLibrary.getMatchMap(u)
     for (var s in VariableLibrary.infoMap) {
@@ -167,15 +168,15 @@ var MethodLibrary = {
         }
       }
     }
-  },
+  }),
   // 获取当前操作系统
-  getOS: function () {
+  getOS: monitor(function () {
     var _this = this
     MethodLibrary.matchInfoMap(_this)
     return _this.os || 'Unknown'
-  },
+  }),
   // 获取操作系统版本
-  getOSVersion: function () {
+  getOSVersion: monitor(function () {
     var _this = this
     var u = VariableLibrary.navigator.userAgent || ''
     _this.osVersion = ''
@@ -229,9 +230,9 @@ var MethodLibrary = {
       version: _this.osVersion,
       osMajor: _this.osMajor
     }
-  },
+  }),
   // 获取横竖屏状态
-  getOrientationStatu: function () {
+  getOrientationStatu: monitor(function () {
     var orientationStatus = ''
     var orientation = window.matchMedia('(orientation: portrait)')
     if (orientation.matches) {
@@ -240,16 +241,16 @@ var MethodLibrary = {
       orientationStatus = '横屏'
     }
     return orientationStatus
-  },
+  }),
   // 获取设备类型
-  getDeviceType: function () {
+  getDeviceType: monitor(function () {
     var _this = this
     _this.device = 'PC'
     MethodLibrary.matchInfoMap(_this)
     return _this.device
-  },
+  }),
   // 获取网络状态
-  getNetwork: function () {
+  getNetwork: monitor(function () {
     var connection =
       window.navigator.connection ||
       window.navigator.mozConnection ||
@@ -289,9 +290,9 @@ var MethodLibrary = {
       }
     }
     return result
-  },
+  }),
   // 获取当前语言
-  getLanguage: function () {
+  getLanguage: monitor(function () {
     var _this = this
     _this.language = (function () {
       var language =
@@ -305,9 +306,9 @@ var MethodLibrary = {
       return arr.join('_')
     })()
     return _this.language
-  },
+  }),
   // 浏览器信息
-  getBrowserInfo: function () {
+  getBrowserInfo: monitor(function () {
     var _this = this
     MethodLibrary.matchInfoMap(_this)
 
@@ -345,6 +346,7 @@ var MethodLibrary = {
         match['360SE'] = true
       } else if (
         VariableLibrary.navigator &&
+        VariableLibrary.navigator.connection &&
         typeof VariableLibrary.navigator['connection']['saveData'] ==
           'undefined'
       ) {
@@ -589,9 +591,9 @@ var MethodLibrary = {
       engine: _this.engine,
       browserMajor: _this.browserMajor
     }
-  },
+  }),
   // 获取地理位置
-  getGeoPostion: function (callback) {
+  getGeoPostion: monitor(function (callback) {
     navigator &&
       navigator.geolocation &&
       navigator.geolocation.getCurrentPosition(
@@ -604,12 +606,13 @@ var MethodLibrary = {
           display.warn(error)
         }
       )
-  }
+  })
 }
 var _deviceInfo = {}
 if (typeof window !== 'undefined') {
   _deviceInfo = {
     os: MethodLibrary.getOS(),
+    MethodLibrary,
     osVersion: MethodLibrary.getOSVersion().version,
     osVersionMajor: MethodLibrary.getOSVersion().osMajor,
     browser: MethodLibrary.getBrowserInfo().browser,
