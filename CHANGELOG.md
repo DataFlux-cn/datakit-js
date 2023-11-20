@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.1.5
+
+- fix: add deviceInfo monitor
+- fix: headless bug
+-  add public dataway configuration
+- feat: add resource filter handler
+- fix: isSafire to webview bug
+- fix: remove resource console
+- fix: fix first_paint_time collection bug
+
 ## v3.1.4
 
 - fix: _dd to _gc
