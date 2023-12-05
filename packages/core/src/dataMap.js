@@ -28,10 +28,10 @@ export var commonTags = {
   view_host: 'view.host',
   view_path: 'view.path',
   view_name: 'view.path', // 冗余一个字段
-  view_path_group: 'view.path_group',
-  view_url_query: 'view.url_query'
+  view_path_group: 'view.path_group'
 }
 export var commonFields = {
+  view_url_query: 'view.url_query',
   action_id: 'action.id',
   action_ids: 'action.ids',
   view_in_foreground: 'view.in_foreground',

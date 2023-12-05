@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.1.6
+
+- fix: 修改view_url_query 逻辑
+- fix: .ds_store
+- fix: xx
+- fix: remove pagestate isTrust hanler
+- updrade verstion to 3.1.5
+- fix: update changelog
+
 ## v3.1.5
 
 - fix: add deviceInfo monitor

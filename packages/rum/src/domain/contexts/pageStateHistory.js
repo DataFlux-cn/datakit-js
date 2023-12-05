@@ -48,9 +48,7 @@ export function startPageStateHistory(maxPageStateEntriesSelectable) {
     ],
     function (event) {
       // Only get events fired by the browser to avoid false currentPageState changes done with custom events
-      if (event.isTrusted) {
-        addPageState(computePageState(event), event.timeStamp)
-      }
+      addPageState(computePageState(event), event.timeStamp)
     },
     { capture: true }
   )
