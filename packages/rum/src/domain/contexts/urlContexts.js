@@ -4,7 +4,6 @@ import {
   relativeNow,
   ContextHistory,
   replaceNumberCharByPath,
-  jsonStringify,
   getQueryParamsFromUrl,
   isHashAnAnchor,
   getPathFromHash
@@ -74,7 +73,7 @@ export function startUrlContexts(
       host: data.location.host,
       path: path,
       pathGroup: replaceNumberCharByPath(path),
-      urlQuery: jsonStringify(getQueryParamsFromUrl(data.location.href))
+      urlQuery: getQueryParamsFromUrl(data.location.href)
     }
   }
 

@@ -7,7 +7,6 @@ import {
   urlParse,
   getQueryParamsFromUrl,
   replaceNumberCharByPath,
-  jsonStringify,
   RequestType,
   ResourceType,
   RumEventType,
@@ -127,7 +126,7 @@ function processRequest(
         urlHost: urlObj.Host,
         urlPath: urlObj.Path,
         urlPathGroup: replaceNumberCharByPath(urlObj.Path),
-        urlQuery: jsonStringify(getQueryParamsFromUrl(request.url))
+        urlQuery: getQueryParamsFromUrl(request.url)
       },
       type: RumEventType.RESOURCE
     },
@@ -190,7 +189,7 @@ function processResourceEntry(
         urlHost: urlObj.Host,
         urlPath: urlObj.Path,
         urlPathGroup: replaceNumberCharByPath(urlObj.Path),
-        urlQuery: jsonStringify(getQueryParamsFromUrl(entry.name)),
+        urlQuery: getQueryParamsFromUrl(entry.name),
         method: 'GET',
         status: statusCode,
         statusGroup: getStatusGroup(statusCode)
