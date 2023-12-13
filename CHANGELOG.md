@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.7
+
+- fix: stop session bug
+
 ## v3.1.6
 
 - fix: 修改view_url_query 逻辑
