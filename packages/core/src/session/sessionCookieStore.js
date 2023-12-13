@@ -164,6 +164,6 @@ function isValidSessionString(sessionString) {
 function isExpiredState(session) {
   return isEmptyObject(session)
 }
-function clearSession(options) {
+export function clearSession(options) {
   setCookie(SESSION_COOKIE_NAME, '', 0, options)
 }

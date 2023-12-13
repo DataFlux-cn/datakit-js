@@ -2,7 +2,11 @@ import { COOKIE_ACCESS_DELAY } from '../browser/cookie'
 import { Observable } from '../helper/observable'
 import { dateNow, UUID, throttle } from '../helper/tools'
 import { SESSION_TIME_OUT_DELAY } from './sessionConstants'
-import { retrieveSession, withCookieLockAccess } from './sessionCookieStore'
+import {
+  retrieveSession,
+  withCookieLockAccess,
+  clearSession
+} from './sessionCookieStore'
 import { clearInterval, setInterval } from '../helper/timer'
 
 /**
@@ -137,7 +141,7 @@ export function startSessionStore(options, productKey, computeSessionState) {
     renewObservable: renewObservable,
     expireObservable: expireObservable,
     expire: function () {
-      deleteSessionCookie(options)
+      clearSession(options)
       synchronizeSession({})
     },
     stop: function () {
