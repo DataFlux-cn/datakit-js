@@ -10,7 +10,8 @@ import {
   createEventRateLimiter,
   limitModification,
   display,
-  assign
+  assign,
+  round
 } from '@cloudcare/browser-core'
 var SessionType = {
   SYNTHETICS: 'synthetics',
@@ -101,7 +102,14 @@ export function startRumAssembly(
           _gc: {
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,
-            drift: currentDrift()
+            drift: currentDrift(),
+            configuration: {
+              session_sample_rate: round(configuration.sessionSampleRate, 3),
+              session_replay_sample_rate: round(
+                configuration.sessionReplaySampleRate,
+                3
+              )
+            }
           },
           terminal: {
             type: 'web'
