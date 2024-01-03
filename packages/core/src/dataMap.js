@@ -52,6 +52,7 @@ export var dataMap = {
       view_privacy_replay_level: 'privacy.replay_level'
     },
     fields: {
+      sampled_for_replay: 'session.sampled_for_replay',
       is_active: 'view.is_active',
       session_replay_stats: '_gc.replay_stats',
       session_is_active: 'session.is_active',

@@ -160,6 +160,10 @@ export function startRumAssembly(
         if (!('has_replay' in serverRumEvent.session)) {
           serverRumEvent.session.has_replay = commonContext.hasReplay
         }
+        if (serverRumEvent.type === 'view') {
+          serverRumEvent.session.sampled_for_replay =
+            session.sessionReplayAllowed
+        }
         if (!isEmptyObject(commonContext.user)) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
           serverRumEvent.user = extend2Lev(
