@@ -24,7 +24,7 @@ export function initConsoleObservable(apis) {
 
 /* eslint-disable no-console */
 function createConsoleObservable(api) {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var originalConsoleApi = console[api]
     console[api] = function () {
       var params = [].slice.call(arguments)

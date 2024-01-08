@@ -8,28 +8,25 @@ import {
 
 export function createLocationChangeObservable(location) {
   var currentLocation = shallowClone(location)
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var _trackHistory = trackHistory(onLocationChange)
     var _trackHash = trackHash(onLocationChange)
+    function onLocationChange() {
+      if (currentLocation.href === location.href) {
+        return
+      }
+      var newLocation = shallowClone(location)
+      observable.notify({
+        newLocation: newLocation,
+        oldLocation: currentLocation
+      })
+      currentLocation = newLocation
+    }
     return function () {
       _trackHistory.stop()
       _trackHash.stop()
     }
   })
-
-  function onLocationChange() {
-    if (currentLocation.href === location.href) {
-      return
-    }
-    var newLocation = shallowClone(location)
-    observable.notify({
-      newLocation: newLocation,
-      oldLocation: currentLocation
-    })
-    currentLocation = newLocation
-  }
-
-  return observable
 }
 
 function trackHistory(onHistoryChange) {

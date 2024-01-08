@@ -14,7 +14,7 @@ export function initFetchObservable() {
 }
 
 function createFetchObservable() {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     if (!window.fetch) {
       return
     }
@@ -50,8 +50,6 @@ function createFetchObservable() {
     )
     return fetchMethod.stop
   })
-
-  return observable
 }
 
 function beforeSend(observable, input, init) {

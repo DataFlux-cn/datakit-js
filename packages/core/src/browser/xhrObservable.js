@@ -21,7 +21,7 @@ export function initXhrObservable() {
 }
 
 function createXhrObservable() {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var openInstrumentMethod = instrumentMethodAndCallOriginal(
       XMLHttpRequest.prototype,
       'open',
@@ -54,7 +54,6 @@ function createXhrObservable() {
       abortInstrumentMethod.stop()
     }
   })
-  return observable
 }
 
 function openXhr(method, url) {

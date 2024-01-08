@@ -6,7 +6,7 @@ import {
   isNullUndefinedDefaultValue,
   monitor
 } from '@cloudcare/browser-core'
-import { getMutationObserverConstructor } from '../../domMutationCollection'
+import { getMutationObserverConstructor } from '../../domMutationObservable'
 import { NodePrivacyLevel } from '../../../constants'
 import { getNodePrivacyLevel, getTextContent } from './privacy'
 import {
