@@ -61,7 +61,7 @@ function openXhr(method, url) {
   this[DATA_FLUX_REQUEST_ID_KEY] = requestUUID
   xhrContexts[requestUUID] = {
     state: 'open',
-    method: method,
+    method: String(method).toUpperCase(),
     url: normalizeUrl(String(url))
   }
 }

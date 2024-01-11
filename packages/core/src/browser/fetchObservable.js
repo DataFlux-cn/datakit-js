@@ -53,8 +53,21 @@ function createFetchObservable() {
 }
 
 function beforeSend(observable, input, init) {
+  //   var method =
+  //       (init && init.method) || (input instanceof Request && input.method) || 'GET'
+  //     const methodFromParams =
+  //       (init && init.method) || (input instanceof Request && input.method)
+  //     const method = methodFromParams ? methodFromParams.toUpperCase() : 'GET'
+  var methodFromParams = init && init.method
+
+  if (methodFromParams === undefined && input instanceof Request) {
+    methodFromParams = input.method
+  }
+
   var method =
-    (init && init.method) || (input instanceof Request && input.method) || 'GET'
+    methodFromParams !== undefined
+      ? String(methodFromParams).toUpperCase()
+      : 'GET'
   var url = input instanceof Request ? input.url : normalizeUrl(String(input))
 
   var startClocks = clocksNow()
