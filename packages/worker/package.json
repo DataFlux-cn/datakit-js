@@ -1,12 +1,12 @@
 {
     "name": "@cloudcare/browser-worker",
-    "version": "3.1.7",
+    "version": "3.1.8",
     "main": "bundle/worker.js",
     "scripts": {
         "build": "rm -rf bundle && webpack --mode=production"
     },
     "dependencies": {
-        "@cloudcare/browser-core": "3.1.7"
+        "@cloudcare/browser-core": "3.1.8"
     },
     "keywords": [
         "dataflux",

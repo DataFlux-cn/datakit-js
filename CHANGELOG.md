@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.1.8
+
+- fix: method undefined
+- fix: update worker bug
+- fix: observable first function handler
+- feat: add view metric sampled_for_replay
+- feat: add config metric
+- feat: add ds_store ignore
+- fix: 重复shadowroot bug
+
 ## v3.1.7
 
 - fix: stop session bug
