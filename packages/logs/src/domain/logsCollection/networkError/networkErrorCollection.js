@@ -69,11 +69,11 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
             format(type) + ' error ' + request.method + ' ' + request.url,
           date: request.startClocks.timeStamp,
           error: {
-            origin: ErrorSource.NETWORK, // Todo: Remove in the next major release
+            origin: ErrorSource.NETWORK,
             stack: responseData || 'Failed to load'
           },
           http: {
-            method: request.method, // Cast resource method because of case mismatch cf issue RUMF-1152
+            method: request.method,
             status_code: request.status,
             url: request.url,
             statusGroup: getStatusGroup(request.status),
@@ -96,11 +96,6 @@ export function startNetworkErrorCollection(configuration, lifeCycle) {
   }
 }
 
-// TODO: ideally, computeXhrResponseData should always call the callback with a string instead of
-// `unknown`. But to keep backward compatibility, in the case of XHR with a `responseType` different
-// than "text", the response data should be whatever `xhr.response` is. This is a bit confusing as
-// Logs event 'stack' is expected to be a string. This should be changed in a future major version
-// as it could be a breaking change.
 export function computeXhrResponseData(xhr, configuration, callback) {
   if (typeof xhr.response === 'string') {
     callback(truncateResponseText(xhr.response, configuration))

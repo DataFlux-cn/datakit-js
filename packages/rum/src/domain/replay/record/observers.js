@@ -374,7 +374,6 @@ export function initInputObserver(cb, defaultPrivacyLevel, target) {
         ),
         function (el) {
           if (el !== target) {
-            // TODO: Consider the privacy implications for various differing input privacy levels
             cbWithDedup(el, { isChecked: false })
           }
         }

@@ -300,7 +300,6 @@ function processCharacterDataMutations(mutations, configuration) {
 
     textMutations.push({
       id: getSerializedNodeId(mutation.target),
-      // TODO: pass a valid "ignoreWhiteSpace" argument
       value: isNullUndefinedDefaultValue(
         getTextContent(mutation.target, false, parentNodePrivacyLevel, null)
       )

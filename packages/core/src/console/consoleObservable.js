@@ -42,7 +42,6 @@ function createConsoleObservable(api) {
 }
 
 function buildConsoleLog(params, api, handlingStack) {
-  // Todo: remove console error prefix in the next major version
   var message = map(params, function (param) {
     return formatConsoleParameters(param)
   }).join(' ')

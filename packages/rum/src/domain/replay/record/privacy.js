@@ -245,7 +245,6 @@ export function getTextContent(
 }
 
 /**
- * TODO: Preserve CSS element order, and record the presence of the tag, just don't render
  * We don't need this logic on the recorder side.
  * For security related meta's, customer can mask themmanually given they
  * are easy to identify in the HEAD tag.
