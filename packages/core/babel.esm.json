@@ -3,7 +3,7 @@
     "include": [
         "./src/**/*.js"
     ],
-    "exclude": [
+    "ignore": [
         "./src/**/*.spec.js"
     ],
     "presets": [
