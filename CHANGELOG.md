@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.1.9
+
+- fix: add package.json repository directory
+- fix: types
+- fix: update ignore
+- feat: add types d.ts file
+- merge test unit branch
+- feat: update bebel config exclude to ignore
+- feat: 添加 exclude spec file
+- feat: add test unit
+- fix: remove TODO
+
 ## v3.1.8
 
 - fix: method undefined
