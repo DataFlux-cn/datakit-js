@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.10
+
+- fix: update npmignore
+
 ## v3.1.9
 
 - fix: add package.json repository directory
