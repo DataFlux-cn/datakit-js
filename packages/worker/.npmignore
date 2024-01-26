@@ -1,6 +1,4 @@
 *
 !/bundle/worker.js
-!/string/**/*
-!/cjs/**/*
-!/esm/**/*
 !/src/**/*
+/src/**/*.spec.js

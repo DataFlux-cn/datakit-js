@@ -3,4 +3,5 @@
 !/cjs/**/*
 !/esm/**/*
 !/src/**/*
+/src/**/*.spec.js
 !/types/**/*
