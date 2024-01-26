@@ -29,7 +29,9 @@ export interface InternalContext {
 export declare const datafluxRum: {
   init: (initConfiguration: RumInitConfiguration) => void
   setGlobalContextProperty: (key: any, value: any) => void
+  addRumGlobalContext: (key: any, value: any) => void
   removeGlobalContextProperty: (key: any) => void
+  removeRumGlobalContext: (key: any) => void
   getGlobalContext: () => Context
   setGlobalContext: (context: any) => void
   clearGlobalContext: () => void

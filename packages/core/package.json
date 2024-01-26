@@ -16,7 +16,8 @@
     ],
     "repository": {
         "url": "https://github.com/DataFlux-cn/datakit-js",
-        "type": "git"
+        "type": "git",
+        "directory": "packages/core"
     },
     "author": "dataflux",
     "license": "MIT",

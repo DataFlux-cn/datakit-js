@@ -10,12 +10,13 @@
     },
     "keywords": [
         "dataflux",
-        "logs",
+        "worker",
         "sdk"
     ],
     "repository": {
         "url": "https://github.com/DataFlux-cn/datakit-js",
-        "type": "git"
+        "type": "git",
+        "directory": "packages/worker"
     },
     "publishConfig": {
         "access": "public"
