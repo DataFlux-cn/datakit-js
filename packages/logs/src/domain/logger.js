@@ -80,7 +80,8 @@ Logger.prototype = {
         origin: ErrorSource.LOGGER, // Remove in next major
         stack: rawError.stack,
         kind: rawError.type,
-        message: rawError.message
+        message: rawError.message,
+        causes: rawError.causes
       }
     }
 

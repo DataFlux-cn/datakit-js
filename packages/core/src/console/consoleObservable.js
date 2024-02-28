@@ -2,7 +2,8 @@ import { computeStackTrace } from '../tracekit'
 import {
   createHandlingStack,
   formatErrorMessage,
-  toStackTraceString
+  toStackTraceString,
+  flattenErrorCauses
 } from '../helper/errorTools'
 import { mergeObservables, Observable } from '../helper/observable'
 import { find, map } from '../helper/tools'
@@ -38,7 +39,6 @@ function createConsoleObservable(api) {
       console[api] = originalConsoleApi
     }
   })
-  return observable
 }
 
 function buildConsoleLog(params, api, handlingStack) {
@@ -46,7 +46,7 @@ function buildConsoleLog(params, api, handlingStack) {
     return formatConsoleParameters(param)
   }).join(' ')
   var stack
-
+  var causes
   if (api === ConsoleApiName.error) {
     var firstErrorParam = find(params, function (param) {
       return param instanceof Error
@@ -55,13 +55,17 @@ function buildConsoleLog(params, api, handlingStack) {
       ? toStackTraceString(computeStackTrace(firstErrorParam))
       : undefined
     message = 'console error: ' + message
+    causes = firstErrorParam
+      ? flattenErrorCauses(firstErrorParam, 'console')
+      : undefined
   }
 
   return {
     api: api,
     message: message,
     stack: stack,
-    handlingStack: handlingStack
+    handlingStack: handlingStack,
+    causes: causes
   }
 }
 

@@ -159,14 +159,15 @@ function newView(
     service = viewOptions.service
     version = viewOptions.version
   }
-
-  lifeCycle.notify(LifeCycleEventType.VIEW_CREATED, {
+  var viewCreatedEvent = {
     id: id,
     name: name,
     startClocks: startClocks,
     service: service,
     version: version
-  })
+  }
+  lifeCycle.notify(LifeCycleEventType.BEFORE_VIEW_CREATED, viewCreatedEvent)
+  lifeCycle.notify(LifeCycleEventType.VIEW_CREATED, viewCreatedEvent)
 
   // Update the view every time the measures are changing
   var _scheduleViewUpdate = throttle(
@@ -264,6 +265,9 @@ function newView(
         true
       )
       lifeCycle.notify(LifeCycleEventType.VIEW_ENDED, { endClocks: endClocks })
+      lifeCycle.notify(LifeCycleEventType.AFTER_VIEW_ENDED, {
+        endClocks: endClocks
+      })
       clearInterval(keepAliveIntervalId)
       setViewEnd(endClocks.relative)
       stopCommonViewMetricsTracking()

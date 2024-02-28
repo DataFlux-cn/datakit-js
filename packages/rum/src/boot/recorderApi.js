@@ -4,7 +4,8 @@ import {
   LifeCycleEventType,
   canUseEventBridge,
   Observable,
-  relativeNow
+  relativeNow,
+  PageExitReason
 } from '@cloudcare/browser-core'
 
 import { getReplayStats as getReplayStatsImpl } from '../domain/replay/replayStats'
@@ -84,7 +85,17 @@ export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
           state = { status: RecorderStatus.IntentToStart }
         }
       })
-
+      lifeCycle.subscribe(
+        LifeCycleEventType.PAGE_EXITED,
+        function (pageExitEvent) {
+          if (
+            pageExitEvent.reason === PageExitReason.UNLOADING ||
+            pageExitEvent.reason === PageExitReason.PAGEHIDE
+          ) {
+            stopStrategy()
+          }
+        }
+      )
       lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
         if (state.status === RecorderStatus.IntentToStart) {
           startStrategy()

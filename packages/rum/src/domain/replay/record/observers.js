@@ -145,16 +145,23 @@ export function initMoveObserver(cb) {
       trailing: false
     }
   )
+  var cancelThrottle = _updatePosition.cancel
+  var updatePosition = _updatePosition.throttled
 
-  return addEventListeners(
+  var _listener = addEventListeners(
     document,
     [DOM_EVENT.MOUSE_MOVE, DOM_EVENT.TOUCH_MOVE],
-    _updatePosition.throttled,
+    updatePosition,
     {
       capture: true,
       passive: true
     }
-  ).stop
+  )
+  var removeListener = _listener.stop
+  return function () {
+    removeListener()
+    cancelThrottle()
+  }
 }
 
 var eventTypeToMouseInteraction = {
@@ -269,15 +276,18 @@ function initScrollObserver(cb, defaultPrivacyLevel, elementsScrollPositions) {
       y: scrollPositions.scrollTop
     })
   }, SCROLL_OBSERVER_THRESHOLD)
-  return addEventListener(
-    document,
-    DOM_EVENT.SCROLL,
-    _updatePosition.throttled,
-    {
-      capture: true,
-      passive: true
-    }
-  ).stop
+  var cancelThrottle = _updatePosition.cancel
+  var updatePosition = _updatePosition.throttled
+
+  var _listener = addEventListener(document, DOM_EVENT.SCROLL, updatePosition, {
+    capture: true,
+    passive: true
+  })
+  var removeListener = _listener.stop
+  return function () {
+    removeListener()
+    cancelThrottle()
+  }
 }
 
 function initViewportResizeObserver(cb) {

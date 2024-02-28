@@ -27,7 +27,8 @@ export function startConsoleCollection(configuration, lifeCycle) {
           log.api === ConsoleApiName.error
             ? {
                 origin: ErrorSource.CONSOLE,
-                stack: log.stack
+                stack: log.stack,
+                causes: log.causes
               }
             : undefined,
         status: LogStatusForApi[log.api]

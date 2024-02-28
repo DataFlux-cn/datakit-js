@@ -23,8 +23,8 @@ export function startRuntimeErrorCollection(configuration, lifeCycle) {
         date: rawError.startClocks.timeStamp,
         error: {
           kind: rawError.type,
-          origin: ErrorSource.SOURCE,
-          stack: rawError.stack
+          stack: rawError.stack,
+          causes: rawError.causes
         },
         origin: ErrorSource.SOURCE,
         status: StatusType.error

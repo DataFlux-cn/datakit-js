@@ -26,11 +26,7 @@ export function startUrlContexts(
 
   var previousViewUrl
 
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, function (data) {
-    urlContextHistory.closeActive(data.endClocks.relative)
-  })
-
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_CREATED, function (data) {
+  lifeCycle.subscribe(LifeCycleEventType.BEFORE_VIEW_CREATED, function (data) {
     var viewUrl = location.href
     urlContextHistory.add(
       buildUrlContext({
@@ -42,7 +38,9 @@ export function startUrlContexts(
     )
     previousViewUrl = viewUrl
   })
-
+  lifeCycle.subscribe(LifeCycleEventType.AFTER_VIEW_ENDED, function (data) {
+    urlContextHistory.closeActive(data.endClocks.relative)
+  })
   var locationChangeSubscription = locationChangeObservable.subscribe(function (
     data
   ) {
