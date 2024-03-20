@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.1.11
+
+- feat:  Optimize DOM iteration
+- fix: fix unexpected session renewal after expire() ([#2632](https://gitlab.jiagouyun.com/cloudcare/dataflux-rum-sdk-javscript/pull/2632))
+- fix: 添加 error causes 字段
+- fix: add getNodePrivacyLevel cache handler
+
 ## v3.1.10
 
 - fix: update npmignore
