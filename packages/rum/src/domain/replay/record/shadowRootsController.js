@@ -8,6 +8,9 @@ export var initShadowRootsController = function (configuration, data) {
 
   var shadowRootsController = {
     addShadowRoot: function (shadowRoot) {
+      if (controllerByShadowRoot.has(shadowRoot)) {
+        return
+      }
       var _startMutaionObserve = startMutationObserver(
         mutationCb,
         configuration,

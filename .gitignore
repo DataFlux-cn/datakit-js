@@ -3,6 +3,8 @@ cjs
 bundle
 esm
 node_modules
+coverage
 .vscode
+.DS_Store
 scripts/publish-oss-base.js
 lerna-debug.log

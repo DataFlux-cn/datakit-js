@@ -13,7 +13,7 @@ import {
   TelemetryService
 } from '@cloudcare/browser-core'
 import { startPerformanceCollection } from '../domain/performanceCollection'
-import { createDOMMutationObservable } from '../domain/domMutationCollection'
+import { createDOMMutationObservable } from '../domain/domMutationObservable.js'
 import { createLocationChangeObservable } from '../domain/locationChangeObservable'
 import { startLongTaskCollection } from '../domain/rumEventsCollection/longTask/longTaskCollection'
 import { startActionCollection } from '../domain/rumEventsCollection/actions/actionCollection'

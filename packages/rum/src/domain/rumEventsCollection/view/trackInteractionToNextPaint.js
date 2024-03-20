@@ -67,7 +67,10 @@ export function trackInteractionToNextPaint(
       }
 
       var newInteraction = longestInteractions.estimateP98Duration()
-      if (newInteraction) {
+      if (
+        newInteraction &&
+        newInteraction.duration !== interactionToNextPaint
+      ) {
         interactionToNextPaint = newInteraction.duration
         if (interactionToNextPaint > 10 * ONE_MINUTE && !telemetryCollected) {
           telemetryCollected = true

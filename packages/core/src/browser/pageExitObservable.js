@@ -13,7 +13,7 @@ export var PageExitReason = {
 }
 
 export function createPageExitObservable() {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     /**
      * Only event that guarantee to fire on mobile devices when the page transitions to background state
      * (e.g. when user switches to a different application, goes to homescreen, etc), or is being unloaded.
@@ -60,8 +60,6 @@ export function createPageExitObservable() {
       beforeUnloadListener.stop()
     }
   })
-
-  return observable
 }
 
 export function isPageExitReason(reason) {

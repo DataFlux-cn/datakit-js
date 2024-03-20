@@ -15,7 +15,7 @@ export function initViewportObservable() {
 }
 
 export function createViewportObservable() {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var _throttledUpdateDimension = throttle(function () {
       observable.notify(getViewportDimension())
     }, 200)
@@ -25,8 +25,6 @@ export function createViewportObservable() {
       passive: true
     }).stop
   })
-
-  return observable
 }
 
 // excludes the width and height of any rendered classic scrollbar that is fixed to the visual viewport

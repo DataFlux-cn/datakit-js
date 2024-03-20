@@ -55,12 +55,13 @@ export function instrumentSetter(object, property, after) {
   ) {
     return { stop: noop }
   }
-  // Using the patched `setTimeout` from Zone.js triggers a rendering loop in some Angular
-  // component, see issue RUMF-1443
+  var stoppedInstrumentation = noop
   var instrumentation = function (thisObject, value) {
     // put hooked setter into event loop to avoid of set latency
     setTimeout(function () {
-      after(thisObject, value)
+      if (instrumentation !== stoppedInstrumentation) {
+        after(thisObject, value)
+      }
     }, 0)
   }
 
@@ -82,7 +83,7 @@ export function instrumentSetter(object, property, after) {
       ) {
         Object.defineProperty(object, property, originalDescriptor)
       } else {
-        instrumentation = noop
+        instrumentation = stoppedInstrumentation
       }
     }
   }

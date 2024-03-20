@@ -26,7 +26,7 @@ export function initReportObservable(configuration, apis) {
 }
 
 function createReportObservable(reportTypes) {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     if (!window.ReportingObserver) {
       return
     }
@@ -52,7 +52,7 @@ function createReportObservable(reportTypes) {
 }
 
 function createCspViolationReportObservable(configuration) {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var handleCspViolation = function (event) {
       observable.notify(buildRawReportFromCspViolation(event))
     }

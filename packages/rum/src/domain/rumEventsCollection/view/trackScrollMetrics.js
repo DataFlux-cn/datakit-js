@@ -81,7 +81,7 @@ export function createScrollValuesObservable(configuration, throttleDuration) {
   if (throttleDuration === undefined) {
     throttleDuration = THROTTLE_SCROLL_DURATION
   }
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     function notify() {
       observable.notify(computeScrollValues())
     }
@@ -113,6 +113,4 @@ export function createScrollValuesObservable(configuration, throttleDuration) {
       }
     }
   })
-
-  return observable
 }

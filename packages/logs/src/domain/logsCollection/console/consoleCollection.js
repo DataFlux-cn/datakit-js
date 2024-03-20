@@ -1,16 +1,23 @@
-import { timeStampNow, ConsoleApiName, ErrorSource, initConsoleObservable, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  timeStampNow,
+  ConsoleApiName,
+  ErrorSource,
+  initConsoleObservable,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 import { StatusType } from '../../logger'
-
 
 var LogStatusForApi = {
   [ConsoleApiName.log]: StatusType.info,
   [ConsoleApiName.debug]: StatusType.debug,
   [ConsoleApiName.info]: StatusType.info,
   [ConsoleApiName.warn]: StatusType.warn,
-  [ConsoleApiName.error]: StatusType.error,
+  [ConsoleApiName.error]: StatusType.error
 }
 export function startConsoleCollection(configuration, lifeCycle) {
-  var consoleSubscription = initConsoleObservable(configuration.forwardConsoleLogs).subscribe(function(log) {
+  var consoleSubscription = initConsoleObservable(
+    configuration.forwardConsoleLogs
+  ).subscribe(function (log) {
     lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
       rawLogsEvent: {
         date: timeStampNow(),
@@ -19,18 +26,19 @@ export function startConsoleCollection(configuration, lifeCycle) {
         error:
           log.api === ConsoleApiName.error
             ? {
-                origin: ErrorSource.CONSOLE, // Todo: Remove in the next major release
+                origin: ErrorSource.CONSOLE,
                 stack: log.stack,
+                causes: log.causes
               }
             : undefined,
-        status: LogStatusForApi[log.api],
-      },
+        status: LogStatusForApi[log.api]
+      }
     })
   })
 
   return {
-    stop: function(){
+    stop: function () {
       consoleSubscription.unsubscribe()
-    },
+    }
   }
 }

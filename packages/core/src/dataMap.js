@@ -38,7 +38,9 @@ export var commonFields = {
   display: 'display',
   session_has_replay: 'session.has_replay',
   is_login: 'user.is_login',
-  page_states: '_gc.page_states'
+  page_states: '_gc.page_states',
+  session_sample_rate: '_gc.configuration.session_sample_rate',
+  session_replay_sample_rate: '_gc.configuration.session_replay_sample_rate'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
@@ -50,6 +52,7 @@ export var dataMap = {
       view_privacy_replay_level: 'privacy.replay_level'
     },
     fields: {
+      sampled_for_replay: 'session.sampled_for_replay',
       is_active: 'view.is_active',
       session_replay_stats: '_gc.replay_stats',
       session_is_active: 'session.is_active',

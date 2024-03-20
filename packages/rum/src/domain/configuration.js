@@ -15,6 +15,7 @@ import {
 } from '@cloudcare/browser-core'
 import { buildEnv } from '../boot/buildEnv'
 import { isTracingOption } from '../domain/tracing/tracer'
+
 export function validateAndBuildRumConfiguration(initConfiguration) {
   if (!initConfiguration.applicationId) {
     display.error(

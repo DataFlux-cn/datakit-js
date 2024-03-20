@@ -168,7 +168,9 @@ function processResourceEntry(
   var entryMetrics = computePerformanceEntryMetrics(entry)
   var urlObj = urlParse(entry.name).getParse()
   var statusCode = ''
-  if (is304(entry)) {
+  if (entry.responseStatus !== 0) {
+    statusCode = entry.responseStatus
+  } else if (is304(entry)) {
     statusCode = 304
   } else if (isCacheHit(entry)) {
     statusCode = 200

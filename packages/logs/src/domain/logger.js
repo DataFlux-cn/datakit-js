@@ -80,7 +80,8 @@ Logger.prototype = {
         origin: ErrorSource.LOGGER, // Remove in next major
         stack: rawError.stack,
         kind: rawError.type,
-        message: rawError.message
+        message: rawError.message,
+        causes: rawError.causes
       }
     }
 
@@ -139,7 +140,9 @@ Logger.prototype = {
   removeContext: function (key) {
     this.contextManager.remove(key)
   },
-
+  clearContext() {
+    this.contextManager.clearContext()
+  },
   setHandler: function (handler) {
     this.handlerType = handler
   },

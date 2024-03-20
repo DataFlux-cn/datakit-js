@@ -1,19 +1,23 @@
-import { SESSION_TIME_OUT_DELAY, ContextHistory, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  SESSION_TIME_OUT_DELAY,
+  ContextHistory,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 
 export var VIEW_CONTEXT_TIME_OUT_DELAY = SESSION_TIME_OUT_DELAY
 
 export function startViewContexts(lifeCycle) {
   var viewContextHistory = new ContextHistory(VIEW_CONTEXT_TIME_OUT_DELAY)
 
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_CREATED, function(view){
+  lifeCycle.subscribe(LifeCycleEventType.BEFORE_VIEW_CREATED, function (view) {
     viewContextHistory.add(buildViewContext(view), view.startClocks.relative)
   })
 
-  lifeCycle.subscribe(LifeCycleEventType.VIEW_ENDED, function(data) {
+  lifeCycle.subscribe(LifeCycleEventType.AFTER_VIEW_ENDED, function (data) {
     viewContextHistory.closeActive(data.endClocks.relative)
   })
 
-  lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function() {
+  lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
     viewContextHistory.reset()
   })
 
@@ -22,16 +26,16 @@ export function startViewContexts(lifeCycle) {
       service: view.service,
       version: view.version,
       id: view.id,
-      name: view.name,
+      name: view.name
     }
   }
 
   return {
-    findView: function(startTime)  {
+    findView: function (startTime) {
       return viewContextHistory.find(startTime)
     },
-    stop: function() {
+    stop: function () {
       viewContextHistory.stop()
-    },
+    }
   }
 }

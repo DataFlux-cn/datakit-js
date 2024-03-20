@@ -1,4 +1,10 @@
-import { noop, ErrorSource, trackRuntimeError, Observable, LifeCycleEventType } from '@cloudcare/browser-core'
+import {
+  noop,
+  ErrorSource,
+  trackRuntimeError,
+  Observable,
+  LifeCycleEventType
+} from '@cloudcare/browser-core'
 import { StatusType } from '../../logger'
 
 export function startRuntimeErrorCollection(configuration, lifeCycle) {
@@ -10,26 +16,26 @@ export function startRuntimeErrorCollection(configuration, lifeCycle) {
 
   var _trackRuntimeError = trackRuntimeError(rawErrorObservable)
 
-  var rawErrorSubscription = rawErrorObservable.subscribe(function(rawError) {
+  var rawErrorSubscription = rawErrorObservable.subscribe(function (rawError) {
     lifeCycle.notify(LifeCycleEventType.RAW_LOG_COLLECTED, {
       rawLogsEvent: {
         message: rawError.message,
         date: rawError.startClocks.timeStamp,
         error: {
           kind: rawError.type,
-          origin: ErrorSource.SOURCE, // Todo: Remove in the next major release
           stack: rawError.stack,
+          causes: rawError.causes
         },
         origin: ErrorSource.SOURCE,
-        status: StatusType.error,
-      },
+        status: StatusType.error
+      }
     })
   })
 
   return {
-    stop: function() {
+    stop: function () {
       _trackRuntimeError.stop()
       rawErrorSubscription.unsubscribe()
-    },
+    }
   }
 }

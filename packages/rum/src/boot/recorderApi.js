@@ -4,7 +4,8 @@ import {
   LifeCycleEventType,
   canUseEventBridge,
   Observable,
-  relativeNow
+  relativeNow,
+  PageExitReason
 } from '@cloudcare/browser-core'
 
 import { getReplayStats as getReplayStatsImpl } from '../domain/replay/replayStats'
@@ -72,7 +73,8 @@ export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
       lifeCycle,
       configuration,
       sessionManager,
-      viewContexts
+      viewContexts,
+      worker
     ) {
       lifeCycle.subscribe(LifeCycleEventType.SESSION_EXPIRED, function () {
         if (
@@ -83,13 +85,39 @@ export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
           state = { status: RecorderStatus.IntentToStart }
         }
       })
-
+      lifeCycle.subscribe(
+        LifeCycleEventType.PAGE_EXITED,
+        function (pageExitEvent) {
+          if (
+            pageExitEvent.reason === PageExitReason.UNLOADING ||
+            pageExitEvent.reason === PageExitReason.PAGEHIDE
+          ) {
+            stopStrategy()
+          }
+        }
+      )
       lifeCycle.subscribe(LifeCycleEventType.SESSION_RENEWED, function () {
         if (state.status === RecorderStatus.IntentToStart) {
           startStrategy()
         }
       })
-
+      var cachedDeflateEncoder
+      function getOrCreateDeflateEncoder() {
+        if (!cachedDeflateEncoder) {
+          if (!worker) {
+            worker = startDeflateWorker(function () {
+              stopStrategy()
+            }, createDeflateWorkerImpl)
+          }
+          if (worker) {
+            cachedDeflateEncoder = createDeflateEncoder(
+              worker,
+              DeflateEncoderStreamId.REPLAY
+            )
+          }
+        }
+        return cachedDeflateEncoder
+      }
       startStrategy = function () {
         var session = sessionManager.findTrackedSession()
         if (!session || !session.sessionReplayAllowed) {
@@ -110,13 +138,11 @@ export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
           if (state.status !== RecorderStatus.Starting) {
             return
           }
-          if (state.status !== RecorderStatus.Starting) {
-            return
-          }
-          var worker = startDeflateWorker(function () {
-            stopStrategy()
-          }, createDeflateWorkerImpl)
-          if (!worker) {
+          var deflateEncoder = getOrCreateDeflateEncoder()
+          //   var worker = startDeflateWorker(function () {
+          //     stopStrategy()
+          //   }, createDeflateWorkerImpl)
+          if (!deflateEncoder) {
             state = {
               status: RecorderStatus.Stopped
             }
@@ -127,7 +153,7 @@ export function makeRecorderApi(startRecordingImpl, createDeflateWorkerImpl) {
             configuration,
             sessionManager,
             viewContexts,
-            createDeflateEncoder(worker, DeflateEncoderStreamId.REPLAY)
+            deflateEncoder
           )
           recorderStartObservable.notify(relativeNow())
           state = {

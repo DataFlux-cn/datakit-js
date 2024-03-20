@@ -7,7 +7,7 @@ var _Observable = function (onFirstSubscribe) {
 _Observable.prototype = {
   subscribe: function (f) {
     if (!this.observers.length && this.onFirstSubscribe) {
-      this.onLastUnsubscribe = this.onFirstSubscribe() || undefined
+      this.onLastUnsubscribe = this.onFirstSubscribe(this) || undefined
     }
     this.observers.push(f)
     var _this = this
@@ -32,7 +32,7 @@ export var Observable = _Observable
 
 export function mergeObservables() {
   var observables = [].slice.call(arguments)
-  var globalObservable = new Observable(function () {
+  return new Observable(function (globalObservable) {
     var subscriptions = map(observables, function (observable) {
       return observable.subscribe(function (data) {
         return globalObservable.notify(data)
@@ -44,5 +44,4 @@ export function mergeObservables() {
       })
     }
   })
-  return globalObservable
 }

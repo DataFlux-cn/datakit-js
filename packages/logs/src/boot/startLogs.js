@@ -32,7 +32,7 @@ export function startLogs(configuration, buildCommonContext, mainLogger) {
         message: error.message,
         date: error.startClocks.timeStamp,
         error: {
-          origin: ErrorSource.AGENT // Todo: Remove in the next major release
+          origin: ErrorSource.AGENT
         },
         origin: ErrorSource.AGENT,
         status: StatusType.error

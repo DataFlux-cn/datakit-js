@@ -1,5 +1,42 @@
 # Changelog
 
+## v3.1.11
+
+- feat:  Optimize DOM iteration
+- fix: fix unexpected session renewal after expire() ([#2632](https://gitlab.jiagouyun.com/cloudcare/dataflux-rum-sdk-javscript/pull/2632))
+- fix: 添加 error causes 字段
+- fix: add getNodePrivacyLevel cache handler
+
+## v3.1.10
+
+- fix: update npmignore
+
+## v3.1.9
+
+- fix: add package.json repository directory
+- fix: types
+- fix: update ignore
+- feat: add types d.ts file
+- merge test unit branch
+- feat: update bebel config exclude to ignore
+- feat: 添加 exclude spec file
+- feat: add test unit
+- fix: remove TODO
+
+## v3.1.8
+
+- fix: method undefined
+- fix: update worker bug
+- fix: observable first function handler
+- feat: add view metric sampled_for_replay
+- feat: add config metric
+- feat: add ds_store ignore
+- fix: 重复shadowroot bug
+
+## v3.1.7
+
+- fix: stop session bug
+
 ## v3.1.6
 
 - fix: 修改view_url_query 逻辑

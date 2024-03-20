@@ -1,10 +1,15 @@
 import { COOKIE_ACCESS_DELAY } from '../browser/cookie'
 import { Observable } from '../helper/observable'
-import { dateNow, UUID, throttle } from '../helper/tools'
+import { dateNow, UUID, throttle, ONE_SECOND } from '../helper/tools'
 import { SESSION_TIME_OUT_DELAY } from './sessionConstants'
-import { retrieveSession, withCookieLockAccess } from './sessionCookieStore'
+import {
+  retrieveSession,
+  withCookieLockAccess,
+  clearSession
+} from './sessionCookieStore'
 import { clearInterval, setInterval } from '../helper/timer'
 
+export var STORAGE_POLL_DELAY = ONE_SECOND
 /**
  * Different session concepts:
  * - tracked, the session has an id and is updated along the user navigation
@@ -15,10 +20,9 @@ export function startSessionStore(options, productKey, computeSessionState) {
   var renewObservable = new Observable()
   var expireObservable = new Observable()
 
-  var watchSessionTimeoutId = setInterval(watchSession, COOKIE_ACCESS_DELAY)
+  var watchSessionTimeoutId = setInterval(watchSession, STORAGE_POLL_DELAY)
   var sessionCache = retrieveActiveSession()
-
-  function expandOrRenewSession() {
+  var _throttleExpandOrRenewSession = throttle(function () {
     var isTracked
     withCookieLockAccess({
       options: options,
@@ -34,7 +38,26 @@ export function startSessionStore(options, productKey, computeSessionState) {
         sessionCache = cookieSession
       }
     })
-  }
+  }, STORAGE_POLL_DELAY)
+  var throttledExpandOrRenewSession = _throttleExpandOrRenewSession.throttled
+  var cancelExpandOrRenewSession = _throttleExpandOrRenewSession.cancel
+  //   function expandOrRenewSession() {
+  //     var isTracked
+  //     withCookieLockAccess({
+  //       options: options,
+  //       process: function (cookieSession) {
+  //         var synchronizedSession = synchronizeSession(cookieSession)
+  //         isTracked = expandOrRenewCookie(synchronizedSession)
+  //         return synchronizedSession
+  //       },
+  //       after: function (cookieSession) {
+  //         if (isTracked && !hasSessionInCache()) {
+  //           renewSession(cookieSession)
+  //         }
+  //         sessionCache = cookieSession
+  //       }
+  //     })
+  //   }
 
   function expandSession() {
     withCookieLockAccess({
@@ -128,8 +151,7 @@ export function startSessionStore(options, productKey, computeSessionState) {
   }
 
   return {
-    expandOrRenewSession: throttle(expandOrRenewSession, COOKIE_ACCESS_DELAY)
-      .throttled,
+    expandOrRenewSession: throttledExpandOrRenewSession,
     expandSession: expandSession,
     getSession: function () {
       return sessionCache
@@ -137,7 +159,8 @@ export function startSessionStore(options, productKey, computeSessionState) {
     renewObservable: renewObservable,
     expireObservable: expireObservable,
     expire: function () {
-      deleteSessionCookie(options)
+      cancelExpandOrRenewSession()
+      clearSession(options)
       synchronizeSession({})
     },
     stop: function () {

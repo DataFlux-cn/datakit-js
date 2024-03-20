@@ -120,7 +120,7 @@ export function createPageActivityObservable(
   domMutationObservable,
   configuration
 ) {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var subscriptions = []
     var firstRequestIndex
     var pendingRequestsCount = 0
@@ -186,8 +186,6 @@ export function createPageActivityObservable(
       observable.notify({ isBusy: pendingRequestsCount > 0 })
     }
   })
-
-  return observable
 }
 
 function isExcludedUrl(configuration, requestUrl) {

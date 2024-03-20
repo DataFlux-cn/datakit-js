@@ -2,7 +2,8 @@ import { computeStackTrace } from '../tracekit'
 import {
   createHandlingStack,
   formatErrorMessage,
-  toStackTraceString
+  toStackTraceString,
+  flattenErrorCauses
 } from '../helper/errorTools'
 import { mergeObservables, Observable } from '../helper/observable'
 import { find, map } from '../helper/tools'
@@ -24,7 +25,7 @@ export function initConsoleObservable(apis) {
 
 /* eslint-disable no-console */
 function createConsoleObservable(api) {
-  var observable = new Observable(function () {
+  return new Observable(function (observable) {
     var originalConsoleApi = console[api]
     console[api] = function () {
       var params = [].slice.call(arguments)
@@ -38,16 +39,14 @@ function createConsoleObservable(api) {
       console[api] = originalConsoleApi
     }
   })
-  return observable
 }
 
 function buildConsoleLog(params, api, handlingStack) {
-  // Todo: remove console error prefix in the next major version
   var message = map(params, function (param) {
     return formatConsoleParameters(param)
   }).join(' ')
   var stack
-
+  var causes
   if (api === ConsoleApiName.error) {
     var firstErrorParam = find(params, function (param) {
       return param instanceof Error
@@ -56,13 +55,17 @@ function buildConsoleLog(params, api, handlingStack) {
       ? toStackTraceString(computeStackTrace(firstErrorParam))
       : undefined
     message = 'console error: ' + message
+    causes = firstErrorParam
+      ? flattenErrorCauses(firstErrorParam, 'console')
+      : undefined
   }
 
   return {
     api: api,
     message: message,
     stack: stack,
-    handlingStack: handlingStack
+    handlingStack: handlingStack,
+    causes: causes
   }
 }
 

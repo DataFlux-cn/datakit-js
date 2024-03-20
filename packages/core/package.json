@@ -1,8 +1,9 @@
 {
     "name": "@cloudcare/browser-core",
-    "version": "3.1.6",
+    "version": "3.1.11",
     "main": "cjs/index.js",
     "module": "esm/index.js",
+    "types": "types/index.d.ts",
     "scripts": {
         "build": "run-p build:cjs build:esm",
         "build:cjs": "rm -rf cjs && babel --config-file ./babel.cjs.json --out-dir cjs ./src",
@@ -15,7 +16,8 @@
     ],
     "repository": {
         "url": "https://github.com/DataFlux-cn/datakit-js",
-        "type": "git"
+        "type": "git",
+        "directory": "packages/core"
     },
     "author": "dataflux",
     "license": "MIT",

@@ -6,7 +6,7 @@ import {
   isNullUndefinedDefaultValue,
   monitor
 } from '@cloudcare/browser-core'
-import { getMutationObserverConstructor } from '../../domMutationCollection'
+import { getMutationObserverConstructor } from '../../domMutationObservable'
 import { NodePrivacyLevel } from '../../../constants'
 import { getNodePrivacyLevel, getTextContent } from './privacy'
 import {
@@ -73,6 +73,7 @@ function processMutations(
   configuration,
   shadowRootsController
 ) {
+  var nodePrivacyLevelCache = new Map()
   mutations
     .filter(function (mutation) {
       return mutation.type === 'childList'
@@ -96,7 +97,8 @@ function processMutations(
       nodeAndAncestorsHaveSerializedNode(mutation.target) &&
       getNodePrivacyLevel(
         mutation.target,
-        configuration.defaultPrivacyLevel
+        configuration.defaultPrivacyLevel,
+        nodePrivacyLevelCache
       ) !== NodePrivacyLevel.HIDDEN
     )
   })
@@ -105,7 +107,8 @@ function processMutations(
       return mutation.type === 'childList'
     }),
     configuration,
-    shadowRootsController
+    shadowRootsController,
+    nodePrivacyLevelCache
   )
   var adds = _processChildListMutations.adds
   var removes = _processChildListMutations.removes
@@ -123,7 +126,8 @@ function processMutations(
         mutation.type === 'characterData' && !hasBeenSerialized(mutation.target)
       )
     }),
-    configuration
+    configuration,
+    nodePrivacyLevelCache
   )
 
   var attributes = processAttributesMutations(
@@ -132,7 +136,8 @@ function processMutations(
         mutation.type === 'attributes' && !hasBeenSerialized(mutation.target)
       )
     }),
-    configuration
+    configuration,
+    nodePrivacyLevelCache
   )
   if (!texts.length && !attributes.length && !removes.length && !adds.length) {
     return
@@ -148,7 +153,8 @@ function processMutations(
 function processChildListMutations(
   mutations,
   configuration,
-  shadowRootsController
+  shadowRootsController,
+  nodePrivacyLevelCache
 ) {
   // First, we iterate over mutations to collect:
   //
@@ -200,7 +206,8 @@ function processChildListMutations(
 
     var parentNodePrivacyLevel = getNodePrivacyLevel(
       node.parentNode,
-      configuration.defaultPrivacyLevel
+      configuration.defaultPrivacyLevel,
+      nodePrivacyLevelCache
     )
     if (
       parentNodePrivacyLevel === NodePrivacyLevel.HIDDEN ||
@@ -267,7 +274,11 @@ function processChildListMutations(
   }
 }
 
-function processCharacterDataMutations(mutations, configuration) {
+function processCharacterDataMutations(
+  mutations,
+  configuration,
+  nodePrivacyLevelCache
+) {
   var textMutations = []
 
   // Deduplicate mutations based on their target node
@@ -289,7 +300,8 @@ function processCharacterDataMutations(mutations, configuration) {
 
     var parentNodePrivacyLevel = getNodePrivacyLevel(
       getParentNode(mutation.target),
-      configuration.defaultPrivacyLevel
+      configuration.defaultPrivacyLevel,
+      nodePrivacyLevelCache
     )
     if (
       parentNodePrivacyLevel === NodePrivacyLevel.HIDDEN ||
@@ -300,7 +312,6 @@ function processCharacterDataMutations(mutations, configuration) {
 
     textMutations.push({
       id: getSerializedNodeId(mutation.target),
-      // TODO: pass a valid "ignoreWhiteSpace" argument
       value: isNullUndefinedDefaultValue(
         getTextContent(mutation.target, false, parentNodePrivacyLevel, null)
       )
@@ -310,7 +321,11 @@ function processCharacterDataMutations(mutations, configuration) {
   return textMutations
 }
 
-function processAttributesMutations(mutations, configuration) {
+function processAttributesMutations(
+  mutations,
+  configuration,
+  nodePrivacyLevelCache
+) {
   var attributeMutations = []
 
   // Deduplicate mutations based on their target node and changed attribute
@@ -337,7 +352,8 @@ function processAttributesMutations(mutations, configuration) {
     }
     var privacyLevel = getNodePrivacyLevel(
       mutation.target,
-      configuration.defaultPrivacyLevel
+      configuration.defaultPrivacyLevel,
+      nodePrivacyLevelCache
     )
     var attributeValue = serializeAttribute(
       mutation.target,

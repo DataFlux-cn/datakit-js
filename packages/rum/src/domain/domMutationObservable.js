@@ -8,26 +8,25 @@ import {
 export function createDOMMutationObservable() {
   var MutationObserver = getMutationObserverConstructor()
 
-  var observable = new Observable(
-    monitor(function () {
-      if (!MutationObserver) {
-        return
-      }
-      var observer = new MutationObserver(function () {
+  return new Observable(function (observable) {
+    if (!MutationObserver) {
+      return
+    }
+    var observer = new MutationObserver(
+      monitor(function () {
         return observable.notify()
       })
-      observer.observe(document, {
-        attributes: true,
-        characterData: true,
-        childList: true,
-        subtree: true
-      })
-      return function () {
-        return observer.disconnect()
-      }
+    )
+    observer.observe(document, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true
     })
-  )
-  return observable
+    return function () {
+      return observer.disconnect()
+    }
+  })
 }
 
 export function getMutationObserverConstructor() {

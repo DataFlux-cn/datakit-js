@@ -10,7 +10,8 @@ import {
   createEventRateLimiter,
   limitModification,
   display,
-  assign
+  assign,
+  round
 } from '@cloudcare/browser-core'
 var SessionType = {
   SYNTHETICS: 'synthetics',
@@ -101,7 +102,14 @@ export function startRumAssembly(
           _gc: {
             sdkName: configuration.sdkName,
             sdkVersion: configuration.sdkVersion,
-            drift: currentDrift()
+            drift: currentDrift(),
+            configuration: {
+              session_sample_rate: round(configuration.sessionSampleRate, 3),
+              session_replay_sample_rate: round(
+                configuration.sessionReplaySampleRate,
+                3
+              )
+            }
           },
           terminal: {
             type: 'web'
@@ -151,6 +159,10 @@ export function startRumAssembly(
         }
         if (!('has_replay' in serverRumEvent.session)) {
           serverRumEvent.session.has_replay = commonContext.hasReplay
+        }
+        if (serverRumEvent.type === 'view') {
+          serverRumEvent.session.sampled_for_replay =
+            session.sessionReplayAllowed
         }
         if (!isEmptyObject(commonContext.user)) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion

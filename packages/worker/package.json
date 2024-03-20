@@ -1,21 +1,22 @@
 {
     "name": "@cloudcare/browser-worker",
-    "version": "3.1.6",
+    "version": "3.1.11",
     "main": "bundle/worker.js",
     "scripts": {
         "build": "rm -rf bundle && webpack --mode=production"
     },
     "dependencies": {
-        "@cloudcare/browser-core": "3.1.6"
+        "@cloudcare/browser-core": "3.1.11"
     },
     "keywords": [
         "dataflux",
-        "logs",
+        "worker",
         "sdk"
     ],
     "repository": {
         "url": "https://github.com/DataFlux-cn/datakit-js",
-        "type": "git"
+        "type": "git",
+        "directory": "packages/worker"
     },
     "publishConfig": {
         "access": "public"

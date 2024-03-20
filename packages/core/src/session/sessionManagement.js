@@ -8,6 +8,7 @@ import { startSessionStore } from './sessionStore'
 import { SESSION_TIME_OUT_DELAY } from './sessionConstants'
 import { DOM_EVENT } from '../helper/enums'
 import { clearInterval, setInterval } from '../helper/timer'
+import { Observable } from '../helper/observable'
 export var VISIBILITY_CHECK_DELAY = ONE_MINUTE
 var SESSION_CONTEXT_TIMEOUT_DELAY = SESSION_TIME_OUT_DELAY
 var stopCallbacks = []
@@ -17,6 +18,8 @@ export var startSessionManager = function (
   productKey,
   computeSessionState
 ) {
+  var renewObservable = new Observable()
+  var expireObservable = new Observable()
   var sessionStore = startSessionStore(options, productKey, computeSessionState)
   stopCallbacks.push(function () {
     return sessionStore.stop()
@@ -29,8 +32,10 @@ export var startSessionManager = function (
 
   sessionStore.renewObservable.subscribe(function () {
     sessionContextHistory.add(buildSessionContext(), relativeNow())
+    renewObservable.notify()
   })
   sessionStore.expireObservable.subscribe(function () {
+    expireObservable.notify()
     sessionContextHistory.closeActive(relativeNow())
   })
 
@@ -55,8 +60,8 @@ export var startSessionManager = function (
     findActiveSession: function (startTime) {
       return sessionContextHistory.find(startTime)
     },
-    renewObservable: sessionStore.renewObservable,
-    expireObservable: sessionStore.expireObservable,
+    renewObservable: renewObservable,
+    expireObservable: expireObservable,
     expire: sessionStore.expire
   }
 }

@@ -5,6 +5,7 @@
         "packages/*"
     ],
     "devDependencies": {
+        "@jsdevtools/coverage-istanbul-loader": "3.0.5",
         "@babel/cli": "^7.22.10",
         "@babel/core": "^7.22.9",
         "@babel/preset-env": "^7.22.9",
@@ -16,6 +17,16 @@
         "glob": "10.3.3",
         "lerna": "^7.1.4",
         "npm-run-all": "^4.1.5",
+        "jasmine-core": "3.99.1",
+        "karma": "6.4.2",
+        "karma-browserstack-launcher": "1.6.0",
+        "karma-chrome-launcher": "3.2.0",
+        "karma-coverage-istanbul-reporter": "3.0.3",
+        "karma-jasmine": "4.0.2",
+        "karma-junit-reporter": "2.0.1",
+        "karma-sourcemap-loader": "0.4.0",
+        "karma-spec-reporter": "0.0.36",
+        "karma-webpack": "5.0.0",
         "webpack": "^5.88.2",
         "webpack-cli": "^5.1.4",
         "webpack-dev-server": "^4.15.1"
@@ -24,7 +35,6 @@
         "@babel/traverse": "7.22.6"
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
         "build": "lerna run build --stream",
         "build:bundle": "lerna run build:bundle --stream",
         "publish:npm": "npm run build && lerna publish from-package",
@@ -33,7 +43,10 @@
         "publish:oss:test": "lerna run publish:oss:test --stream",
         "dev": "node scripts/dev-server.js",
         "release": "scripts/cli release",
-        "version": "scripts/cli version"
+        "version": "scripts/cli version",
+        "test": "npm run test:unit:watch",
+        "test:unit": "karma start ./test/unit/karma.local.conf.js",
+        "test:unit:watch": "npm run test:unit --no-single-run"
     },
     "keywords": [
         "dataflux",
