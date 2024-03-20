@@ -49,7 +49,11 @@ export function trackCumulativeLayoutShift(lifeCycle, configuration, callback) {
             var cls = round(maxClsValue, 4)
             var clsTarget = window.largestLayoutShiftTarget()
             var cslTargetSelector
-            if (clsTarget) {
+            if (
+              clsTarget &&
+              // 检测目标是否在dom 中被删除
+              clsTarget.isConnected
+            ) {
               cslTargetSelector = getSelectorFromElement(
                 clsTarget,
                 configuration.actionNameAttribute
