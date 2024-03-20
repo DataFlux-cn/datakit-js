@@ -29,7 +29,13 @@ export function hasChildNodes(node) {
 //   return isNodeShadowHost(node) ? node.shadowRoot.childNodes : node.childNodes
 // }
 export function forEachChildNodes(node, callback) {
-  node.childNodes.forEach(callback)
+  // node.childNodes.forEach(callback)
+  var child = node.firstChild
+
+  while (child) {
+    callback(child)
+    child = child.nextSibling
+  }
   if (isNodeShadowHost(node)) {
     callback(node.shadowRoot)
   }
