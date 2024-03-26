@@ -367,13 +367,24 @@ export function computeSize(entry) {
   if (entry.startTime < entry.responseStart) {
     return {
       size: entry.decodedBodySize,
-      encodeSize:
-        Number.MAX_SAFE_INTEGER < entry.encodedBodySize
-          ? 0
-          : entry.encodedBodySize // max safe interger
+      encodedBodySize: entry.encodedBodySize,
+      decodedBodySize: entry.decodedBodySize,
+      transferSize: entry.transferSize
     }
+    // return {
+    //   size: entry.decodedBodySize,
+    //   encodeSize:
+    //     Number.MAX_SAFE_INTEGER < entry.encodedBodySize
+    //       ? 0
+    //       : entry.encodedBodySize // max safe interger
+    // }
   }
-  return undefined
+  return {
+    size: undefined,
+    encodedBodySize: undefined,
+    decodedBodySize: undefined,
+    transferSize: undefined
+  }
 }
 
 export function isAllowedRequestUrl(configuration, url) {

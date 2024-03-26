@@ -107,7 +107,9 @@ export var dataMap = {
     fields: {
       duration: 'resource.duration',
       resource_size: 'resource.size',
-      resource_encode_size: 'resource.encode_size',
+      resource_encode_size: 'resource.encoded_body_size',
+      resource_decode_size: 'resource.decoded_body_size',
+      resource_transfer_size: 'resource.transfer_size',
       resource_render_blocking_status: 'resource.render_blocking_status',
       resource_dns: 'resource.dns',
       resource_tcp: 'resource.tcp',
