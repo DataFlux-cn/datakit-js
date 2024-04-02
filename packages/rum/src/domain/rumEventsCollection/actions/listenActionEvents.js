@@ -4,7 +4,8 @@ export function listenActionEvents(events) {
   var selectionEmptyAtPointerDown
   var userActivity = {
     selection: false,
-    input: false
+    input: false,
+    scroll: false
   }
   var clickContext
   var listeners = [
@@ -16,7 +17,8 @@ export function listenActionEvents(events) {
           selectionEmptyAtPointerDown = isSelectionEmpty()
           userActivity = {
             selection: false,
-            input: false
+            input: false,
+            scroll: false
           }
           clickContext = events.onPointerDown(event)
         }
@@ -50,7 +52,14 @@ export function listenActionEvents(events) {
       },
       { capture: true }
     ),
-
+    addEventListener(
+      window,
+      DOM_EVENT.SCROLL,
+      function () {
+        userActivity.scroll = true
+      },
+      { capture: true, passive: true }
+    ),
     addEventListener(
       window,
       DOM_EVENT.INPUT,
