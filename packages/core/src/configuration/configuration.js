@@ -119,9 +119,17 @@ export function validatePostRequestRequireParamsConfiguration(
 export function buildCookieOptions(initConfiguration) {
   var cookieOptions = {}
 
-  cookieOptions.secure = mustUseSecureCookie(initConfiguration)
-  cookieOptions.crossSite = !!initConfiguration.useCrossSiteSessionCookie
-
+  //   cookieOptions.secure = mustUseSecureCookie(initConfiguration)
+  //   cookieOptions.crossSite = !!initConfiguration.useCrossSiteSessionCookie
+  cookieOptions.secure =
+    !!initConfiguration.useSecureSessionCookie ||
+    !!initConfiguration.usePartitionedCrossSiteSessionCookie ||
+    !!initConfiguration.useCrossSiteSessionCookie
+  cookieOptions.crossSite =
+    !!initConfiguration.usePartitionedCrossSiteSessionCookie ||
+    !!initConfiguration.useCrossSiteSessionCookie
+  cookieOptions.partitioned =
+    !!initConfiguration.usePartitionedCrossSiteSessionCookie
   if (initConfiguration.trackSessionAcrossSubdomains) {
     cookieOptions.domain = getCurrentSite()
   }
@@ -129,9 +137,9 @@ export function buildCookieOptions(initConfiguration) {
   return cookieOptions
 }
 
-function mustUseSecureCookie(initConfiguration) {
-  return (
-    !!initConfiguration.useSecureSessionCookie ||
-    !!initConfiguration.useCrossSiteSessionCookie
-  )
-}
+// function mustUseSecureCookie(initConfiguration) {
+//   return (
+//     !!initConfiguration.useSecureSessionCookie ||
+//     !!initConfiguration.useCrossSiteSessionCookie
+//   )
+// }

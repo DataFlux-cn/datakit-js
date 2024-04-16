@@ -13,6 +13,7 @@ export function setCookie(name, value, expireDelay, options) {
   var sameSite = options && options.crossSite ? 'none' : 'strict'
   var domain = options && options.domain ? ';domain=' + options.domain : ''
   var secure = options && options.secure ? ';secure' : ''
+  var partitioned = options && options.partitioned ? ';partitioned' : ''
   document.cookie =
     name +
     '=' +
@@ -22,7 +23,8 @@ export function setCookie(name, value, expireDelay, options) {
     ';path=/;samesite=' +
     sameSite +
     domain +
-    secure
+    secure +
+    partitioned
 }
 
 export function getCookie(name) {
