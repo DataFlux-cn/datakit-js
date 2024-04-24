@@ -19,8 +19,7 @@ import {
   getTextContent,
   shouldMaskNode,
   reducePrivacyLevel,
-  getNodeSelfPrivacyLevel,
-  MAX_ATTRIBUTE_VALUE_CHAR_LENGTH
+  getNodeSelfPrivacyLevel
 } from './privacy'
 import {
   getSerializedNodeId,
@@ -34,7 +33,10 @@ import {
   getHref,
   getCssRulesString
 } from './serializationUtils'
-
+import {
+  isLongDataUrl,
+  sanitizeDataUrl
+} from '../../rumEventsCollection/resource/resourceUtils'
 // Those values are the only one that can be used when inheriting privacy levels from parent to
 // children during serialization, since HIDDEN and IGNORE shouldn't serialize their children. This
 // ensures that no children are serialized when they shouldn't.
@@ -310,13 +312,15 @@ export function serializeAttribute(
   }
 
   // Minimum Fix for customer.
-  if (
-    attributeValue.length > MAX_ATTRIBUTE_VALUE_CHAR_LENGTH &&
-    attributeValue.slice(0, 5) === 'data:'
-  ) {
-    return 'data:truncated'
+  //   if (
+  //     attributeValue.length > MAX_ATTRIBUTE_VALUE_CHAR_LENGTH &&
+  //     attributeValue.slice(0, 5) === 'data:'
+  //   ) {
+  //     return 'data:truncated'
+  //   }
+  if (isLongDataUrl(attributeValue)) {
+    return sanitizeDataUrl(attributeValue)
   }
-
   return attributeValue
 }
 

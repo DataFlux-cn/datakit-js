@@ -367,15 +367,43 @@ export function computeSize(entry) {
   if (entry.startTime < entry.responseStart) {
     return {
       size: entry.decodedBodySize,
-      encodeSize:
-        Number.MAX_SAFE_INTEGER < entry.encodedBodySize
-          ? 0
-          : entry.encodedBodySize // max safe interger
+      encodedBodySize: entry.encodedBodySize,
+      decodedBodySize: entry.decodedBodySize,
+      transferSize: entry.transferSize
     }
+    // return {
+    //   size: entry.decodedBodySize,
+    //   encodeSize:
+    //     Number.MAX_SAFE_INTEGER < entry.encodedBodySize
+    //       ? 0
+    //       : entry.encodedBodySize // max safe interger
+    // }
   }
-  return undefined
+  return {
+    size: undefined,
+    encodedBodySize: undefined,
+    decodedBodySize: undefined,
+    transferSize: undefined
+  }
 }
 
 export function isAllowedRequestUrl(configuration, url) {
   return url && !isIntakeRequest(url, configuration)
+}
+
+var DATA_URL_REGEX = /data:(.+)?(;base64)?,/g
+export var MAX_ATTRIBUTE_VALUE_CHAR_LENGTH = 24_000
+export function isLongDataUrl(url) {
+  if (url.length <= MAX_ATTRIBUTE_VALUE_CHAR_LENGTH) {
+    return false
+  } else if (url.substring(0, 5) === 'data:') {
+    // Avoid String.match RangeError: Maximum call stack size exceeded
+    url = url.substring(0, MAX_ATTRIBUTE_VALUE_CHAR_LENGTH)
+    return true
+  }
+  return false
+}
+
+export function sanitizeDataUrl(url) {
+  return url.match(DATA_URL_REGEX)[0] + '[...]'
 }

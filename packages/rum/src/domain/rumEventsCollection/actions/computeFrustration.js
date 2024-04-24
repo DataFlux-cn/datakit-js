@@ -42,7 +42,7 @@ export function computeFrustration(clicks, rageClick) {
 export function isRage(clicks) {
   if (
     some(clicks, function (click) {
-      return click.getUserActivity().selection
+      return click.getUserActivity().selection || click.getUserActivity().scroll
     })
   ) {
     return false
@@ -80,7 +80,11 @@ var DEAD_CLICK_EXCLUDE_SELECTOR =
   'a[href] *'
 
 export function isDead(click) {
-  if (click.hasPageActivity() || click.getUserActivity().input) {
+  if (
+    click.hasPageActivity() ||
+    click.getUserActivity().input ||
+    click.getUserActivity().scroll
+  ) {
     return false
   }
   return !elementMatches(click.event.target, DEAD_CLICK_EXCLUDE_SELECTOR)

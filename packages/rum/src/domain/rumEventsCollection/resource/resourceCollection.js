@@ -1,5 +1,4 @@
 import {
-  msToNs,
   getStatusGroup,
   UUID,
   extend2Lev,
@@ -24,7 +23,9 @@ import {
   isRequestKind,
   is304,
   isCacheHit,
-  isResourceUrlLimit
+  isResourceUrlLimit,
+  isLongDataUrl,
+  sanitizeDataUrl
 } from './resourceUtils'
 import { PageState } from '../../contexts/pageStateHistory.js'
 export function startResourceCollection(
@@ -122,7 +123,9 @@ function processRequest(
         method: request.method,
         status: request.status,
         statusGroup: getStatusGroup(request.status),
-        url: request.url,
+        url: isLongDataUrl(request.url)
+          ? sanitizeDataUrl(request.url)
+          : request.url,
         urlHost: urlObj.Host,
         urlPath: urlObj.Path,
         urlPathGroup: replaceNumberCharByPath(urlObj.Path),
