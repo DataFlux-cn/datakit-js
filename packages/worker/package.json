@@ -21,6 +21,9 @@
     "publishConfig": {
         "access": "public"
     },
+    "devDependencies": {
+        "webpack": "5.91.0"
+    },
     "author": "dataflux",
     "license": "MIT",
     "description": "DataFlux RUM Web 端数据指标监控",
