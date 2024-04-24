@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.1.12
+
+- feat: 修改webpack 版本
+- feat: 添加第三方cookie 支持
+- fix: 添加 resource url dataURL 处理
+- fix: 忽略滚动对 action 的处理
+- feat: add resource collection decodeSize,encodeSize
+- fix: trackCumulativeLayoutShift target element connected
+
 ## v3.1.11
 
 - feat:  Optimize DOM iteration
