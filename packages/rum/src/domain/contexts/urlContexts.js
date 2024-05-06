@@ -62,8 +62,8 @@ export function startUrlContexts(
   function buildUrlContext(data) {
     var path = data.location.pathname
     var hash = data.location.hash
-    if (path === '/' && hash && !isHashAnAnchor(hash)) {
-      path = '/' + getPathFromHash(hash)
+    if (hash && !isHashAnAnchor(hash)) {
+      path = path + getPathFromHash(hash)
     }
     return {
       url: data.url,
