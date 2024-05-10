@@ -33,15 +33,15 @@ export interface InitConfiguration {
   service?: string | undefined
   env?: string | undefined
   version?: string | undefined
-  tracingSampleRate: number | undefined
+  tracingSampleRate?: number | undefined
   /**
    * @deprecated use usePartitionedCrossSiteSessionCookie instead
    */
   useCrossSiteSessionCookie?: boolean | undefined
   useSecureSessionCookie?: boolean | undefined
   trackSessionAcrossSubdomains?: boolean | undefined
-  storeContextsToLocal: boolean | undefined
-  sendContentTypeByJson: boolean | undefined
+  storeContextsToLocal?: boolean | undefined
+  sendContentTypeByJson?: boolean | undefined
 }
 export enum TraceType {
   DDTRACE = 'ddtrace',
@@ -87,6 +87,6 @@ export interface RumInitConfiguration extends InitConfiguration {
   trackUserInteractions?: boolean | undefined
   actionNameAttribute?: string | undefined
   trackViewsManually?: boolean | undefined
-  traceType: TraceType
-  traceId128Bit: boolean | undefined
+  traceType?: TraceType
+  traceId128Bit?: boolean | undefined
 }
