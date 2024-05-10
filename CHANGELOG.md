@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.1.13
+
+- fix: 添加typescript 注解
+- fix: 修复typescript 定义错误
+- fix: 修改hash 模式path 获取方式
+- fix: buildUrlContext path group bug
+- fix: 添加iframe 屏蔽信息
+- feat: updrade learn version
+
 ## v3.1.12
 
 - feat: 修改webpack 版本
