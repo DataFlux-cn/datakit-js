@@ -8,5 +8,5 @@ export interface LogsInitConfiguration extends InitConfiguration {
   forwardErrorsToLogs?: boolean | undefined
   forwardConsoleLogs?: ConsoleApiName[] | 'all' | undefined
   forwardReports?: RawReportType[] | 'all' | undefined
-  requestErrorResponseLengthLimit: number
+  requestErrorResponseLengthLimit?: number
 }
