@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.14
+
+- fix: 修复 rum logs 类型定义
+
 ## v3.1.13
 
 - fix: 添加typescript 注解

@@ -1,6 +1,9 @@
 import type { Logger, LoggerConfiguration } from './logger'
-import type { LogsInitConfiguration } from './configuration'
-import type { InitConfiguration, User, Context } from '@cloudcare/browser-core'
+import type {
+  LogsInitConfiguration,
+  LogsSiteConfiguration
+} from './configuration'
+import type { User, Context } from '@cloudcare/browser-core'
 export interface InternalContext {
   session: {
     id: string | undefined
@@ -8,7 +11,9 @@ export interface InternalContext {
 }
 export declare const datafluxLogs: {
   logger: Logger
-  init: (initConfiguration: LogsInitConfiguration) => void
+  init: (
+    initConfiguration: LogsInitConfiguration | LogsSiteConfiguration
+  ) => void
   getGlobalContext: () => Context
   setGlobalContext: (context: any) => void
   setGlobalContextProperty: (key: any, value: any) => void
@@ -16,7 +21,10 @@ export declare const datafluxLogs: {
   clearGlobalContext: () => void
   createLogger: (name: string, conf?: LoggerConfiguration) => Logger
   getLogger: (name: string) => Logger | undefined
-  getInitConfiguration: () => InitConfiguration | undefined
+  getInitConfiguration: () =>
+    | LogsInitConfiguration
+    | LogsSiteConfiguration
+    | undefined
   getInternalContext: (
     startTime?: number | undefined
   ) => InternalContext | undefined
