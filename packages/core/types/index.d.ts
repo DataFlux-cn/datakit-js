@@ -22,11 +22,28 @@ export declare const RawReportType: {
   readonly cspViolation: 'csp_violation'
 }
 export type RawReportType = (typeof RawReportType)[keyof typeof RawReportType]
-export interface InitConfiguration {
+
+export interface SiteInitConfiguration {
   /**
    *  以openway 方式上报数据令牌，从观测云控制台获取，必填
    */
-  clientToken?: string | undefined
+  clientToken: string | undefined
+
+  /**
+   *  以 公共openway 方式上报数据地址，从观测云控制台获取，必填
+   */
+  site: string | undefined
+}
+export interface DatakitInitConfiguration {
+  /** DataKit 数据上报 Origin 注释:
+   * 协议（包括：//），域名（或IP地址）[和端口号]
+   * 例如：
+   * https://www.datakit.com；
+   * http://100.20.34.3:8088。
+   */
+  datakitOrigin: string
+}
+export interface InitConfiguration {
   /**
    *  数据发送前的的拦截器
    * @param event  事件内容
@@ -40,17 +57,7 @@ export interface InitConfiguration {
   sessionSampleRate?: number | undefined
   telemetrySampleRate?: number | undefined
   silentMultipleInit?: boolean | undefined
-  /**
-   *  以 公共openway 方式上报数据地址，从观测云控制台获取，必填
-   */
-  site?: string | undefined
-  /** DataKit 数据上报 Origin 注释:
-   * 协议（包括：//），域名（或IP地址）[和端口号]
-   * 例如：
-   * https://www.datakit.com；
-   * http://100.20.34.3:8088。
-   */
-  datakitOrigin: string
+
   service?: string | undefined
   /** Web 应用当前环境，如 prod：线上环境；gray：灰度环境；pre：预发布环境；common：日常环境；local：本地环境。 */
   env?: string | undefined
@@ -112,7 +119,7 @@ export declare function matchList(
   useStartsWith?: boolean
 ): boolean
 
-export interface RumInitConfiguration extends InitConfiguration {
+export interface RumBaseInitConfiguration extends InitConfiguration {
   /**从观测云创建的应用 ID */
   applicationId: string
   /**
@@ -149,3 +156,7 @@ export interface RumInitConfiguration extends InitConfiguration {
    */
   traceId128Bit?: boolean | undefined
 }
+export type RumInitConfiguration = RumBaseInitConfiguration &
+  DatakitInitConfiguration
+export type RumSiteInitConfiguration = RumBaseInitConfiguration &
+  SiteInitConfiguration

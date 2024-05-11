@@ -1,6 +1,6 @@
 import type {
   RumInitConfiguration,
-  InitConfiguration,
+  RumSiteInitConfiguration,
   Context,
   User
 } from '@cloudcare/browser-core'
@@ -27,7 +27,9 @@ export interface InternalContext {
   }
 }
 export declare const datafluxRum: {
-  init: (initConfiguration: RumInitConfiguration) => void
+  init: (
+    initConfiguration: RumInitConfiguration | RumSiteInitConfiguration
+  ) => void
   setGlobalContextProperty: (key: any, value: any) => void
   addRumGlobalContext: (key: any, value: any) => void
   removeGlobalContextProperty: (key: any) => void
@@ -38,7 +40,10 @@ export declare const datafluxRum: {
   getInternalContext: (
     startTime?: number | undefined
   ) => InternalContext | undefined
-  getInitConfiguration: () => InitConfiguration | undefined
+  getInitConfiguration: () =>
+    | RumInitConfiguration
+    | RumSiteInitConfiguration
+    | undefined
   addAction: (name: string, context?: object | undefined) => void
   addError: (error: unknown, context?: object | undefined) => void
   addTiming: (name: string, time?: number | undefined) => void

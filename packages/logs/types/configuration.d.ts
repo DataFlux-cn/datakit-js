@@ -1,12 +1,19 @@
 import type {
   InitConfiguration,
   ConsoleApiName,
-  RawReportType
+  RawReportType,
+  SiteInitConfiguration,
+  DatakitInitConfiguration
 } from '@cloudcare/browser-core'
-export interface LogsInitConfiguration extends InitConfiguration {
-  beforeSend?: ((event: any) => boolean) | undefined
+export interface LogsBaseInitConfiguration extends InitConfiguration {
   forwardErrorsToLogs?: boolean | undefined
   forwardConsoleLogs?: ConsoleApiName[] | 'all' | undefined
   forwardReports?: RawReportType[] | 'all' | undefined
   requestErrorResponseLengthLimit?: number
 }
+
+export type LogsSiteConfiguration = LogsBaseInitConfiguration &
+  DatakitInitConfiguration
+
+export type LogsInitConfiguration = LogsBaseInitConfiguration &
+  SiteInitConfiguration
