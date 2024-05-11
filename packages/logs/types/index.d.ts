@@ -3,7 +3,7 @@ import type {
   LogsInitConfiguration,
   LogsSiteConfiguration
 } from './configuration'
-import type { InitConfiguration, User, Context } from '@cloudcare/browser-core'
+import type { User, Context } from '@cloudcare/browser-core'
 export interface InternalContext {
   session: {
     id: string | undefined
