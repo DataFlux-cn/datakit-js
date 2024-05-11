@@ -143,7 +143,7 @@ export interface RumBaseInitConfiguration extends InitConfiguration {
    */
   trackUserInteractions?: boolean | undefined
   /**
-   * 指定 action 数据 name 获取方式，默认自动获取，可以指定元素特定属性名称
+   * 指定 action 数据 name 获取方式，默认自动获取，可以指定元素特定属性名称,alt,name,title,aria-labelledby,aria-label,data-guance-action-name 这些属性
    */
   actionNameAttribute?: string | undefined
   trackViewsManually?: boolean | undefined
