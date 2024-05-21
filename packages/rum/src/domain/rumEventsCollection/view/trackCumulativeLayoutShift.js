@@ -32,48 +32,64 @@ export function trackCumulativeLayoutShift(lifeCycle, configuration, callback) {
       stop: noop
     }
   }
+
   var maxClsValue = 0
+  // WeakRef is not supported in IE11 and Safari mobile, but so is the layout shift API, so this code won't be executed in these browsers
+  var maxClsTarget
+
+  // if no layout shift happen the value should be reported as 0
   callback({
     value: 0
   })
+
   var window = slidingSessionWindow()
   var _subscribe = lifeCycle.subscribe(
     LifeCycleEventType.PERFORMANCE_ENTRIES_COLLECTED,
-    function (entries) {
-      for (var i = 0; i < entries.length; i++) {
-        var entry = entries[i]
+    (entries) => {
+      for (var entry of entries) {
         if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-          window.update(entry)
-          if (window.value() > maxClsValue) {
-            maxClsValue = window.value()
-            var cls = round(maxClsValue, 4)
-            var clsTarget = window.largestLayoutShiftTarget()
-            var cslTargetSelector
-            if (
-              clsTarget &&
-              // 检测目标是否在dom 中被删除
-              clsTarget.isConnected
-            ) {
-              cslTargetSelector = getSelectorFromElement(
-                clsTarget,
-                configuration.actionNameAttribute
-              )
-            }
+          var _update = window.update(entry)
+          var cumulatedValue = _update.cumulatedValue
+          var isMaxValue = _update.isMaxValue
+          if (isMaxValue) {
+            var target = getTargetFromSource(entry.sources)
+            maxClsTarget = target ? new WeakRef(target) : undefined
+          }
+
+          if (cumulatedValue > maxClsValue) {
+            maxClsValue = cumulatedValue
+            var target = maxClsTarget && maxClsTarget.deref()
+
             callback({
-              value: cls,
-              targetSelector: cslTargetSelector
+              value: round(maxClsValue, 4),
+              targetSelector:
+                target && target.isConnected
+                  ? getSelectorFromElement(
+                      target,
+                      configuration.actionNameAttribute
+                    )
+                  : undefined
             })
           }
         }
       }
     }
   )
+
   var stop = _subscribe.unsubscribe
   return {
     stop: stop
   }
 }
-
+function getTargetFromSource(sources) {
+  if (!sources) {
+    return
+  }
+  var source = find(sources, function (source) {
+    return !!source.node && isElementNode(source.node)
+  })
+  return source && source.node
+}
 function slidingSessionWindow() {
   var value = 0
   var startTime
