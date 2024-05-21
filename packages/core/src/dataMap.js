@@ -6,6 +6,7 @@ export var commonTags = {
   env: 'env',
   service: 'service',
   version: 'version',
+  source: 'source',
   userid: 'user.id',
   user_email: 'user.email',
   user_name: 'user.name',
