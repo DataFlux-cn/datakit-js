@@ -6,7 +6,8 @@ import {
   RumEventType,
   LifeCycleEventType,
   UUID,
-  noop
+  noop,
+  discardNegativeDuration
 } from '@cloudcare/browser-core'
 import { trackClickActions } from './trackClickActions'
 export function startActionCollection(
@@ -55,7 +56,9 @@ function processAction(action, pageStateHistory) {
             count: action.counts.errorCount
           },
           id: action.id,
-          loadingTime: toServerDuration(action.duration),
+          loadingTime: discardNegativeDuration(
+            toServerDuration(action.duration)
+          ),
           frustration: {
             type: action.frustrationTypes
           },
