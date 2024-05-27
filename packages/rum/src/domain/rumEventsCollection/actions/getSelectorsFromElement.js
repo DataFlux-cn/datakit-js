@@ -38,6 +38,11 @@ var UNIQUE_AMONG_CHILDREN_SELECTOR_GETTERS = [
 ]
 
 export function getSelectorFromElement(targetElement, actionNameAttribute) {
+  if (!isConnected(targetElement)) {
+    // We cannot compute a selector for a detached element, as we don't have access to all of its
+    // parents, and we cannot determine if it's unique in the document.
+    return
+  }
   var targetElementSelector = ''
   var element = targetElement
 
@@ -206,4 +211,17 @@ export function supportScopeSelector() {
     }
   }
   return supportScopeSelectorCache
+}
+
+/**
+ * Polyfill-utility for the `isConnected` property not supported in IE11
+ */
+function isConnected(element) {
+  if (
+    'isConnected' in element
+    // cast is to make sure `element` is not inferred as `never` after the check
+  ) {
+    return element.isConnected
+  }
+  return element.ownerDocument.documentElement.contains(element)
 }

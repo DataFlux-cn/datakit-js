@@ -63,12 +63,11 @@ export function trackCumulativeLayoutShift(lifeCycle, configuration, callback) {
             callback({
               value: round(maxClsValue, 4),
               targetSelector:
-                target && target.isConnected
-                  ? getSelectorFromElement(
-                      target,
-                      configuration.actionNameAttribute
-                    )
-                  : undefined
+                target &&
+                getSelectorFromElement(
+                  target,
+                  configuration.actionNameAttribute
+                )
             })
           }
         }
