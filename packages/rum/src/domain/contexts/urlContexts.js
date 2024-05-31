@@ -49,20 +49,26 @@ export function startUrlContexts(
       var changeTime = relativeNow()
       urlContextHistory.closeActive(changeTime)
       urlContextHistory.add(
-        buildUrlContext({
-          url: data.newLocation.href,
-          location: data.newLocation,
-          referrer: current.referrer
-        }),
+        buildUrlContext(
+          {
+            url: data.newLocation.href,
+            location: data.newLocation,
+            referrer: current.referrer
+          },
+          true
+        ),
         changeTime
       )
     }
   })
 
-  function buildUrlContext(data) {
+  function buildUrlContext(data, isHandlerHash) {
+    if (isHandlerHash === undefined) {
+      isHandlerHash = false
+    }
     var path = data.location.pathname
     var hash = data.location.hash
-    if (hash && !isHashAnAnchor(hash)) {
+    if (hash && !isHashAnAnchor(hash) && isHandlerHash) {
       path = '/' + getPathFromHash(hash)
     }
     return {
