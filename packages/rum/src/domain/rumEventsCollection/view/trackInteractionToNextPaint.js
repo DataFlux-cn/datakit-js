@@ -66,28 +66,28 @@ export function trackInteractionToNextPaint(
         }
       }
 
-      var newInteraction = longestInteractions.estimateP98Duration()
+      var newInteraction = longestInteractions.estimateP98Interaction()
       if (
         newInteraction &&
         newInteraction.duration !== interactionToNextPaint
       ) {
         interactionToNextPaint = newInteraction.duration
-        if (interactionToNextPaint > 10 * ONE_MINUTE && !telemetryCollected) {
-          telemetryCollected = true
-          addTelemetryDebug('INP outlier', {
-            inp: interactionToNextPaint,
-            interaction: {
-              timeFromViewStart: elapsed(viewStart, newInteraction.startTime),
-              duration: newInteraction.duration,
-              startTime: newInteraction.startTime,
-              processingStart: newInteraction.processingStart,
-              processingEnd: newInteraction.processingEnd,
-              interactionId: newInteraction.interactionId,
-              name: newInteraction.name,
-              targetNodeName: newInteraction.target?.nodeName
-            }
-          })
-        }
+        // if (interactionToNextPaint > 10 * ONE_MINUTE && !telemetryCollected) {
+        //   telemetryCollected = true
+        //   addTelemetryDebug('INP outlier', {
+        //     inp: interactionToNextPaint,
+        //     interaction: {
+        //       timeFromViewStart: elapsed(viewStart, newInteraction.startTime),
+        //       duration: newInteraction.duration,
+        //       startTime: newInteraction.startTime,
+        //       processingStart: newInteraction.processingStart,
+        //       processingEnd: newInteraction.processingEnd,
+        //       interactionId: newInteraction.interactionId,
+        //       name: newInteraction.name,
+        //       targetNodeName: newInteraction.target?.nodeName
+        //     }
+        //   })
+        // }
         if (newInteraction.target && isElementNode(newInteraction.target)) {
           interactionToNextPaintTargetSelector = getSelectorFromElement(
             newInteraction.target,
@@ -167,7 +167,7 @@ function trackLongestInteractions(getViewInteractionCount) {
      * Compute the p98 longest interaction.
      * For better performance the computation is based on 10 longest interactions and the interaction count of the current view.
      */
-    estimateP98Duration: function () {
+    estimateP98Interaction: function () {
       var interactionIndex = Math.min(
         longestInteractions.length - 1,
         Math.floor(getViewInteractionCount() / 50)

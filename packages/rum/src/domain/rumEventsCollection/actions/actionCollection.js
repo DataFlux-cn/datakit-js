@@ -10,6 +10,7 @@ import {
   discardNegativeDuration
 } from '@cloudcare/browser-core'
 import { trackClickActions } from './trackClickActions'
+import { PageState } from '../../contexts/pageStateHistory'
 export function startActionCollection(
   lifeCycle,
   domMutationObservable,
@@ -94,7 +95,8 @@ function processAction(action, pageStateHistory) {
       date: action.startClocks.timeStamp,
       type: RumEventType.ACTION,
       view: {
-        in_foreground: pageStateHistory.isInActivePageStateAt(
+        in_foreground: pageStateHistory.wasInPageStateAt(
+          PageState.ACTIVE,
           action.startClocks.relative
         )
       }
