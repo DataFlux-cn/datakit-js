@@ -1,5 +1,20 @@
 # Changelog
 
+## v3.1.15
+
+- feat: add injectTraceHeader configuration
+- fix: interactiontonextPaint selector  bug
+- fix: 处理hash 问题
+- feat: add trackResum handler
+- fix: getSelectorFromElement add isConnected handler
+- fix: 修改resourceCollection validateEntry 逻辑
+- fix: action duration为负数bug
+- fix: add source:browser to all RUM Events
+- fix: cls detached node 内存泄露bug
+- fix: update script
+- fix: doc
+- feat: 添加部分md 文档
+
 ## v3.1.14
 
 - fix: 修复 rum logs 类型定义
