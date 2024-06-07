@@ -152,5 +152,21 @@ export function injectHeadersIfTracingAllowed(
   context.traceId = tracer.getTraceId()
   context.spanId = tracer.getSpanId()
   context.traceSampled = traceSampled
-  inject(tracer.makeTracingHeaders())
+
+  var headers = tracer.makeTracingHeaders()
+  if (configuration.injectTraceHeader) {
+    var result = configuration.injectTraceHeader({
+      traceId: context.traceId,
+      spanId: context.spanId,
+      traceSampled: traceSampled
+    })
+    if (getType(result) === 'object') {
+      each(result, function (value, key) {
+        if (getType(value) === 'string') {
+          headers[key] = value
+        }
+      })
+    }
+  }
+  inject(headers)
 }

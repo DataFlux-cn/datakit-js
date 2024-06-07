@@ -10,6 +10,7 @@ import {
   DefaultPrivacyLevel,
   objectHasValue,
   isMatchOption,
+  catchUserErrors,
   getOrigin,
   each
 } from '@cloudcare/browser-core'
@@ -73,7 +74,6 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
     initConfiguration.trackUserInteractions,
     initConfiguration.trackInteractions
   )
-
   return assign(
     {
       applicationId: initConfiguration.applicationId,
@@ -84,6 +84,12 @@ export function validateAndBuildRumConfiguration(initConfiguration) {
       ),
       tracingSampleRate: initConfiguration.tracingSampleRate,
       allowedTracingUrls: allowedTracingUrls,
+      injectTraceHeader:
+        initConfiguration.injectTraceHeader &&
+        catchUserErrors(
+          initConfiguration.injectTraceHeader,
+          'injectTraceHeader threw an error:'
+        ),
       excludedActivityUrls: isNullUndefinedDefaultValue(
         initConfiguration.excludedActivityUrls,
         []
