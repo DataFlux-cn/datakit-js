@@ -157,14 +157,10 @@ export interface RumBaseInitConfiguration extends InitConfiguration {
   traceId128Bit?: boolean | undefined
   /**
    * Fetch/Xhr 拦截之后，往请求 header 添加额外 header-key，受 allowedTracingUrls 影响
-   * @param context  事件额外属性 { traceId:string; spanId:string; traceSampled: number}
+   * @param context  请求附带额外信息，包括traceid spanid url 等内容
    * @returns 返回 key: value 对象, 请求添加的额外 key
    */
-  injectTraceHeader?: (context?: {
-    traceId: string
-    spanId: string
-    traceSampled: number
-  }) => { [key: string]: string } | undefined
+  injectTraceHeader?: (content: any) => { [key: string]: string } | undefined
 }
 export type RumInitConfiguration = RumBaseInitConfiguration &
   DatakitInitConfiguration
