@@ -238,7 +238,7 @@ export function computePerformanceResourceDetails(entry) {
     responseStart = entry.responseStart,
     responseEnd = entry.responseEnd
   var details = {
-    firstbyte: msToNs(responseStart - domainLookupStart),
+    firstbyte: msToNs(responseStart - requestStart),
     trans: msToNs(responseEnd - responseStart),
     downloadTime: formatTiming(startTime, responseStart, responseEnd),
     firstByteTime: formatTiming(startTime, requestStart, responseStart)
