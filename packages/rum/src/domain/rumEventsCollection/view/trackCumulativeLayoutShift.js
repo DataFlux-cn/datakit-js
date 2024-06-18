@@ -89,53 +89,37 @@ function getTargetFromSource(sources) {
   })
   return source && source.node
 }
+export var MAX_WINDOW_DURATION = 5 * ONE_SECOND
+var MAX_UPDATE_GAP = ONE_SECOND
 function slidingSessionWindow() {
-  var value = 0
+  var cumulatedValue = 0
   var startTime
   var endTime
-  var largestLayoutShift = 0
-  var largestLayoutShiftTarget
-  var largestLayoutShiftTime
+  var maxValue = 0
   return {
     update: function (entry) {
       var shouldCreateNewWindow =
         startTime === undefined ||
-        entry.startTime - endTime >= ONE_SECOND ||
-        entry.startTime - startTime >= 5 * ONE_SECOND
+        entry.startTime - endTime >= MAX_UPDATE_GAP ||
+        entry.startTime - startTime >= 5 * MAX_WINDOW_DURATION
+      var isMaxValue
+
       if (shouldCreateNewWindow) {
         startTime = endTime = entry.startTime
-        value = entry.value
-        largestLayoutShift = 0
-        largestLayoutShiftTarget = undefined
+        maxValue = cumulatedValue = entry.value
+        isMaxValue = true
       } else {
-        value += entry.value
+        cumulatedValue += entry.value
         endTime = entry.startTime
-      }
-
-      if (entry.value > largestLayoutShift) {
-        largestLayoutShift = entry.value
-        largestLayoutShiftTime = entry.startTime
-
-        if (entry.sources && entry.sources.length) {
-          var findTarget = find(entry.sources, function (s) {
-            return !!s.node && isElementNode(s.node)
-          })
-          if (findTarget) {
-            largestLayoutShiftTarget = findTarget.node
-          }
-        } else {
-          largestLayoutShiftTarget = undefined
+        isMaxValue = entry.value > maxValue
+        if (isMaxValue) {
+          maxValue = entry.value
         }
       }
-    },
-    value: function () {
-      return value
-    },
-    largestLayoutShiftTarget: function () {
-      return largestLayoutShiftTarget
-    },
-    largestLayoutShiftTime: function () {
-      return largestLayoutShiftTime
+      return {
+        cumulatedValue: cumulatedValue,
+        isMaxValue: isMaxValue
+      }
     }
   }
 }

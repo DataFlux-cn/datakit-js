@@ -1,4 +1,4 @@
-import { noop, monitor } from '@cloudcare/browser-core'
+import { noop, monitor, throttle } from '@cloudcare/browser-core'
 
 /**
  * Maximum duration to wait before processing mutations. If the browser is idle, mutations will be
@@ -7,7 +7,7 @@ import { noop, monitor } from '@cloudcare/browser-core'
  * browser is busy executing a longer task, mutations will be processed after this task.
  */
 var MUTATION_PROCESS_MAX_DELAY = 100
-
+export var MUTATION_PROCESS_MIN_DELAY = 16
 export function createMutationBatch(processMutationBatch) {
   var cancelScheduledFlush = noop
   var pendingMutations = []
@@ -17,15 +17,19 @@ export function createMutationBatch(processMutationBatch) {
     processMutationBatch(pendingMutations)
     pendingMutations = []
   }
-
+  //const { throttled: throttledFlush, cancel: cancelThrottle }
+  var _throttled = throttle(flush, MUTATION_PROCESS_MIN_DELAY, {
+    leading: false
+  })
+  var throttledFlush = _throttled.throttled
+  var cancelThrottle = _throttled.cancel
   return {
     addMutations: function (mutations) {
       if (pendingMutations.length === 0) {
-        cancelScheduledFlush = requestIdleCallback(flush, {
+        cancelScheduledFlush = requestIdleCallback(throttledFlush, {
           timeout: MUTATION_PROCESS_MAX_DELAY
         })
       }
-      //   pendingMutations.push(...mutations)
       Array.prototype.push.apply(pendingMutations, mutations)
     },
 
@@ -33,6 +37,7 @@ export function createMutationBatch(processMutationBatch) {
 
     stop: function () {
       cancelScheduledFlush()
+      cancelThrottle()
     }
   }
 }
