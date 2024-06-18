@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.1.16
+
+- fix: CLS cumulatedValue bug
+- fix: add injectTraceHeader context
+- fix: update license
+
 ## v3.1.15
 
 - feat: add injectTraceHeader configuration
