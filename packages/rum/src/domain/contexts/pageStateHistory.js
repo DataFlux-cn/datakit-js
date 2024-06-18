@@ -27,7 +27,7 @@ export function startPageStateHistory(maxPageStateEntriesSelectable) {
   if (maxPageStateEntriesSelectable === undefined) {
     maxPageStateEntriesSelectable = MAX_PAGE_STATE_ENTRIES_SELECTABLE
   }
-  var pageStateHistory = new ContextHistory(
+  var pageStateEntryHistory = new ContextHistory(
     PAGE_STATE_CONTEXT_TIME_OUT_DELAY,
     MAX_PAGE_STATE_ENTRIES
   )
@@ -63,16 +63,19 @@ export function startPageStateHistory(maxPageStateEntriesSelectable) {
     }
 
     currentPageState = nextPageState
-    pageStateHistory.closeActive(startTime)
-    pageStateHistory.add(
+    pageStateEntryHistory.closeActive(startTime)
+    pageStateEntryHistory.add(
       { state: currentPageState, startTime: startTime },
       startTime
     )
   }
 
-  return {
+  const pageStateHistory = {
     findAll: function (eventStartTime, duration) {
-      var pageStateEntries = pageStateHistory.findAll(eventStartTime, duration)
+      var pageStateEntries = pageStateEntryHistory.findAll(
+        eventStartTime,
+        duration
+      )
 
       if (pageStateEntries.length === 0) {
         return
@@ -99,19 +102,26 @@ export function startPageStateHistory(maxPageStateEntriesSelectable) {
 
       return pageStateServerEntries
     },
-    isInActivePageStateAt: function (startTime) {
-      var pageStateEntry = pageStateHistory.find(startTime)
-      return (
-        pageStateEntry !== undefined &&
-        pageStateEntry.state === PageState.ACTIVE
-      )
+
+    wasInPageStateAt: function (state, startTime) {
+      return pageStateHistory.wasInPageStateDuringPeriod(state, startTime, 0)
     },
+
+    wasInPageStateDuringPeriod: function (state, startTime, duration) {
+      return pageStateEntryHistory
+        .findAll(startTime, duration)
+        .some(function (pageState) {
+          return pageState.state === state
+        })
+    },
+
     addPageState: addPageState,
     stop: function () {
       stopEventListeners()
-      pageStateHistory.stop()
+      pageStateEntryHistory.stop()
     }
   }
+  return pageStateHistory
 }
 
 function computePageState(event) {

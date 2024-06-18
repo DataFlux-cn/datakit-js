@@ -49,5 +49,6 @@ export * from './helper/serialisation/jsonStringify'
 export * from './helper/serialisation/rowData'
 export * from './helper/serialisation/storedContextManager'
 export * from './user'
-
+export * from './helper/polyfills'
 export * from './telemetry/telemetry'
+export * from './helper/catchUserErrors'

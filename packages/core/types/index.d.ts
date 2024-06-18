@@ -143,7 +143,7 @@ export interface RumBaseInitConfiguration extends InitConfiguration {
    */
   trackUserInteractions?: boolean | undefined
   /**
-   * 指定 action 数据 name 获取方式，默认自动获取，可以指定元素特定属性名称
+   * 指定 action 数据 name 获取方式，默认自动获取，可以指定元素特定属性名称,alt,name,title,aria-labelledby,aria-label,data-guance-action-name 这些属性
    */
   actionNameAttribute?: string | undefined
   trackViewsManually?: boolean | undefined
@@ -155,6 +155,12 @@ export interface RumBaseInitConfiguration extends InitConfiguration {
    * 是否以 128 字节的方式生成 traceID，与 traceType 对应，目前支持类型 zipkin、jaeger。
    */
   traceId128Bit?: boolean | undefined
+  /**
+   * Fetch/Xhr 拦截之后，往请求 header 添加额外 header-key，受 allowedTracingUrls 影响
+   * @param context  请求附带额外信息，包括traceid spanid url 等内容
+   * @returns 返回 key: value 对象, 请求添加的额外 key
+   */
+  injectTraceHeader?: (content: any) => { [key: string]: string } | undefined
 }
 export type RumInitConfiguration = RumBaseInitConfiguration &
   DatakitInitConfiguration

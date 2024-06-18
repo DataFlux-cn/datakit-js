@@ -22,7 +22,7 @@ cmd_help () {
 }
 
 cmd_release () {
-  [[ `git branch --show-current` != "master" ]] || fail 'please do not release from `master` branch'
+  [[ `git branch --show-current`!="master" ]] || fail 'please do not release from `master` branch'
   lerna version --exact
 }
 

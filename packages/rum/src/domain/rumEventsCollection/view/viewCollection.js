@@ -6,7 +6,8 @@ import {
   RumEventType,
   LifeCycleEventType,
   extend2Lev,
-  findByPath
+  findByPath,
+  discardNegativeDuration
 } from '@cloudcare/browser-core'
 import { trackViews } from './trackViews'
 export function startViewCollection(
@@ -229,8 +230,4 @@ function processViewUpdate(view, configuration, recorderApi, pageStateHistory) {
       location: view.location
     }
   }
-}
-
-function discardNegativeDuration(duration) {
-  return isNumber(duration) && duration < 0 ? undefined : duration
 }

@@ -13,6 +13,7 @@ import {
 } from '@cloudcare/browser-core'
 import { trackConsoleError } from './trackConsoleError'
 import { trackReportError } from './trackReportError'
+import { PageState } from '../../contexts/pageStateHistory'
 
 export function startErrorCollection(
   lifeCycle,
@@ -85,7 +86,8 @@ function processError(error, pageStateHistory) {
     },
     type: RumEventType.ERROR,
     view: {
-      in_foreground: pageStateHistory.isInActivePageStateAt(
+      in_foreground: pageStateHistory.wasInPageStateAt(
+        PageState.ACTIVE,
         error.startClocks.relative
       )
     }

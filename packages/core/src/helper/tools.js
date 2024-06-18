@@ -1747,3 +1747,7 @@ export function getPathFromHash(hash) {
   var index = hash.indexOf('?')
   return index < 0 ? hash : hash.slice(0, index)
 }
+
+export function discardNegativeDuration(duration) {
+  return isNumber(duration) && duration < 0 ? undefined : duration
+}

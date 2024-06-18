@@ -48,6 +48,9 @@ export var startSessionManager = function (
   trackVisibility(function () {
     return sessionStore.expandSession()
   })
+  //   trackResume(function () {
+  //     return sessionStore.expandSession()
+  //   })
 
   function buildSessionContext() {
     return {
@@ -108,4 +111,10 @@ function trackVisibility(expandSession) {
   stopCallbacks.push(function () {
     clearInterval(visibilityCheckInterval)
   })
+}
+function trackResume(cb) {
+  var _addEventListener = addEventListener(window, DOM_EVENT.RESUME, cb, {
+    capture: true
+  })
+  stopCallbacks.push(_addEventListener.stop)
 }

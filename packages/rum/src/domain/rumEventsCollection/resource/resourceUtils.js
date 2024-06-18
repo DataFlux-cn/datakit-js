@@ -221,26 +221,24 @@ export function isCacheHit(entry) {
 
 // ·   loadEventEnd：返回当前网页load事件的回调函数运行结束时的Unix毫秒时间戳。如果该事件还没有发生，返回0
 export function computePerformanceResourceDetails(entry) {
-  var validEntry = toValidEntry(entry)
-
-  if (!validEntry) {
+  if (!isValidEntry(entry)) {
     return undefined
   }
 
-  var startTime = validEntry.startTime,
-    fetchStart = validEntry.fetchStart,
-    redirectStart = validEntry.redirectStart,
-    redirectEnd = validEntry.redirectEnd,
-    domainLookupStart = validEntry.domainLookupStart,
-    domainLookupEnd = validEntry.domainLookupEnd,
-    connectStart = validEntry.connectStart,
-    secureConnectionStart = validEntry.secureConnectionStart,
-    connectEnd = validEntry.connectEnd,
-    requestStart = validEntry.requestStart,
-    responseStart = validEntry.responseStart,
-    responseEnd = validEntry.responseEnd
+  var startTime = entry.startTime,
+    fetchStart = entry.fetchStart,
+    redirectStart = entry.redirectStart,
+    redirectEnd = entry.redirectEnd,
+    domainLookupStart = entry.domainLookupStart,
+    domainLookupEnd = entry.domainLookupEnd,
+    connectStart = entry.connectStart,
+    secureConnectionStart = entry.secureConnectionStart,
+    connectEnd = entry.connectEnd,
+    requestStart = entry.requestStart,
+    responseStart = entry.responseStart,
+    responseEnd = entry.responseEnd
   var details = {
-    firstbyte: msToNs(responseStart - domainLookupStart),
+    firstbyte: msToNs(responseStart - requestStart),
     trans: msToNs(responseEnd - responseStart),
     downloadTime: formatTiming(startTime, responseStart, responseEnd),
     firstByteTime: formatTiming(startTime, requestStart, responseStart)
@@ -284,7 +282,7 @@ export function computePerformanceResourceDetails(entry) {
   return details
 }
 
-export function toValidEntry(entry) {
+export function isValidEntry(entry) {
   // Ensure timings are in the right order. On top of filtering out potential invalid
   // RumPerformanceResourceTiming, it will ignore entries from requests where timings cannot be
   // collected, for example cross origin requests without a "Timing-Allow-Origin" header allowing
@@ -302,47 +300,51 @@ export function toValidEntry(entry) {
   // page_trans	float		内容传输时间	responseEnd - responseStart
   // page_dom	float		DOM解析耗时	domInteractive - responseEnd
   // page_resource_load_time	float		资源加载时间	loadEventStart - domContentLoadedEventEnd
-  if (
-    !areInOrder(
-      entry.startTime,
-      entry.fetchStart,
-      entry.domainLookupStart,
-      entry.domainLookupEnd,
-      entry.connectStart,
-      entry.connectEnd,
-      entry.requestStart,
-      entry.responseStart,
-      entry.responseEnd
-    )
-  ) {
-    return undefined
-  }
+  var areCommonTimingsInOrder = areInOrder(
+    entry.startTime,
+    entry.fetchStart,
+    entry.domainLookupStart,
+    entry.domainLookupEnd,
+    entry.connectStart,
+    entry.connectEnd,
+    entry.requestStart,
+    entry.responseStart,
+    entry.responseEnd
+  )
+  var areRedirectionTimingsInOrder = hasRedirection(entry)
+    ? areInOrder(
+        entry.startTime,
+        entry.redirectStart,
+        entry.redirectEnd,
+        entry.fetchStart
+      )
+    : true
+  return areCommonTimingsInOrder && areRedirectionTimingsInOrder
+  //   if (!hasRedirection(entry)) {
+  //     return entry
+  //   }
 
-  if (!hasRedirection(entry)) {
-    return entry
-  }
+  //   var redirectStart = entry.redirectStart
+  //   var redirectEnd = entry.redirectEnd
+  //   // Firefox doesn't provide redirect timings on cross origin requests.
+  //   // Provide a default for those.
+  //   if (redirectStart < entry.startTime) {
+  //     redirectStart = entry.startTime
+  //   }
+  //   if (redirectEnd < entry.startTime) {
+  //     redirectEnd = entry.fetchStart
+  //   }
 
-  var redirectStart = entry.redirectStart
-  var redirectEnd = entry.redirectEnd
-  // Firefox doesn't provide redirect timings on cross origin requests.
-  // Provide a default for those.
-  if (redirectStart < entry.startTime) {
-    redirectStart = entry.startTime
-  }
-  if (redirectEnd < entry.startTime) {
-    redirectEnd = entry.fetchStart
-  }
-
-  // Make sure redirect timings are in order
-  if (
-    !areInOrder(entry.startTime, redirectStart, redirectEnd, entry.fetchStart)
-  ) {
-    return undefined
-  }
-  return extend({}, entry, {
-    redirectEnd: redirectEnd,
-    redirectStart: redirectStart
-  })
+  //   // Make sure redirect timings are in order
+  //   if (
+  //     !areInOrder(entry.startTime, redirectStart, redirectEnd, entry.fetchStart)
+  //   ) {
+  //     return undefined
+  //   }
+  //   return extend({}, entry, {
+  //     redirectEnd: redirectEnd,
+  //     redirectStart: redirectStart
+  //   })
   // return {
   //   ...entry,
   //   redirectEnd,

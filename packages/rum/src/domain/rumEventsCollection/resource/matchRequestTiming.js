@@ -1,6 +1,7 @@
-import { toValidEntry } from './resourceUtils'
-import { map, filter, addDuration } from '@cloudcare/browser-core'
+import { isValidEntry } from './resourceUtils'
+import { map, filter, addDuration, WeakSet } from '@cloudcare/browser-core'
 
+var alreadyMatchedEntries = new WeakSet()
 /**
  * Look for corresponding timing in resource timing buffer
  *
@@ -23,11 +24,13 @@ export function matchRequestTiming(request) {
   if (!sameNameEntries.length || !('toJSON' in sameNameEntries[0])) {
     return
   }
-  var candidates = map(sameNameEntries, function (entry) {
-    return entry.toJSON()
+  var candidates = filter(sameNameEntries, function (entry) {
+    return !alreadyMatchedEntries.has(entry)
   })
 
-  candidates = filter(candidates, toValidEntry)
+  candidates = filter(candidates, function (entry) {
+    return isValidEntry(entry)
+  })
   candidates = filter(candidates, function (entry) {
     return isBetween(
       entry,
@@ -40,7 +43,8 @@ export function matchRequestTiming(request) {
   })
 
   if (candidates.length === 1) {
-    return candidates[0]
+    alreadyMatchedEntries.add(candidates[0])
+    return candidates[0].toJSON()
   }
   return
 }
