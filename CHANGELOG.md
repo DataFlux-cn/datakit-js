@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.1.17
+
+- Merge branch 'dev'
+- fix: remove hide end view bug
+- feat: fadd common fields drift
+- add changeLog
+
 ## v3.1.16
 
 - fix: CLS cumulatedValue bug
