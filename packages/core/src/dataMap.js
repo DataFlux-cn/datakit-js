@@ -41,7 +41,8 @@ export var commonFields = {
   is_login: 'user.is_login',
   page_states: '_gc.page_states',
   session_sample_rate: '_gc.configuration.session_sample_rate',
-  session_replay_sample_rate: '_gc.configuration.session_replay_sample_rate'
+  session_replay_sample_rate: '_gc.configuration.session_replay_sample_rate',
+  drift: '_gc.drift'
 }
 // 需要用双引号将字符串类型的field value括起来， 这里有数组标示[string, path]
 export var dataMap = {
